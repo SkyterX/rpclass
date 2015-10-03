@@ -14,7 +14,7 @@ include_directories(${GTEST_INCLUDE_DIRS})
 # Build Test Executables
 #
 add_executable(${PROJECT_NAME}-test ${TEST_SRCS})
-target_link_libraries(${PROJECT_NAME}-test ${GTEST_BOTH_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}-test ${GTEST_BOTH_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 #
 # Set compiler flags
 #

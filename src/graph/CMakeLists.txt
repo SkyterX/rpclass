@@ -29,6 +29,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 
 link_directories("${PROJECT_SOURCE_DIR}/lib")
 
+list(APPEND CMAKE_CXX_FLAGS " -std=c++11")
+
 add_subdirectory(src)
 add_subdirectory(test)
 

@@ -28,7 +28,7 @@ public:
     using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
     StaticGraph() {};
     template <class PairIterator>
-    StaticGraph::StaticGraph(PairIterator begin, PairIterator end,
+    StaticGraph(PairIterator begin, PairIterator end,
         vertices_size_type n, edges_size_type m);
 
 };
