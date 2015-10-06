@@ -5,6 +5,7 @@ project (graph)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
 # defined projects like INSTALL.vcproj and ZERO_CHECK.vcproj
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 #
 # Project Search Paths
 #
@@ -28,8 +29,6 @@ list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/tools")
 #link_directories(${Boost_LIBRARY_DIRS})
 
 link_directories("${PROJECT_SOURCE_DIR}/lib")
-
-list(APPEND CMAKE_CXX_FLAGS " -std=c++11")
 
 add_subdirectory(src)
 add_subdirectory(test)
