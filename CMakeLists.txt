@@ -23,7 +23,17 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 #
 link_directories("${PROJECT_SOURCE_DIR}/lib")
 
+
+#
+# Theirdparty dependencies
+#
+set(gtest_force_shared_crt ON)
 add_subdirectory(thirdparty/googletest-release-1.7.0)
+
+
+#
+# Subprojects
+#
 
 add_subdirectory(src/graph)
 #add_subdirectory(test)
