@@ -19,5 +19,7 @@ link_directories("${PROJECT_SOURCE_DIR}/lib")
 
 list(APPEND CMAKE_CXX_FLAGS " -std=c++11")
 
+add_subdirectory(thirdparty/googletest-release-1.7.0)
+
 add_subdirectory(src/graph)
 #add_subdirectory(test)

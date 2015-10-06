@@ -7,14 +7,13 @@ file(GLOB_RECURSE TEST_SRCS *.cpp *.h *.hpp)
 # Google Test
 #
 enable_testing()
-list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/thirdparty/gtest")
-find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+
 #
 # Build Test Executables
 #
 add_executable(${PROJECT_NAME}-test ${TEST_SRCS})
-target_link_libraries(${PROJECT_NAME}-test ${GTEST_BOTH_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}-test gtest gtest_main)
 #
 # Set compiler flags
 #
