@@ -16,7 +16,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
 
 # Command to output information to the console
 # Useful for displaying errors, warnings, and debugging
-message ("cxx Flags: " ${CMAKE_CXX_FLAGS})
+# message ("cxx Flags: " ${CMAKE_CXX_FLAGS})
 
 target_link_libraries(${PROJECT_NAME})
 
