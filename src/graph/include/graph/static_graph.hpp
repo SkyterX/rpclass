@@ -1,71 +1,106 @@
 #pragma once
-
-#include <graph/graph.hpp>
-#include <graph/properties.hpp>
-#include <boost/property_map/property_map.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/adjacency_list.hpp>
-
+#include <vector>
+#include <cinttypes>
+#include <graph/IReader.hpp>
 
 namespace graph {
 
-    template <typename BundledVertexProperties, typename BundledEdgeProperties>
-    using StaticGraph = boost::adjacency_list<
-        boost::vecS, boost::vecS, boost::bidirectionalS,
-        BundledVertexProperties, BundledEdgeProperties>;
-  
-    template <typename BundledVertexProperties, typename BundledEdgeProperties>
-    struct graph_traits<StaticGraph<BundledVertexProperties, BundledEdgeProperties>>
-        : boost::graph_traits<StaticGraph<BundledVertexProperties, BundledEdgeProperties>> {};
+	template <typename Iterator>
+	class Vertex {
+	public:
+		Iterator begin;
+		Vertex(Iterator& it) : begin(it) {}
+	};
 
-    template <typename BundledVertexProperties, typename BundledEdgeProperties>
-    struct property_map<
-        StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
-        vertex_bundle_t,
-        void > {
-        using type = typename boost::property_map<
-            StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
-            boost::vertex_bundle_t>::type;
-    };
-    template <typename BundledVertexProperties, typename BundledEdgeProperties>
-    struct property_map< 
-        StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
-        edge_bundle_t,
-        void > {
-        using type = typename boost::property_map<
-            StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
-            boost::edge_bundle_t>::type;
-    };
+	class StaticGraph {
+		class VertexIterator;
+	public:
+		using edge_size_type = uint32_t;
+		using vertices_size_type = uint32_t;
+		using edges_size_type = uint32_t;
+		using degree_size_type = uint16_t;
+		using vertex_descriptor = vertices_size_type;
+	private:
+		using EdgesVecType = std::vector<vertex_descriptor>;
+	public:
+		using adjacency_iterator = EdgesVecType::const_iterator;
+		using VertexType = Vertex<EdgesVecType::const_iterator>;
+	private:
+		using VerticesVecType = std::vector<VertexType>;
+	public:
 
-    template <typename BundledVertexProperties, typename BundledEdgeProperties>
-    inline typename property_map<
-        StaticGraph<BundledVertexProperties, BundledEdgeProperties>,
-        vertex_bundle_t>::type
-        get(const vertex_bundle_t&,
-            StaticGraph<BundledVertexProperties, BundledEdgeProperties>& graph) {
-        return boost::get(boost::vertex_bundle, graph);
-    };
+		class vertex_iterator;
+		class Builder;
 
-    template <typename BundledVertexProperties, typename BundledEdgeProperties>
-    inline typename property_map<
-        StaticGraph<BundledVertexProperties, BundledEdgeProperties>,
-        edge_bundle_t>::type
-        get(const edge_bundle_t&,
-            StaticGraph<BundledVertexProperties, BundledEdgeProperties>& graph) {
-        return boost::get(boost::edge_bundle, graph);
-    };
+		using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
 
-};
+		StaticGraph() {};
 
-// Supress boost get functions instantiation by supressing instantiation of boost::property_map template.
+		template <class PairIterator>
+		StaticGraph(PairIterator begin, PairIterator end,
+					vertices_size_type n, edges_size_type m);
 
-namespace boost {
+		VerticesVecType vertices;
+		EdgesVecType edges;
+	};
 
-template <typename Graph>
-struct property_map<Graph, ::graph::vertex_bundle_t, void> {};
+	class StaticGraph::vertex_iterator : std::iterator<std::forward_iterator_tag, vertex_descriptor> {
+	public:
+		vertex_iterator(const StaticGraph& g, vertex_descriptor start);
+		vertex_iterator(const StaticGraph& g);
+		virtual ~vertex_iterator();
+		void swap(vertex_iterator& other);
+		vertex_iterator& operator++();
+		vertex_iterator operator++(int);
+		bool operator==(const vertex_iterator& other) const;
+		bool operator!=(const vertex_iterator& other) const;
+		const vertex_descriptor& operator*() const;
+		const vertex_descriptor* operator->() const;
+	private:
+		vertex_descriptor currentVertex;
+		vertex_descriptor verticesCount;
+	};
 
-template <typename Graph>
-struct property_map<Graph, ::graph::edge_bundle_t, void> {};
+	class StaticGraph::Builder {
+		friend class StaticGraph;
+
+	public:
+		Builder(vertices_size_type vertexCount, edges_size_type edgesCount);
+		virtual ~Builder();
+		void AddEdge(const edge_descriptor &e);
+		StaticGraph* Build();
+	private:
+		void SortEdgesAndCopyTo(StaticGraph& graph);
+
+		std::vector<edge_descriptor> unsortedEdges;
+		int vertexCount;
+	};
+
+	StaticGraph* ReadGraphFrom(IReader& reader);
+
+	std::pair<StaticGraph::vertex_iterator, StaticGraph::vertex_iterator>
+	vertices(const StaticGraph& g);
+
+	std::pair<StaticGraph::adjacency_iterator, StaticGraph::adjacency_iterator>
+	adjacent_vertices(StaticGraph::vertex_descriptor u, const StaticGraph& g);
+
+	std::pair<StaticGraph::edge_descriptor, bool>
+	edge(StaticGraph::vertex_descriptor u, StaticGraph::vertex_descriptor v,
+		 const StaticGraph& g);
+
+	StaticGraph::vertex_descriptor
+	source(StaticGraph::edge_descriptor e, const StaticGraph& g);
+
+	StaticGraph::vertex_descriptor
+	target(StaticGraph::edge_descriptor e, const StaticGraph& g);
+
+	StaticGraph::degree_size_type
+	out_degree(StaticGraph::vertex_descriptor u, const StaticGraph& g);
+
+	StaticGraph::vertices_size_type
+	num_vertices(const StaticGraph& g);
+
+	StaticGraph::edges_size_type
+	num_edges(const StaticGraph& g);
 
 }
-
