@@ -1,9 +1,23 @@
 #include <graph/static_graph.hpp>
 #include <algorithm>
 
-// vertex_iterator  
-namespace graph {
+// StaticGraph
+namespace graph
+{
+	StaticGraph::StaticGraph() : Vertices(*this) {}
 
+	StaticGraph::EdgesCollection StaticGraph::Edges(const vertex_descriptor& v) const {
+		return EdgesCollection(*this, v);
+	}
+
+	StaticGraph::edges_size_type StaticGraph::EdgesCount() const {
+		return edges.size();
+	}
+}
+
+// vertex_iterator  
+namespace graph
+{
 	StaticGraph::vertex_iterator::vertex_iterator(const StaticGraph& g, vertex_descriptor start)
 		: currentVertex(start), verticesCount(g.vertices.size()) {}
 
@@ -47,9 +61,52 @@ namespace graph {
 	}
 }
 
-// Builder
-namespace graph {
+// VertexCollection  
+namespace graph
+{
+	StaticGraph::VertexCollection::VertexCollection(const StaticGraph& g) : graph(g) {}
 
+	StaticGraph::vertex_iterator StaticGraph::VertexCollection::begin() const {
+		return vertex_iterator(this->graph, 0);
+	}
+
+	StaticGraph::vertex_iterator StaticGraph::VertexCollection::end() const {
+		return vertex_iterator(this->graph);
+	}
+
+	StaticGraph::vertices_size_type StaticGraph::VertexCollection::size() const {
+		return this->graph.vertices.size();
+	}
+
+	StaticGraph::VertexType StaticGraph::VertexCollection::operator[](const vertex_descriptor& v) const {
+		if (v == this->size())
+			return VertexType(this->graph.edges.end());
+		return this->graph.vertices[v];
+	}
+}
+
+// EdgesCollection  
+namespace graph
+{
+	StaticGraph::EdgesCollection::EdgesCollection(const StaticGraph& g, const vertex_descriptor& v)
+		:graph(g), vertex(v) {}
+
+	StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::begin() {
+		return this->graph.Vertices[this->vertex].begin;
+	}
+
+	StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::end() {
+		return this->graph.Vertices[this->vertex + 1].begin;
+	}
+
+	StaticGraph::degree_size_type StaticGraph::EdgesCollection::size() {
+		return (degree_size_type)(begin() - end());
+	}
+}
+
+// Builder
+namespace graph
+{
 	StaticGraph::Builder::Builder(vertices_size_type vertexCount, edges_size_type edgesCount) {
 		this->unsortedEdges.reserve(edgesCount);
 		this->vertexCount = vertexCount;
@@ -101,7 +158,8 @@ namespace graph {
 }
 
 // external functions  
-namespace graph {
+namespace graph
+{
 	StaticGraph* ReadGraphFrom(IReader& reader) {
 		StaticGraph::Builder* builder = nullptr;
 
@@ -141,18 +199,18 @@ namespace graph {
 	}
 
 	std::pair<StaticGraph::edge_descriptor, bool> edge(StaticGraph::vertex_descriptor u, StaticGraph::vertex_descriptor v, const StaticGraph& g) {
-		auto adjacencyIterators = adjacent_vertices(u, g);
-		auto result = lower_bound(adjacencyIterators.first, adjacencyIterators.second, v);
+		auto edges = g.Edges(u);
+		auto result = lower_bound(edges.begin(), edges.end(), v);
 
 		StaticGraph::edge_descriptor edge = std::make_pair(u, v);
-		return make_pair(edge, result != adjacencyIterators.second && *result == v);
+		return make_pair(edge, result != edges.end() && *result == v);
 	}
 
 	template <class PairIterator>
 	StaticGraph::StaticGraph(PairIterator begin, PairIterator end, vertices_size_type n, edges_size_type m) {
 		auto builder = new Builder(n, m);
 
-		for (auto it = begin; it != end; ++it) {
+		for (auto& it = begin; it != end; ++it) {
 			builder->AddEdge(it);
 		}
 
@@ -162,11 +220,12 @@ namespace graph {
 	}
 
 	std::pair<StaticGraph::vertex_iterator, StaticGraph::vertex_iterator> vertices(const StaticGraph& g) {
-		return make_pair(StaticGraph::vertex_iterator(g, 0), StaticGraph::vertex_iterator(g));
+		return make_pair(g.Vertices.begin(), g.Vertices.end());
 	}
 
 	std::pair<StaticGraph::adjacency_iterator, StaticGraph::adjacency_iterator> adjacent_vertices(StaticGraph::vertex_descriptor u, const StaticGraph& g) {
-		return make_pair(g.vertices[u].begin, g.vertices[u].begin + out_degree(u, g));
+		auto edgesCollection = g.Edges(u);
+		return make_pair(edgesCollection.begin(), edgesCollection.end());
 	}
 
 	StaticGraph::vertex_descriptor source(StaticGraph::edge_descriptor e, const StaticGraph& g) {
@@ -178,16 +237,14 @@ namespace graph {
 	}
 
 	StaticGraph::degree_size_type out_degree(StaticGraph::vertex_descriptor u, const StaticGraph& g) {
-		if (u == g.vertices.size() - 1)
-			return (StaticGraph::degree_size_type)(g.edges.end() - g.vertices[u].begin);
-		return (StaticGraph::degree_size_type)(g.vertices[u + 1].begin - g.vertices[u].begin);
+		return g.Edges(u).size();
 	}
 
 	StaticGraph::vertices_size_type num_vertices(const StaticGraph& g) {
-		return g.vertices.size();
+		return g.Vertices.size();
 	}
 
 	StaticGraph::edges_size_type num_edges(const StaticGraph& g) {
-		return g.edges.size();
+		return g.EdgesCount();
 	}
 }

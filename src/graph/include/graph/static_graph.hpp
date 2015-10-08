@@ -3,14 +3,17 @@
 #include <cinttypes>
 #include <graph/IReader.hpp>
 
-namespace graph {
-
+namespace graph
+{
 	template <typename Iterator>
 	class Vertex {
 	public:
 		Iterator begin;
-		Vertex(Iterator& it) : begin(it) {}
+
+		Vertex(const Iterator& it) : begin(it) {}
 	};
+
+	class StaticGraph;
 
 	class StaticGraph {
 		class VertexIterator;
@@ -32,17 +35,46 @@ namespace graph {
 		class vertex_iterator;
 		class Builder;
 
+		class VertexCollection {
+		public:
+			vertex_iterator begin() const;
+			vertex_iterator end() const;
+			vertices_size_type size() const;
+			VertexType operator[](const vertex_descriptor& v) const;
+		private:
+			VertexCollection(const StaticGraph& g);
+			const StaticGraph& graph;
+			friend class StaticGraph;
+		};
+
+		class EdgesCollection {
+		public:
+			adjacency_iterator begin();
+			adjacency_iterator end();
+			degree_size_type size();
+		private:
+			EdgesCollection(const StaticGraph& g, const vertex_descriptor& v);
+			const StaticGraph& graph;
+			const vertex_descriptor& vertex;
+			friend class StaticGraph;
+		};
+
 		using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
 
-		StaticGraph() {};
+		StaticGraph();
 
 		template <class PairIterator>
 		StaticGraph(PairIterator begin, PairIterator end,
-					vertices_size_type n, edges_size_type m);
+		            vertices_size_type n, edges_size_type m);
 
-		VerticesVecType vertices;
+		const VertexCollection Vertices;
+		EdgesCollection Edges(const vertex_descriptor& v) const;
+		edges_size_type EdgesCount() const;
+	private:
 		EdgesVecType edges;
+		VerticesVecType vertices;
 	};
+
 
 	class StaticGraph::vertex_iterator : std::iterator<std::forward_iterator_tag, vertex_descriptor> {
 	public:
@@ -67,7 +99,7 @@ namespace graph {
 	public:
 		Builder(vertices_size_type vertexCount, edges_size_type edgesCount);
 		virtual ~Builder();
-		void AddEdge(const edge_descriptor &e);
+		void AddEdge(const edge_descriptor& e);
 		StaticGraph* Build();
 	private:
 		void SortEdgesAndCopyTo(StaticGraph& graph);
@@ -86,7 +118,7 @@ namespace graph {
 
 	std::pair<StaticGraph::edge_descriptor, bool>
 	edge(StaticGraph::vertex_descriptor u, StaticGraph::vertex_descriptor v,
-		 const StaticGraph& g);
+	     const StaticGraph& g);
 
 	StaticGraph::vertex_descriptor
 	source(StaticGraph::edge_descriptor e, const StaticGraph& g);
@@ -102,5 +134,4 @@ namespace graph {
 
 	StaticGraph::edges_size_type
 	num_edges(const StaticGraph& g);
-
 }
