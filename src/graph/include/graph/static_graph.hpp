@@ -1,14 +1,18 @@
 #pragma once
+
 #include <vector>
+#include <cinttypes>
+
+using namespace std;
 
 namespace graph {
-
 template <typename Iterator>
 class Vertex {
     Iterator begin;
 };
 
 class StaticGraph {
+
     class VertexIterator;
 public:
     using edge_size_type = uint32_t;
