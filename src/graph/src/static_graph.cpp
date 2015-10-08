@@ -100,7 +100,7 @@ namespace graph
 	}
 
 	StaticGraph::degree_size_type StaticGraph::EdgesCollection::size() {
-		return (degree_size_type)(begin() - end());
+		return (degree_size_type)(end() - begin());
 	}
 }
 
