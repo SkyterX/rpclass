@@ -16,7 +16,7 @@ int main() {
 	double time = clock();
 
 	FileReader fileReader;
-//	fileReader.Open("input.txt");
+	//fileReader.Open("input.txt");
 	fileReader.Open("osm-bawu.gr");
 	//fileReader.Open("osm-ger.gr");
 
