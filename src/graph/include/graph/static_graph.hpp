@@ -45,17 +45,7 @@ namespace graph
 			friend class StaticGraph;
 		};
 
-		class EdgesCollection {
-		public:
-			adjacency_iterator begin();
-			adjacency_iterator end();
-			degree_size_type size();
-		private:
-			EdgesCollection(const StaticGraph& g, const vertex_descriptor& v);
-			const StaticGraph& graph;
-			const vertex_descriptor& vertex;
-			friend class StaticGraph;
-		};
+		class EdgesCollection;
 
 		using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
 
@@ -73,6 +63,18 @@ namespace graph
 		VerticesVecType vertices;
 	};
 
+	class StaticGraph::EdgesCollection {
+	public:
+		adjacency_iterator begin() const;
+		adjacency_iterator end() const;
+		degree_size_type size() const;
+		bool contains(vertex_descriptor v) const;
+	private:
+		EdgesCollection(const StaticGraph& g, const vertex_descriptor& v);
+		const StaticGraph& graph;
+		const vertex_descriptor& vertex;
+		friend class StaticGraph;
+	};
 
 	class StaticGraph::vertex_iterator : std::iterator<std::forward_iterator_tag, vertex_descriptor> {
 	public:

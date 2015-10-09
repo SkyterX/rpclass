@@ -13,6 +13,19 @@ namespace graph
 	StaticGraph::edges_size_type StaticGraph::EdgesCount() const {
 		return edges.size();
 	}
+
+	template <class PairIterator>
+	StaticGraph::StaticGraph(PairIterator begin, PairIterator end, vertices_size_type n, edges_size_type m) {
+		auto builder = new Builder(n, m);
+
+		for (auto& it = begin; it != end; ++it) {
+			builder->AddEdge(it);
+		}
+
+		builder->SortEdgesAndCopyTo(*this);
+
+		delete builder;
+	}
 }
 
 // vertex_iterator  
@@ -91,16 +104,21 @@ namespace graph
 	StaticGraph::EdgesCollection::EdgesCollection(const StaticGraph& g, const vertex_descriptor& v)
 		:graph(g), vertex(v) {}
 
-	StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::begin() {
+	StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::begin() const{
 		return this->graph.Vertices[this->vertex].begin;
 	}
 
-	StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::end() {
+	StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::end() const{
 		return this->graph.Vertices[this->vertex + 1].begin;
 	}
 
-	StaticGraph::degree_size_type StaticGraph::EdgesCollection::size() {
+	StaticGraph::degree_size_type StaticGraph::EdgesCollection::size() const{
 		return (degree_size_type)(end() - begin());
+	}
+	
+	bool StaticGraph::EdgesCollection::contains(vertex_descriptor v) const {
+		auto result = lower_bound(this->begin(), this->end(), v);
+		return result != this->end() && *result == v;
 	}
 }
 
@@ -199,25 +217,10 @@ namespace graph
 	}
 
 	std::pair<StaticGraph::edge_descriptor, bool> edge(StaticGraph::vertex_descriptor u, StaticGraph::vertex_descriptor v, const StaticGraph& g) {
-		auto edges = g.Edges(u);
-		auto result = lower_bound(edges.begin(), edges.end(), v);
-
-		StaticGraph::edge_descriptor edge = std::make_pair(u, v);
-		return make_pair(edge, result != edges.end() && *result == v);
+		auto edge = std::make_pair(u, v);
+		return make_pair(edge, g.Edges(u).contains(v));
 	}
 
-	template <class PairIterator>
-	StaticGraph::StaticGraph(PairIterator begin, PairIterator end, vertices_size_type n, edges_size_type m) {
-		auto builder = new Builder(n, m);
-
-		for (auto& it = begin; it != end; ++it) {
-			builder->AddEdge(it);
-		}
-
-		builder->SortEdgesAndCopyTo(*this);
-
-		delete builder;
-	}
 
 	std::pair<StaticGraph::vertex_iterator, StaticGraph::vertex_iterator> vertices(const StaticGraph& g) {
 		return make_pair(g.Vertices.begin(), g.Vertices.end());

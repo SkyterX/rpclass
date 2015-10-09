@@ -42,7 +42,7 @@ namespace GraphStatistics
 
 		for (auto &source : graph.Vertices) {
 			for (auto &target : graph.Edges(source)) {
-				if (!edge(target, source, graph).second)
+				if (!graph.Edges(target).contains(source))
 					++result;
 			}
 		}
