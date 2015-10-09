@@ -13,8 +13,6 @@ namespace graph
 		Vertex(const Iterator& it) : begin(it) {}
 	};
 
-	class StaticGraph;
-
 	class StaticGraph {
 		class VertexIterator;
 	public:

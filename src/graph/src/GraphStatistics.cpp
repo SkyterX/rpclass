@@ -13,7 +13,7 @@ namespace GraphStatistics
 		return maxDegree;
 	}
 
-	int GetMinimalVertexDegree(const graph::StaticGraph& graph) {
+	graph::StaticGraph::degree_size_type GetMinimalVertexDegree(const graph::StaticGraph& graph) {
 		graph::StaticGraph::degree_size_type minDegree = 1;
 
 		for (auto &v : graph.Vertices) {
@@ -26,7 +26,7 @@ namespace GraphStatistics
 	}
 
 	double GetAverageVertexDegree(const graph::StaticGraph& graph) {
-		int nonEmptyVertexCount = 0;
+		graph::StaticGraph::vertices_size_type nonEmptyVertexCount = 0;
 
 		for (auto& v : graph.Vertices) {
 			auto vertexDegree = out_degree(v, graph);
@@ -37,8 +37,8 @@ namespace GraphStatistics
 		return (double)num_edges(graph) / (double)nonEmptyVertexCount;
 	}
 
-	int GetSingleOrientedEdgesCount(const graph::StaticGraph& graph) {
-		int result = 0;
+	graph::StaticGraph::edges_size_type GetSingleOrientedEdgesCount(const graph::StaticGraph& graph) {
+		graph::StaticGraph::edges_size_type result = 0;
 
 		for (auto &source : graph.Vertices) {
 			for (auto &target : graph.Edges(source)) {
