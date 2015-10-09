@@ -27,9 +27,14 @@ link_directories("${PROJECT_SOURCE_DIR}/lib")
 #
 # Theirdparty dependencies
 #
+# Google Test
+#
 set(gtest_force_shared_crt ON)
 add_subdirectory(thirdparty/googletest-release-1.7.0)
-
+#
+#BOOST
+#
+list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/thirdparty/boost")
 
 #
 # Subprojects

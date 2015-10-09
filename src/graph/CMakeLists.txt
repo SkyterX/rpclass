@@ -21,12 +21,13 @@ list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/tools")
 # Libraries 
 #
 # BOOST 
+list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/thirdparty/boost")
 #set(BOOST_MIN_VERSION "1.49.0")
 #list(APPEND BOOST_COMPONENTS "program_options")
-#list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/thirdparty/boost")
-#find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
-#include_directories(${Boost_INCLUDE_DIRS})
-#link_directories(${Boost_LIBRARY_DIRS})
+
+find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
 
 link_directories("${PROJECT_SOURCE_DIR}/lib")
 
