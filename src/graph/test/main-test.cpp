@@ -1,29 +1,117 @@
 #include <type_traits>
 #include <utility>
-#include<cassert>
+#include <cassert>
+#include <queue>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <gtest/gtest.h>
 #include <graph/static_graph.hpp>
 #include <graph/graph_traits.hpp>
+#include <graph/properties.hpp>
 #include "generator.hpp"
 
 
 using namespace std;
 using namespace graph;
 
-TEST(StaticGraph, Constructor) {
-    StaticGraph staticGraph;
+//BFS 
+struct distance_t {};
+struct color_t {};
+struct edge_type_t {};
+using namespace graph;
+using BFSBundledVertexProperties = Properties<Property<distance_t, uint32_t>, Property<color_t, char>>;
+using BFSBundledEdgeProperties = Properties<Property<edge_type_t, char>>;
+using BFSGraph = boost::adjacency_list<
+    boost::vecS, boost::vecS, boost::bidirectionalS,
+    BFSBundledVertexProperties, BFSBundledEdgeProperties>;
+
+
+namespace graph {
+
+    template<>
+    struct property_map<BFSGraph, vertex_bundle_t> {
+        using type = boost::property_map<BFSGraph, boost::vertex_bundle_t>::type;
+    };
+
+    template<>
+    struct property_map<BFSGraph, edge_bundle_t> {
+        using type = boost::property_map<BFSGraph, boost::edge_bundle_t>::type;
+    };
+
+    property_map<BFSGraph, vertex_bundle_t>::type
+        get(vertex_bundle_t, BFSGraph& graph) {
+        return boost::get(boost::vertex_bundle, graph);
+    }
+
+    property_map<BFSGraph, edge_bundle_t>::type
+        get(edge_bundle_t, BFSGraph& graph) {
+        return boost::get(boost::edge_bundle, graph);
+    }
+    property_map<BFSGraph, vertex_bundle_t>::type::reference
+        get(const property_map<BFSGraph, vertex_bundle_t>::type& pMap, const property_map<BFSGraph, vertex_bundle_t>::type::key_type& key) {
+        return boost::get(pMap, key);
+    }
+
+    property_map<BFSGraph, edge_bundle_t>::type::reference
+        get(const property_map<BFSGraph, edge_bundle_t>::type& pMap, const property_map<BFSGraph, edge_bundle_t>::type::key_type& key) {
+        return boost::get(pMap, key);
+    }
 }
 
-TEST(StaticGraph, IncedenceGraphConcept) {
-    using Graph = boost::adjacency_list<>;
-    BOOST_CONCEPT_ASSERT((boost::concepts::GraphConcept<Graph>));
-    BOOST_CONCEPT_ASSERT((boost::concepts::IncidenceGraphConcept<Graph>));
-    SUCCEED();
+//TEST(StaticGraph, IncedenceGraphConcept) {
+//    using Graph = boost::adjacency_list<>;
+//    BOOST_CONCEPT_ASSERT((boost::concepts::GraphConcept<Graph>));
+//    BOOST_CONCEPT_ASSERT((boost::concepts::IncidenceGraphConcept<Graph>));
+//    SUCCEED();
+//};
 
+
+TEST(StaticGraph, BFS) {
+    using SizeT = uint32_t;
+    using VecPair = vector<pair<SizeT, SizeT>>;
+    const SizeT n = 1 << 10;
+    VecPair input;
+    input.reserve(n);
+    back_insert_iterator<VecPair> backInserter(input);
+    generate_list_graph(backInserter, n);
+    BFSGraph graph(input.begin(), input.end(), n, n);
+    auto vRange = vertices(graph);
+    property_map<BFSGraph, color_t>::type colorPM = graph::get(color_t(), graph);
+    property_map<BFSGraph, distance_t>::type distancePM = graph::get(distance_t(), graph);
+    property_map<BFSGraph, edge_type_t>::type edgeTypePM = graph::get(edge_type_t(), graph);
+    for (graph_traits<BFSGraph>::vertex_iterator vIt = vRange.first; vIt != vRange.second; ++vIt)
+        graph::put(colorPM, *vIt, 0);
+    std::queue<graph_traits<BFSGraph>::vertex_descriptor> vQueue;
+    for (graph_traits<BFSGraph>::vertex_iterator vIt = vRange.first; vIt != vRange.second; ++vIt) {
+        if (graph::get(colorPM, *vIt) == 0) {
+            graph_traits<BFSGraph>::vertex_descriptor start = *vIt;
+            vQueue.push(start);
+            while (!vQueue.empty()) {
+                graph_traits<BFSGraph>::vertex_descriptor source = vQueue.front();
+                vQueue.pop();
+                auto outRange = adjacent_vertices(source, graph);
+                graph::put(colorPM, source, 2);
+                for (graph_traits<BFSGraph>::adjacency_iterator outIt = outRange.first; outIt != outRange.second; ++outIt) {
+                    const graph_traits<BFSGraph>::vertex_descriptor& target = *outIt;
+                    graph_traits<BFSGraph>::edge_descriptor e = edge(source, target, graph).first;
+                    if (graph::get(colorPM, target) == 0) {
+                        graph::put(colorPM, target, 1);
+                        graph::put(distancePM, target, graph::get(distancePM, target) + 1);
+                        graph::put(edgeTypePM, e, 0);
+                        vQueue.push(target);
+                    }
+                    else
+                        if (graph::get(colorPM, target) == 1) graph::put(edgeTypePM, e, 1);
+                        else  graph::put(edgeTypePM, e, 2);
+                }
+            }
+        }
+    };
+    for (graph_traits<BFSGraph>::vertex_iterator vIt = vRange.first; vIt != vRange.second; ++vIt) {
+        EXPECT_EQ(2,graph::get(colorPM, *vIt));
+        EXPECT_LT(graph::get(distancePM, *vIt), n);
+    };
 };
-
 
 TEST(StaticGraph, ListGraph) {
     using Graph = boost::adjacency_list<>;
