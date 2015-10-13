@@ -40,7 +40,7 @@ namespace graph {
 			vertices_size_type size() const;
 			VertexType operator[](const vertex_descriptor& v) const;
 		private:
-			VertexCollection(const StaticGraph& g);
+			explicit VertexCollection(const StaticGraph& g);
 			const StaticGraph& graph;
 			friend class StaticGraph;
 		};
@@ -79,7 +79,7 @@ namespace graph {
 	class StaticGraph::vertex_iterator : std::iterator<std::forward_iterator_tag, vertex_descriptor> {
 	public:
 		vertex_iterator(const StaticGraph& g, vertex_descriptor start);
-		vertex_iterator(const StaticGraph& g);
+		explicit vertex_iterator(const StaticGraph& g);
 		virtual ~vertex_iterator();
 		void swap(vertex_iterator& other);
 		vertex_iterator& operator++();
@@ -111,35 +111,35 @@ namespace graph {
 
 // external functions  
 namespace graph {
-	StaticGraph* ReadGraphFrom(graphIO::IReader& reader) {
+	inline StaticGraph* ReadGraphFrom(graphIO::IReader& reader) {
 		StaticGraph::Builder* builder = nullptr;
 
 		while (char c = reader.NextChar()) {
 			switch (c) {
-			case 'c': {
-				reader.ReadLine();
-				break;
-			}
-			case 'p': {
-				reader.NextChar();
-				reader.NextChar();
+				case 'c': {
+					reader.ReadLine();
+					break;
+				}
+				case 'p': {
+					reader.NextChar();
+					reader.NextChar();
 
-				int vertexCount = reader.NextUnsignedInt() + 1;
-				int linksCount = reader.NextUnsignedInt();
+					int vertexCount = reader.NextUnsignedInt() + 1;
+					int linksCount = reader.NextUnsignedInt();
 
-				builder = new StaticGraph::Builder(vertexCount, linksCount);
-				break;
-			}
-			case 'a': {
-				int from = reader.NextUnsignedInt();
-				int to = reader.NextUnsignedInt();
-				int weight = reader.NextUnsignedInt();
+					builder = new StaticGraph::Builder(vertexCount, linksCount);
+					break;
+				}
+				case 'a': {
+					int from = reader.NextUnsignedInt();
+					int to = reader.NextUnsignedInt();
+					int weight = reader.NextUnsignedInt();
 
-				builder->AddEdge(std::make_pair(from, to));
-				break;
-			}
-			default:
-				throw std::runtime_error("Unexpected token " + c);
+					builder->AddEdge(std::make_pair(from, to));
+					break;
+				}
+				default:
+					throw std::runtime_error("Unexpected token " + c);
 			}
 		}
 
@@ -149,89 +149,89 @@ namespace graph {
 		return graph;
 	}
 
-	std::pair<StaticGraph::edge_descriptor, bool> edge(StaticGraph::vertex_descriptor u, StaticGraph::vertex_descriptor v, const StaticGraph& g) {
+	inline std::pair<StaticGraph::edge_descriptor, bool> edge(StaticGraph::vertex_descriptor u, StaticGraph::vertex_descriptor v, const StaticGraph& g) {
 		auto edge = std::make_pair(u, v);
 		return make_pair(edge, g.Edges(u).contains(v));
 	}
 
 
-	std::pair<StaticGraph::vertex_iterator, StaticGraph::vertex_iterator> vertices(const StaticGraph& g) {
+	inline std::pair<StaticGraph::vertex_iterator, StaticGraph::vertex_iterator> vertices(const StaticGraph& g) {
 		return make_pair(g.Vertices.begin(), g.Vertices.end());
 	}
 
-	std::pair<StaticGraph::adjacency_iterator, StaticGraph::adjacency_iterator> adjacent_vertices(StaticGraph::vertex_descriptor u, const StaticGraph& g) {
+	inline std::pair<StaticGraph::adjacency_iterator, StaticGraph::adjacency_iterator> adjacent_vertices(StaticGraph::vertex_descriptor u, const StaticGraph& g) {
 		auto edgesCollection = g.Edges(u);
 		return make_pair(edgesCollection.begin(), edgesCollection.end());
 	}
 
-	StaticGraph::vertex_descriptor source(StaticGraph::edge_descriptor e, const StaticGraph& g) {
+	inline StaticGraph::vertex_descriptor source(StaticGraph::edge_descriptor e, const StaticGraph& g) {
 		return e.first;
 	}
 
-	StaticGraph::vertex_descriptor target(StaticGraph::edge_descriptor e, const StaticGraph& g) {
+	inline StaticGraph::vertex_descriptor target(StaticGraph::edge_descriptor e, const StaticGraph& g) {
 		return e.second;
 	}
 
-	StaticGraph::degree_size_type out_degree(StaticGraph::vertex_descriptor u, const StaticGraph& g) {
+	inline StaticGraph::degree_size_type out_degree(StaticGraph::vertex_descriptor u, const StaticGraph& g) {
 		return g.Edges(u).size();
 	}
 
-	StaticGraph::vertices_size_type num_vertices(const StaticGraph& g) {
+	inline StaticGraph::vertices_size_type num_vertices(const StaticGraph& g) {
 		return g.Vertices.size();
 	}
 
-	StaticGraph::edges_size_type num_edges(const StaticGraph& g) {
+	inline StaticGraph::edges_size_type num_edges(const StaticGraph& g) {
 		return g.EdgesCount();
 	}
 }
 
 // StaticGraph
 namespace graph {
-	StaticGraph::StaticGraph() : Vertices(*this) {}
-
-	StaticGraph::EdgesCollection StaticGraph::Edges(const vertex_descriptor& v) const {
-		return EdgesCollection(*this, v);
-	}
-
-	StaticGraph::edges_size_type StaticGraph::EdgesCount() const {
-		return edges.size();
-	}
+	inline StaticGraph::StaticGraph() : Vertices(*this) {}
 
 	template <class PairIterator>
-	StaticGraph::StaticGraph(PairIterator begin, PairIterator end, vertices_size_type n, edges_size_type m) {
+	StaticGraph::StaticGraph(PairIterator begin, PairIterator end, vertices_size_type n, edges_size_type m) : StaticGraph() {
 		auto builder = new Builder(n, m);
 
 		for (auto& it = begin; it != end; ++it) {
-			builder->AddEdge(it);
+			builder->AddEdge(*it);
 		}
 
 		builder->SortEdgesAndCopyTo(*this);
 
 		delete builder;
 	}
+
+	inline StaticGraph::EdgesCollection StaticGraph::Edges(const vertex_descriptor& v) const {
+		return EdgesCollection(*this, v);
+	}
+
+	inline StaticGraph::edges_size_type StaticGraph::EdgesCount() const {
+		return edges.size();
+	}
 }
 
 // vertex_iterator  
 namespace graph {
-	StaticGraph::vertex_iterator::vertex_iterator(const StaticGraph& g, vertex_descriptor start)
+	inline StaticGraph::vertex_iterator::vertex_iterator(const StaticGraph& g, vertex_descriptor start)
 		: currentVertex(start), verticesCount(g.vertices.size()) {}
 
-	StaticGraph::vertex_iterator::vertex_iterator(const StaticGraph& g)
+	inline StaticGraph::vertex_iterator::vertex_iterator(const StaticGraph& g)
 		: currentVertex(g.vertices.size()), verticesCount(g.vertices.size()) {}
 
-	StaticGraph::vertex_iterator::~vertex_iterator() {}
+	inline StaticGraph::vertex_iterator::~vertex_iterator() {}
 
-	void StaticGraph::vertex_iterator::swap(vertex_iterator& other) {
+	inline void StaticGraph::vertex_iterator::swap(vertex_iterator& other) {
 		std::swap(currentVertex, other.currentVertex);
 	}
 
-	StaticGraph::vertex_iterator& StaticGraph::vertex_iterator::operator++() {
+	inline StaticGraph::vertex_iterator& StaticGraph::vertex_iterator::operator++() {
 		if (currentVertex != verticesCount)
 			++currentVertex;
 		return *this;
 	}
 
-	StaticGraph::vertex_iterator StaticGraph::vertex_iterator::operator++(int) {
+	inline StaticGraph::vertex_iterator StaticGraph::vertex_iterator::operator++(int) {
 		if (currentVertex == verticesCount)
 			return *this;
 		vertex_iterator tmp(*this);
@@ -239,40 +239,40 @@ namespace graph {
 		return tmp;
 	}
 
-	bool StaticGraph::vertex_iterator::operator==(const vertex_iterator& other) const {
+	inline bool StaticGraph::vertex_iterator::operator==(const vertex_iterator& other) const {
 		return currentVertex == other.currentVertex;
 	}
 
-	bool StaticGraph::vertex_iterator::operator!=(const vertex_iterator& other) const {
+	inline bool StaticGraph::vertex_iterator::operator!=(const vertex_iterator& other) const {
 		return currentVertex != other.currentVertex;
 	}
 
-	const StaticGraph::vertex_descriptor& StaticGraph::vertex_iterator::operator*() const {
+	inline const StaticGraph::vertex_descriptor& StaticGraph::vertex_iterator::operator*() const {
 		return currentVertex;
 	}
 
-	const StaticGraph::vertex_descriptor* StaticGraph::vertex_iterator::operator->() const {
+	inline const StaticGraph::vertex_descriptor* StaticGraph::vertex_iterator::operator->() const {
 		return &currentVertex;
 	}
 }
 
 // VertexCollection  
 namespace graph {
-	StaticGraph::VertexCollection::VertexCollection(const StaticGraph& g) : graph(g) {}
+	inline StaticGraph::VertexCollection::VertexCollection(const StaticGraph& g) : graph(g) {}
 
-	StaticGraph::vertex_iterator StaticGraph::VertexCollection::begin() const {
+	inline StaticGraph::vertex_iterator StaticGraph::VertexCollection::begin() const {
 		return vertex_iterator(this->graph, 0);
 	}
 
-	StaticGraph::vertex_iterator StaticGraph::VertexCollection::end() const {
+	inline StaticGraph::vertex_iterator StaticGraph::VertexCollection::end() const {
 		return vertex_iterator(this->graph);
 	}
 
-	StaticGraph::vertices_size_type StaticGraph::VertexCollection::size() const {
+	inline StaticGraph::vertices_size_type StaticGraph::VertexCollection::size() const {
 		return this->graph.vertices.size();
 	}
 
-	StaticGraph::VertexType StaticGraph::VertexCollection::operator[](const vertex_descriptor& v) const {
+	inline StaticGraph::VertexType StaticGraph::VertexCollection::operator[](const vertex_descriptor& v) const {
 		if (v == this->size())
 			return VertexType(this->graph.edges.end());
 		return this->graph.vertices[v];
@@ -281,22 +281,22 @@ namespace graph {
 
 // EdgesCollection  
 namespace graph {
-	StaticGraph::EdgesCollection::EdgesCollection(const StaticGraph& g, const vertex_descriptor& v)
+	inline StaticGraph::EdgesCollection::EdgesCollection(const StaticGraph& g, const vertex_descriptor& v)
 		:graph(g), vertex(v) {}
 
-	StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::begin() const {
+	inline StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::begin() const {
 		return this->graph.Vertices[this->vertex].begin;
 	}
 
-	StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::end() const {
+	inline StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::end() const {
 		return this->graph.Vertices[this->vertex + 1].begin;
 	}
 
-	StaticGraph::degree_size_type StaticGraph::EdgesCollection::size() const {
+	inline StaticGraph::degree_size_type StaticGraph::EdgesCollection::size() const {
 		return (degree_size_type)(end() - begin());
 	}
 
-	bool StaticGraph::EdgesCollection::contains(vertex_descriptor v) const {
+	inline bool StaticGraph::EdgesCollection::contains(vertex_descriptor v) const {
 		auto result = lower_bound(this->begin(), this->end(), v);
 		return result != this->end() && *result == v;
 	}
@@ -304,24 +304,24 @@ namespace graph {
 
 // Builder
 namespace graph {
-	StaticGraph::Builder::Builder(vertices_size_type vertexCount, edges_size_type edgesCount) {
+	inline StaticGraph::Builder::Builder(vertices_size_type vertexCount, edges_size_type edgesCount) {
 		this->unsortedEdges.reserve(edgesCount);
 		this->vertexCount = vertexCount;
 	}
 
-	StaticGraph::Builder::~Builder() {}
+	inline StaticGraph::Builder::~Builder() {}
 
-	void StaticGraph::Builder::AddEdge(const edge_descriptor& e) {
+	inline void StaticGraph::Builder::AddEdge(const edge_descriptor& e) {
 		unsortedEdges.push_back(e);
 	}
 
-	StaticGraph* StaticGraph::Builder::Build() {
+	inline StaticGraph* StaticGraph::Builder::Build() {
 		StaticGraph* graph = new StaticGraph();
 		SortEdgesAndCopyTo(*graph);
 		return graph;
 	}
 
-	void StaticGraph::Builder::SortEdgesAndCopyTo(StaticGraph& graph) {
+	inline void StaticGraph::Builder::SortEdgesAndCopyTo(StaticGraph& graph) {
 
 		graph.vertices.reserve(this->vertexCount);
 		graph.edges.resize(this->unsortedEdges.size());
