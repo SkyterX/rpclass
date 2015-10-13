@@ -5,11 +5,12 @@
 #include <iostream>
 #include <graph/static_graph.hpp>
 #include <graph/GraphStatistics.hpp>
-#include <graph/FileReader.hpp>
+#include <graph/io/FileReader.hpp>
 #include <ctime>
 
 using namespace std;
 using namespace graph;
+using namespace graphIO;
 
 
 int main() {
