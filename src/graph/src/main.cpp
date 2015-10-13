@@ -22,15 +22,16 @@ int main() {
 	//fileReader.Open("osm-ger.gr");
 
 	auto g = ReadGraphFrom(fileReader);
-
+	printf("Graph reading time: %.3lf\n", (clock() - time) / CLOCKS_PER_SEC);
 	fileReader.Close();
 
+	time = clock();
 	printf("Max Degree: %d\n", GraphStatistics::GetMaximalVertexDegree(*g));
 	printf("Min Degree: %d\n", GraphStatistics::GetMinimalVertexDegree(*g));
 	printf("Average Degree: %.3lf\n", GraphStatistics::GetAverageVertexDegree(*g));
 	printf("Single oriented edges count: %d\n", GraphStatistics::GetSingleOrientedEdgesCount(*g));
 
-	printf("Elapsed time: %.3lf\n", (clock() - time) / CLOCKS_PER_SEC);
+	printf("Statistics time: %.3lf\n", (clock() - time) / CLOCKS_PER_SEC);
 	scanf("%lf", &time);
 
 	delete g;

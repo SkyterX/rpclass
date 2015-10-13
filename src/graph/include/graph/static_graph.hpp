@@ -25,9 +25,11 @@ namespace graph {
 		using EdgesVecType = std::vector<vertex_descriptor>;
 	public:
 		using adjacency_iterator = EdgesVecType::const_iterator;
+		using out_edge_iterator = adjacency_iterator;
 		using VertexType = Vertex<EdgesVecType::const_iterator>;
 	private:
 		using VerticesVecType = std::vector<VertexType>;
+		using EdgesSeparatorsVecType = std::vector<degree_size_type>;
 	public:
 
 		class vertex_iterator;
@@ -56,11 +58,13 @@ namespace graph {
 					vertices_size_type n, edges_size_type m);
 
 		const VertexCollection Vertices;
-		EdgesCollection Edges(const vertex_descriptor& v) const;
+		EdgesCollection OutEdges(const vertex_descriptor& v) const;
+		EdgesCollection InEdges(const vertex_descriptor& v) const;
 		edges_size_type EdgesCount() const;
 	private:
 		EdgesVecType edges;
 		VerticesVecType vertices;
+		EdgesSeparatorsVecType edgesSeparators;
 	};
 
 	class StaticGraph::EdgesCollection {
@@ -70,9 +74,10 @@ namespace graph {
 		degree_size_type size() const;
 		bool contains(vertex_descriptor v) const;
 	private:
-		EdgesCollection(const StaticGraph& g, const vertex_descriptor& v);
+		EdgesCollection(const StaticGraph& g, const vertex_descriptor& v, const bool& forInEdges);
 		const StaticGraph& graph;
 		const vertex_descriptor& vertex;
+		const bool isForInEdges;
 		friend class StaticGraph;
 	};
 
@@ -151,7 +156,7 @@ namespace graph {
 
 	inline std::pair<StaticGraph::edge_descriptor, bool> edge(StaticGraph::vertex_descriptor u, StaticGraph::vertex_descriptor v, const StaticGraph& g) {
 		auto edge = std::make_pair(u, v);
-		return make_pair(edge, g.Edges(u).contains(v));
+		return make_pair(edge, g.OutEdges(u).contains(v));
 	}
 
 
@@ -160,7 +165,7 @@ namespace graph {
 	}
 
 	inline std::pair<StaticGraph::adjacency_iterator, StaticGraph::adjacency_iterator> adjacent_vertices(StaticGraph::vertex_descriptor u, const StaticGraph& g) {
-		auto edgesCollection = g.Edges(u);
+		auto edgesCollection = g.OutEdges(u);
 		return make_pair(edgesCollection.begin(), edgesCollection.end());
 	}
 
@@ -173,7 +178,7 @@ namespace graph {
 	}
 
 	inline StaticGraph::degree_size_type out_degree(StaticGraph::vertex_descriptor u, const StaticGraph& g) {
-		return g.Edges(u).size();
+		return g.OutEdges(u).size();
 	}
 
 	inline StaticGraph::vertices_size_type num_vertices(const StaticGraph& g) {
@@ -181,7 +186,7 @@ namespace graph {
 	}
 
 	inline StaticGraph::edges_size_type num_edges(const StaticGraph& g) {
-		return g.EdgesCount();
+		return g.EdgesCount() / 2;
 	}
 }
 
@@ -202,8 +207,12 @@ namespace graph {
 		delete builder;
 	}
 
-	inline StaticGraph::EdgesCollection StaticGraph::Edges(const vertex_descriptor& v) const {
-		return EdgesCollection(*this, v);
+	inline StaticGraph::EdgesCollection StaticGraph::InEdges(const vertex_descriptor& v) const {
+		return EdgesCollection(*this, v, true);
+	}
+
+	inline StaticGraph::EdgesCollection StaticGraph::OutEdges(const vertex_descriptor& v) const {
+		return EdgesCollection(*this, v, false);
 	}
 
 	inline StaticGraph::edges_size_type StaticGraph::EdgesCount() const {
@@ -281,15 +290,17 @@ namespace graph {
 
 // EdgesCollection  
 namespace graph {
-	inline StaticGraph::EdgesCollection::EdgesCollection(const StaticGraph& g, const vertex_descriptor& v)
-		:graph(g), vertex(v) {}
+	inline StaticGraph::EdgesCollection::EdgesCollection(const StaticGraph& g, const vertex_descriptor& v, const bool& forInEdges)
+		:graph(g), vertex(v), isForInEdges(forInEdges) {}
 
 	inline StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::begin() const {
-		return this->graph.Vertices[this->vertex].begin;
+		return graph.Vertices[vertex].begin + (isForInEdges ? 0 : graph.edgesSeparators[vertex]);
 	}
 
 	inline StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::end() const {
-		return this->graph.Vertices[this->vertex + 1].begin;
+		return isForInEdges
+			? graph.Vertices[vertex].begin + graph.edgesSeparators[vertex]
+			: graph.Vertices[vertex + 1].begin;
 	}
 
 	inline StaticGraph::degree_size_type StaticGraph::EdgesCollection::size() const {
@@ -324,31 +335,45 @@ namespace graph {
 	inline void StaticGraph::Builder::SortEdgesAndCopyTo(StaticGraph& graph) {
 
 		graph.vertices.reserve(this->vertexCount);
-		graph.edges.resize(this->unsortedEdges.size());
+		graph.edgesSeparators.reserve(this->vertexCount);
+		graph.edges.resize(2 * this->unsortedEdges.size());
 
-		auto degreeCounts = std::vector<degree_size_type>(this->vertexCount, 0);
+		auto inDegreeCounts = std::vector<degree_size_type>(this->vertexCount, 0);
+		auto outDegreeCounts = std::vector<degree_size_type>(this->vertexCount, 0);
 		auto linksPointers = std::vector<EdgesVecType::iterator>();
-		linksPointers.reserve(this->vertexCount);
+		linksPointers.reserve(this->vertexCount+1);
 
 		for (auto& edge : this->unsortedEdges) {
-			degreeCounts[source(edge, graph)]++;
+			outDegreeCounts[source(edge, graph)]++;
+			inDegreeCounts[target(edge, graph)]++;
 		}
 
 		linksPointers.push_back(graph.edges.begin());
 		graph.vertices.push_back(VertexType(linksPointers[0]));
+		graph.edgesSeparators.push_back(inDegreeCounts[0]);
+		outDegreeCounts[0] += inDegreeCounts[0];
 		for (int i = 1; i < this->vertexCount; ++i) {
-			linksPointers.push_back(linksPointers[i - 1] + degreeCounts[i - 1]);
+			linksPointers.push_back(linksPointers[i - 1] + outDegreeCounts[i - 1]);
 			graph.vertices.push_back(VertexType(linksPointers[i]));
+			graph.edgesSeparators.push_back(inDegreeCounts[i]);
+			outDegreeCounts[i] += inDegreeCounts[i];
 		}
+		linksPointers.push_back(graph.edges.end());
 
 		for (auto& edge : this->unsortedEdges) {
-			*(linksPointers[source(edge, graph)]++) = target(edge, graph);
+			auto from = source(edge, graph);
+			auto to = target(edge, graph);
+			--outDegreeCounts[from];
+			*(linksPointers[from] + outDegreeCounts[from]) = to;
+			--inDegreeCounts[to];
+			*(linksPointers[to] + inDegreeCounts[to]) = from;
 		}
 
-		auto start = graph.edges.begin();
 		for (int i = 0; i < this->vertexCount; ++i) {
-			auto end = linksPointers[i];
-			sort(start, end);
+			auto start = linksPointers[i];
+			auto end = linksPointers[i + 1];
+			sort(start, start + graph.edgesSeparators[i]);
+			sort(start + graph.edgesSeparators[i], end);
 			start = end;
 		}
 	}

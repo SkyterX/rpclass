@@ -1,6 +1,7 @@
 #pragma once
 
 #include <graph/static_graph.hpp>
+#include <cassert>
 #include <algorithm>
 
 namespace GraphStatistics {
@@ -42,8 +43,8 @@ namespace GraphStatistics {
 		graph::StaticGraph::edges_size_type result = 0;
 
 		for (auto& source : graph.Vertices) {
-			for (auto& target : graph.Edges(source)) {
-				if (!graph.Edges(target).contains(source))
+			for (auto& target : graph.OutEdges(source)) {
+				if (!graph.InEdges(source).contains(target))
 					++result;
 			}
 		}
