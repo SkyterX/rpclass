@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cinttypes>
 #include <boost/graph/graph_traits.hpp>
+#include <memory>
 
 namespace graph {
 	template <typename Iterator>
@@ -39,19 +40,7 @@ namespace graph {
 
 		class vertex_iterator;
 		class Builder;
-
-		class VertexCollection {
-		public:
-			vertex_iterator begin() const;
-			vertex_iterator end() const;
-			vertices_size_type size() const;
-			VertexType operator[](const vertex_descriptor& v) const;
-		private:
-			explicit VertexCollection(const StaticGraph& g);
-			const StaticGraph& graph;
-			friend class StaticGraph;
-		};
-
+		class VertexCollection;
 		class EdgesCollection;
 
 		using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
@@ -62,7 +51,7 @@ namespace graph {
 		StaticGraph(PairIterator begin, PairIterator end,
 					vertices_size_type n, edges_size_type m);
 
-		const VertexCollection Vertices;
+		const VertexCollection& Vertices() const;
 		EdgesCollection OutEdges(const vertex_descriptor& v) const;
 		EdgesCollection InEdges(const vertex_descriptor& v) const;
 		edges_size_type EdgesCount() const;
@@ -70,6 +59,19 @@ namespace graph {
 		EdgesVecType edges;
 		VerticesVecType vertices;
 		EdgesSeparatorsVecType edgesSeparators;
+		std::unique_ptr<VertexCollection> vertexCollection;
+	};
+
+	class StaticGraph::VertexCollection {
+	public:
+		vertex_iterator begin() const;
+		vertex_iterator end() const;
+		vertices_size_type size() const;
+		VertexType operator[](const vertex_descriptor& v) const;
+	private:
+		explicit VertexCollection(const StaticGraph& g);
+		const StaticGraph& graph;
+		friend class StaticGraph;
 	};
 
 	class StaticGraph::EdgesCollection {
@@ -166,7 +168,7 @@ namespace graph {
 
 
 	inline std::pair<StaticGraph::vertex_iterator, StaticGraph::vertex_iterator> vertices(const StaticGraph& g) {
-		return make_pair(g.Vertices.begin(), g.Vertices.end());
+		return make_pair(g.Vertices().begin(), g.Vertices().end());
 	}
 
 	inline std::pair<StaticGraph::adjacency_iterator, StaticGraph::adjacency_iterator> adjacent_vertices(StaticGraph::vertex_descriptor u, const StaticGraph& g) {
@@ -187,7 +189,7 @@ namespace graph {
 	}
 
 	inline StaticGraph::vertices_size_type num_vertices(const StaticGraph& g) {
-		return g.Vertices.size();
+		return g.Vertices().size();
 	}
 
 	inline StaticGraph::edges_size_type num_edges(const StaticGraph& g) {
@@ -197,7 +199,7 @@ namespace graph {
 
 // StaticGraph
 namespace graph {
-	inline StaticGraph::StaticGraph() : Vertices(*this) {}
+	inline StaticGraph::StaticGraph() : vertexCollection(new VertexCollection(*this)) {}
 
 	template <class PairIterator>
 	StaticGraph::StaticGraph(PairIterator begin, PairIterator end, vertices_size_type n, edges_size_type m) : StaticGraph() {
@@ -210,6 +212,10 @@ namespace graph {
 		builder->SortEdgesAndCopyTo(*this);
 
 		delete builder;
+	}
+
+	inline const StaticGraph::VertexCollection& StaticGraph::Vertices() const {
+		return *vertexCollection;
 	}
 
 	inline StaticGraph::EdgesCollection StaticGraph::InEdges(const vertex_descriptor& v) const {
@@ -299,13 +305,13 @@ namespace graph {
 		:graph(g), vertex(v), isForInEdges(forInEdges) {}
 
 	inline StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::begin() const {
-		return graph.Vertices[vertex].begin + (isForInEdges ? 0 : graph.edgesSeparators[vertex]);
+		return graph.Vertices()[vertex].begin + (isForInEdges ? 0 : graph.edgesSeparators[vertex]);
 	}
 
 	inline StaticGraph::adjacency_iterator StaticGraph::EdgesCollection::end() const {
 		return isForInEdges
-			? graph.Vertices[vertex].begin + graph.edgesSeparators[vertex]
-			: graph.Vertices[vertex + 1].begin;
+			? graph.Vertices()[vertex].begin + graph.edgesSeparators[vertex]
+			: graph.Vertices()[vertex + 1].begin;
 	}
 
 	inline StaticGraph::degree_size_type StaticGraph::EdgesCollection::size() const {
