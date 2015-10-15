@@ -3,6 +3,7 @@
 #include <graph/io/IReader.hpp>
 #include <algorithm>
 #include <cinttypes>
+#include <boost/graph/graph_traits.hpp>
 
 namespace graph {
 	template <typename Iterator>
@@ -21,6 +22,10 @@ namespace graph {
 		using edges_size_type = uint32_t;
 		using degree_size_type = uint16_t;
 		using vertex_descriptor = vertices_size_type;
+		using directed_category = boost::directed_tag;
+		using edge_parallel_category = boost::disallow_parallel_edge_tag;
+		using traversal_category = boost::bidirectional_traversal_tag;
+
 	private:
 		using EdgesVecType = std::vector<vertex_descriptor>;
 	public:
