@@ -91,7 +91,7 @@ Temporary Items
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
 
 ## Build generated
-build/
+build*/
 DerivedData
 
 ## Various settings
@@ -104,6 +104,7 @@ DerivedData
 *.perspectivev3
 !default.perspectivev3
 xcuserdata
+*.vagrant
 
 ## Other
 *.xccheckout
@@ -263,3 +264,4 @@ Makefile.in
 /install-sh
 /missing
 /stamp-h1
+
