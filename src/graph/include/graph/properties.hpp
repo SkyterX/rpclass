@@ -1,5 +1,6 @@
 #include <tuple>
 #include <type_traits>
+#include <graph/graph.hpp>
 
 
 namespace graph {
@@ -69,21 +70,11 @@ namespace graph {
             using type = decltype(check(std::declval<PropertyMap>()));
             static const bool value = type::value;
         };
-
-        template < typename Graph >
-        class IsGraph {
-            template < typename C, typename = typename C::vertex_descriptor>
-            static std::true_type check(const C&) {};
-            static std::false_type check(...) {};
-        public:
-            using type = decltype(check(std::declval<Graph>()));
-            static const bool value = type::value;
-        };
     };
 
 // Functions to access properties by tag (correspond to tuple's getters)
     template <typename Tag, typename... Ps>
-    decltype(auto) get(Properties<Ps...>& props) {
+    inline decltype(auto) get(Properties<Ps...>& props) {
         using PropertiesTuple = typename Properties<Ps...>::Base;
         using Index = detail::FindPropertyByTag_t<Tag, Properties<Ps...>>;
         using PTuple = typename std::tuple_element<Index::value, PropertiesTuple>::type::Base;
@@ -92,7 +83,7 @@ namespace graph {
     };
 
     template <typename Tag, typename... Ps>
-    decltype(auto) get(Properties<Ps...>&& props) {
+    inline decltype(auto) get(Properties<Ps...>&& props) {
         using PropertiesTuple = typename Properties<Ps...>::Base;
         using Index = detail::FindPropertyByTag_t<Tag, Properties<Ps...>>;
         using PTuple = typename std::tuple_element<Index::value, PropertiesTuple>::type::Base;
@@ -101,7 +92,7 @@ namespace graph {
     };
 
     template <typename Tag, typename... Ps>
-    decltype(auto) get(const Properties<Ps...>& props) {
+    inline decltype(auto) get(const Properties<Ps...>& props) {
         using PropertiesTuple = typename Properties<Ps...>::Base;
         using Index = detail::FindPropertyByTag_t<Tag, Properties<Ps...>>;
         using PTuple = typename std::tuple_element<Index::value, PropertiesTuple>::type::Base;
@@ -216,7 +207,7 @@ namespace graph {
     };
 
     template <typename Graph, typename Tag>
-    typename property_map<Graph, Tag>::type get(Tag, Graph& graph,
+    inline typename property_map<Graph, Tag>::type get(Tag, Graph& graph,
         std::enable_if_t<!detail::IsTagNotInBundleTag<Graph, Tag, edge_bundle_t>::value>* = nullptr) {
         using EdgeBundledPM = typename property_map<Graph, edge_bundle_t>::type;
         return detail::BundledSubPropertyMap<Tag, EdgeBundledPM>(
@@ -231,7 +222,7 @@ namespace graph {
     };
 
     template <typename Tag, typename BaseBundledPM>
-    void  put(detail::BundledSubPropertyMap<Tag, BaseBundledPM>& pMap,
+    inline void  put(detail::BundledSubPropertyMap<Tag, BaseBundledPM>& pMap,
         const typename detail::BundledSubPropertyMap<Tag, BaseBundledPM>::key_type& key,
         const typename detail::BundledSubPropertyMap<Tag, BaseBundledPM>::value_type& value) {
         auto tpl = graph::get(static_cast<BaseBundledPM&>(pMap), key);

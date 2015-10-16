@@ -7,7 +7,7 @@
 #include <boost/property_map/property_map.hpp>
 #include <gtest/gtest.h>
 #include <graph/static_graph.hpp>
-#include <graph/graph_traits.hpp>
+#include <graph/graph.hpp>
 #include <graph/properties.hpp>
 #include "generator.hpp"
 
@@ -15,7 +15,16 @@
 using namespace std;
 using namespace graph;
 
-//BFS 
+//Graph without any internal properties
+using NoInternalPropertiesGraph = boost::adjacency_list<>;
+namespace graph {
+    template<>
+    struct graph_traits<NoInternalPropertiesGraph> :
+        boost::graph_traits<NoInternalPropertiesGraph> {};
+}
+
+
+//BFS graph and related structures 
 struct distance_t {};
 struct color_t {};
 struct edge_type_t {};
@@ -28,6 +37,9 @@ using BFSGraph = boost::adjacency_list<
 
 namespace graph {
     template<>
+    struct graph_traits<BFSGraph> : boost::graph_traits<BFSGraph> {};
+
+    template<>
     struct property_map<BFSGraph, vertex_bundle_t> {
         using type = boost::property_map<BFSGraph, boost::vertex_bundle_t>::type;
     };
@@ -38,40 +50,40 @@ namespace graph {
     };
 
     template<>
-    graph::property_map<BFSGraph, vertex_bundle_t>::type
+    inline graph::property_map<BFSGraph, vertex_bundle_t>::type
         get<BFSGraph>(const vertex_bundle_t&, BFSGraph& graph) {
         return boost::get(boost::vertex_bundle, graph);
     };
 
     template<>
-    property_map<BFSGraph, edge_bundle_t>::type
+    inline property_map<BFSGraph, edge_bundle_t>::type
         get<BFSGraph>(const edge_bundle_t&, BFSGraph& graph) {
         return boost::get(boost::edge_bundle, graph);
     }
 
     template<>
-    property_map<BFSGraph, vertex_bundle_t>::type::reference
+    inline property_map<BFSGraph, vertex_bundle_t>::type::reference
         get<property_map<BFSGraph, vertex_bundle_t>::type>(const property_map<BFSGraph, vertex_bundle_t>::type& pMap,
             const property_map<BFSGraph, vertex_bundle_t>::type::key_type& key) {
         return boost::get(pMap, key);
     };
 
     template<>
-    property_map<BFSGraph, edge_bundle_t>::type::reference
+    inline property_map<BFSGraph, edge_bundle_t>::type::reference
         get<property_map<BFSGraph, edge_bundle_t>::type>(const property_map<BFSGraph, edge_bundle_t>::type& pMap,
             const property_map<BFSGraph, edge_bundle_t>::type::key_type& key) {
         return boost::get(pMap, key);
     };
 
     template<>
-    void put<property_map<BFSGraph, vertex_bundle_t>::type> (property_map<BFSGraph, vertex_bundle_t>::type& pMap,
+    inline void put<property_map<BFSGraph, vertex_bundle_t>::type> (property_map<BFSGraph, vertex_bundle_t>::type& pMap,
         const property_map<BFSGraph, vertex_bundle_t>::type::key_type& key, 
         const property_map<BFSGraph, vertex_bundle_t>::type::value_type& value) {
         boost::put(pMap, key, value);
     };
 
     template<>
-    void put<property_map<BFSGraph, edge_bundle_t>::type>(property_map<BFSGraph, edge_bundle_t>::type& pMap,
+    inline void put<property_map<BFSGraph, edge_bundle_t>::type>(property_map<BFSGraph, edge_bundle_t>::type& pMap,
         const property_map<BFSGraph, edge_bundle_t>::type::key_type& key,
         const property_map<BFSGraph, edge_bundle_t>::type::value_type& value) {
         boost::put(pMap, key, value);
@@ -79,12 +91,28 @@ namespace graph {
 
 }
 
-TEST(StaticGraph, BidirectionalConcept) {
+TEST(GraphConcepts, GraphConcept) {
     using Graph = BFSGraph;
-    BOOST_CONCEPT_ASSERT((boost::concepts::BidirectionalGraph<Graph>));
+    BOOST_CONCEPT_ASSERT((boost::concepts::GraphConcept<Graph>));
 };
 
-TEST(Properties, PropertyMaps) {
+TEST(GraphConcepts, VertexListGraphConcept) {
+    using Graph = BFSGraph;
+    BOOST_CONCEPT_ASSERT((boost::concepts::VertexListGraphConcept<Graph>));
+};
+
+TEST(GraphConcepts, IncidenceGraphConcept) {
+    using Graph = BFSGraph;
+    BOOST_CONCEPT_ASSERT((boost::concepts::IncidenceGraphConcept<Graph>));
+};
+
+TEST(GraphConcepts, BidirectionalGraphConcept) {
+    using Graph = BFSGraph;
+    BOOST_CONCEPT_ASSERT((boost::concepts::BidirectionalGraphConcept<Graph>));
+};
+
+
+TEST(PropertyGraph, InternalProperties) {
     using Graph = BFSGraph;
     BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
         graph::property_map<BFSGraph, graph::vertex_bundle_t>::type, 
@@ -92,21 +120,24 @@ TEST(Properties, PropertyMaps) {
     BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
         graph::property_map<BFSGraph, graph::edge_bundle_t>::type, 
         graph::property_map<BFSGraph, graph::edge_bundle_t>::type::key_type>));
+};
+
+TEST(PropertyGraph, InternalColorEdgeTypeProperties) {
     BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
-        graph::property_map<BFSGraph, color_t>::type, 
+        graph::property_map<BFSGraph, color_t>::type,
         graph::property_map<BFSGraph, color_t>::type::key_type>));
     BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
-        graph::property_map<BFSGraph, edge_type_t>::type, 
+        graph::property_map<BFSGraph, edge_type_t>::type,
         graph::property_map<BFSGraph, edge_type_t>::type::key_type>));
+};
 
-}
 
+TEST(GraphStructure, ListGraph) {
+    using Graph = NoInternalPropertiesGraph;
 
-TEST(StaticGraph, ListGraph) {
-    using Graph = boost::adjacency_list<>;
     using SizeT = uint32_t;
     using VecPair = vector<pair<SizeT, SizeT>>;
-    const SizeT n = 1 << 16;
+    const SizeT n = 1 << 10;
     VecPair input;
     input.reserve(n);
     back_insert_iterator<VecPair> backInserter(input);
@@ -166,48 +197,50 @@ TEST(StaticGraph, ListGraph) {
     EXPECT_EQ(n, num_edges(graph));    
 };
 
-TEST(StaticGraph, BFS) {
+
+TEST(GraphAlgorithms, BFS) {
+    using Graph = BFSGraph;
     using SizeT = uint32_t;
     using VecPair = vector<pair<SizeT, SizeT>>;
-    const SizeT n = 1 << 10;
+    const SizeT n = 1 << 16;
     VecPair input;
     input.reserve(n);
     back_insert_iterator<VecPair> backInserter(input);
     generate_list_graph(backInserter, n);
-    BFSGraph graph(input.begin(), input.end(), n);
+    Graph graph(input.begin(), input.end(), n);
+    auto colorPM = graph::get(color_t(), graph);
+    auto distancePM = graph::get(distance_t(), graph);
+    auto edgeTypePM = graph::get(edge_type_t(), graph);
     auto vRange = vertices(graph);
-    property_map<BFSGraph, color_t>::type colorPM = graph::get(color_t(), graph);
-    property_map<BFSGraph, distance_t>::type distancePM = graph::get(distance_t(), graph);
-    property_map<BFSGraph, edge_type_t>::type edgeTypePM = graph::get(edge_type_t(), graph);
-    for (graph_traits<BFSGraph>::vertex_iterator vIt = vRange.first; vIt != vRange.second; ++vIt)
+    for (auto vIt = vRange.first; vIt != vRange.second; ++vIt)
         graph::put(colorPM, *vIt, 0);
-    std::queue<graph_traits<BFSGraph>::vertex_descriptor> vQueue;
-    for (graph_traits<BFSGraph>::vertex_iterator vIt = vRange.first; vIt != vRange.second; ++vIt) {
+    std::queue<graph_traits<Graph>::vertex_descriptor> vQueue;
+    for (auto vIt = vRange.first; vIt != vRange.second; ++vIt) {
         if (graph::get(colorPM, *vIt) == 0) {
-            graph_traits<BFSGraph>::vertex_descriptor start = *vIt;
+            auto start = *vIt;
             vQueue.push(start);
             while (!vQueue.empty()) {
-                graph_traits<BFSGraph>::vertex_descriptor source = vQueue.front();
+                auto src = vQueue.front();
                 vQueue.pop();
-                auto outRange = adjacent_vertices(source, graph);
-                graph::put(colorPM, source, 2);
-                for (graph_traits<BFSGraph>::adjacency_iterator outIt = outRange.first; outIt != outRange.second; ++outIt) {
-                    const graph_traits<BFSGraph>::vertex_descriptor& target = *outIt;
-                    graph_traits<BFSGraph>::edge_descriptor e = edge(source, target, graph).first;
-                    if (graph::get(colorPM, target) == 0) {
-                        graph::put(colorPM, target, 1);
-                        graph::put(distancePM, target, graph::get(distancePM, target) + 1);
+                auto outRange = out_edges(src, graph);
+                graph::put(colorPM, src, 2);
+                for (auto outIt = outRange.first; outIt != outRange.second; ++outIt) {
+                    auto e = *outIt;
+                    auto tgt = target(e,graph);
+                    if (graph::get(colorPM, tgt) == 0) {
+                        graph::put(colorPM, tgt, 1);
+                        graph::put(distancePM, tgt, graph::get(distancePM, tgt) + 1);
                         graph::put(edgeTypePM, e, 0);
-                        vQueue.push(target);
+                        vQueue.push(tgt);
                     }
                     else
-                        if (graph::get(colorPM, target) == 1) graph::put(edgeTypePM, e, 1);
+                        if (graph::get(colorPM, tgt) == 1) graph::put(edgeTypePM, e, 1);
                         else  graph::put(edgeTypePM, e, 2);
                 }
             }
         }
     };
-    for (graph_traits<BFSGraph>::vertex_iterator vIt = vRange.first; vIt != vRange.second; ++vIt) {
+    for (auto vIt = vRange.first; vIt != vRange.second; ++vIt) {
         EXPECT_EQ(2,graph::get(colorPM, *vIt));
         EXPECT_LT(graph::get(distancePM, *vIt), n);
     };
