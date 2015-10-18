@@ -32,6 +32,7 @@ namespace graph {
 	public:
 		using adjacency_iterator = EdgesVecType::const_iterator;
 		using out_edge_iterator = adjacency_iterator;
+		using in_edge_iterator = adjacency_iterator;
 		using VertexType = Vertex<EdgesVecType::const_iterator>;
 	private:
 		using VerticesVecType = std::vector<VertexType>;
@@ -188,6 +189,10 @@ namespace graph {
 		return g.OutEdges(u).size();
 	}
 
+	inline std::pair<StaticGraph::out_edge_iterator, StaticGraph::out_edge_iterator> out_edges(StaticGraph::vertex_descriptor u, const StaticGraph& g){
+		return adjacent_vertices(u, g);
+	}
+
 	inline StaticGraph::vertices_size_type num_vertices(const StaticGraph& g) {
 		return g.Vertices().size();
 	}
@@ -195,6 +200,20 @@ namespace graph {
 	inline StaticGraph::edges_size_type num_edges(const StaticGraph& g) {
 		return g.EdgesCount() / 2;
 	}
+
+	inline std::pair<StaticGraph::out_edge_iterator, StaticGraph::out_edge_iterator> in_edges(StaticGraph::vertex_descriptor v, const StaticGraph& g) {
+		auto edgesCollection = g.InEdges(v); // or incident edges (for undirected graphs) ?
+		return make_pair(edgesCollection.begin(), edgesCollection.end());
+	}
+
+	inline StaticGraph::degree_size_type in_degree(StaticGraph::vertex_descriptor v, const StaticGraph& g) {
+		return g.InEdges(v).size();
+	}
+
+	inline StaticGraph::degree_size_type degree(StaticGraph::vertex_descriptor v, const StaticGraph& g) {
+		return in_degree(v, g) + out_degree(v, g);
+	}
+
 }
 
 // StaticGraph
