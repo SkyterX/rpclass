@@ -43,8 +43,8 @@ namespace GraphStatistics {
 		graph::StaticGraph::edges_size_type result = 0;
 
 		for (auto& source : graph.Vertices()) {
-			for (auto& target : graph.OutEdges(source)) {
-				if (!graph.InEdges(source).contains(target))
+			for (auto& target : graph.OutAdjacencies(source)) {
+				if (!graph.InAdjacencies(source).contains(target))
 					++result;
 			}
 		}
