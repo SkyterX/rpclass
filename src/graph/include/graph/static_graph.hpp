@@ -5,6 +5,7 @@
 #include <cinttypes>
 #include <boost/graph/graph_traits.hpp>
 #include <memory>
+#include <boost/iterator/counting_iterator.hpp>
 
 namespace graph {
 	template <typename Iterator>
@@ -39,7 +40,7 @@ namespace graph {
 		using EdgesSeparatorsVecType = std::vector<degree_size_type>;
 	public:
 
-		class vertex_iterator;
+		using vertex_iterator = boost::counting_iterator<vertex_descriptor>;
 		class Builder;
 		class VertexCollection;
 		class EdgesCollection;
@@ -87,23 +88,6 @@ namespace graph {
 		const vertex_descriptor& vertex;
 		const bool isForInEdges;
 		friend class StaticGraph;
-	};
-
-	class StaticGraph::vertex_iterator : std::iterator<std::forward_iterator_tag, vertex_descriptor> {
-	public:
-		vertex_iterator(const StaticGraph& g, vertex_descriptor start);
-		explicit vertex_iterator(const StaticGraph& g);
-		virtual ~vertex_iterator();
-		void swap(vertex_iterator& other);
-		vertex_iterator& operator++();
-		vertex_iterator operator++(int);
-		bool operator==(const vertex_iterator& other) const;
-		bool operator!=(const vertex_iterator& other) const;
-		const vertex_descriptor& operator*() const;
-		const vertex_descriptor* operator->() const;
-	private:
-		vertex_descriptor currentVertex;
-		vertex_descriptor verticesCount;
 	};
 
 	class StaticGraph::Builder {
@@ -169,7 +153,7 @@ namespace graph {
 
 
 	inline std::pair<StaticGraph::vertex_iterator, StaticGraph::vertex_iterator> vertices(const StaticGraph& g) {
-		return make_pair(g.Vertices().begin(), g.Vertices().end());
+		return std::make_pair(g.Vertices().begin(), g.Vertices().end());
 	}
 
 	inline std::pair<StaticGraph::adjacency_iterator, StaticGraph::adjacency_iterator> adjacent_vertices(StaticGraph::vertex_descriptor u, const StaticGraph& g) {
@@ -250,61 +234,16 @@ namespace graph {
 	}
 }
 
-// vertex_iterator  
-namespace graph {
-	inline StaticGraph::vertex_iterator::vertex_iterator(const StaticGraph& g, vertex_descriptor start)
-		: currentVertex(start), verticesCount(g.vertices.size()) {}
-
-	inline StaticGraph::vertex_iterator::vertex_iterator(const StaticGraph& g)
-		: currentVertex(g.vertices.size()), verticesCount(g.vertices.size()) {}
-
-	inline StaticGraph::vertex_iterator::~vertex_iterator() {}
-
-	inline void StaticGraph::vertex_iterator::swap(vertex_iterator& other) {
-		std::swap(currentVertex, other.currentVertex);
-	}
-
-	inline StaticGraph::vertex_iterator& StaticGraph::vertex_iterator::operator++() {
-		if (currentVertex != verticesCount)
-			++currentVertex;
-		return *this;
-	}
-
-	inline StaticGraph::vertex_iterator StaticGraph::vertex_iterator::operator++(int) {
-		if (currentVertex == verticesCount)
-			return *this;
-		vertex_iterator tmp(*this);
-		++currentVertex;
-		return tmp;
-	}
-
-	inline bool StaticGraph::vertex_iterator::operator==(const vertex_iterator& other) const {
-		return currentVertex == other.currentVertex;
-	}
-
-	inline bool StaticGraph::vertex_iterator::operator!=(const vertex_iterator& other) const {
-		return currentVertex != other.currentVertex;
-	}
-
-	inline const StaticGraph::vertex_descriptor& StaticGraph::vertex_iterator::operator*() const {
-		return currentVertex;
-	}
-
-	inline const StaticGraph::vertex_descriptor* StaticGraph::vertex_iterator::operator->() const {
-		return &currentVertex;
-	}
-}
-
 // VertexCollection  
 namespace graph {
 	inline StaticGraph::VertexCollection::VertexCollection(const StaticGraph& g) : graph(g) {}
 
 	inline StaticGraph::vertex_iterator StaticGraph::VertexCollection::begin() const {
-		return vertex_iterator(this->graph, 0);
+		return vertex_iterator(0);
 	}
 
 	inline StaticGraph::vertex_iterator StaticGraph::VertexCollection::end() const {
-		return vertex_iterator(this->graph);
+		return vertex_iterator(this->graph.vertices.size());
 	}
 
 	inline StaticGraph::vertices_size_type StaticGraph::VertexCollection::size() const {
