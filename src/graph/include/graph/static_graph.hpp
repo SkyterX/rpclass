@@ -7,7 +7,8 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/property_map/property_map.hpp>
 #include "util/Collection.hpp"
-#include "edges.hpp"
+#include "StaticGraphIterators.hpp"
+#include "BasicGraphStructures.hpp"
 
 namespace graph
 {
@@ -15,58 +16,11 @@ namespace graph
 			public boost::bidirectional_graph_tag,
 			public boost::vertex_list_graph_tag { };
 	
-	// adjacency_iterator
-	template <typename AdjacencyListIterator, typename VertexDescriptor>
-	class AdjacencyIterator
-		: public boost::iterator_adaptor<
-		AdjacencyIterator<AdjacencyListIterator, VertexDescriptor>,
-		AdjacencyListIterator,
-		VertexDescriptor> {
-		typedef boost::iterator_adaptor<
-			AdjacencyIterator<AdjacencyListIterator, VertexDescriptor>,
-			AdjacencyListIterator,
-			VertexDescriptor> BaseType;
-	public:
-		explicit AdjacencyIterator(const AdjacencyListIterator& p, bool isForInEdges)
-			: BaseType(p), isForInEdges(isForInEdges) {}
+	struct vertex_properties_stub {};
 
-	private:
-		friend class boost::iterator_core_access;
-		friend class edge_iterator;
+	struct edge_properties_stub {};
+	
 
-		VertexDescriptor& dereference() const {
-			return isForInEdges ? (*this->base_reference())->source : (*this->base_reference())->target;
-		}
-
-		bool isForInEdges;
-	};
-
-	// edge_iterator
-	template <typename AdjacencyListIterator, typename EdgeDescriptor>
-	class EdgeIterator
-		: public boost::iterator_adaptor<
-		EdgeIterator<AdjacencyListIterator, EdgeDescriptor>,
-		AdjacencyListIterator,
-		EdgeDescriptor,
-		boost::use_default,
-		EdgeDescriptor> {
-		typedef boost::iterator_adaptor<
-			EdgeIterator<AdjacencyListIterator, EdgeDescriptor>,
-			AdjacencyListIterator,
-			EdgeDescriptor,
-			boost::use_default,
-			EdgeDescriptor> BaseType;
-	public:
-		explicit EdgeIterator(const AdjacencyListIterator& p)
-			: BaseType(p) {}
-
-	private:
-		friend class boost::iterator_core_access;
-
-		EdgeDescriptor dereference() const {
-			return EdgeDescriptor(**this->base_reference());
-		}
-	};
 
 	class StaticGraph {
 		class VertexIterator;
@@ -81,8 +35,8 @@ namespace graph
 		using edge_parallel_category = boost::disallow_parallel_edge_tag;
 		using traversal_category = StaticGraphTraversalCategory;
 
-		using EdgeType = FancyEdge<vertex_descriptor>; 
-		using edge_descriptor = FancyEdgeDescriptor<EdgeType::VertexType>;
+		using EdgeType = FancyEdge<vertex_descriptor, edge_properties_stub>; 
+		using edge_descriptor = FancyEdgeDescriptor<EdgeType::VertexType, EdgeType::EdgePropertiesType>;
 
 	private:
 		using AdjacenciesVecType = std::vector<EdgeType*>;
@@ -93,7 +47,7 @@ namespace graph
 		using adjacency_iterator = AdjacencyIterator<AdjacenciesVecIteratorType, vertex_descriptor>;
 		using out_edge_iterator = edge_iterator;
 		using in_edge_iterator = edge_iterator;
-		using VertexType = Vertex<AdjacenciesVecIteratorType>;
+		using VertexType = Vertex<AdjacenciesVecIteratorType, vertex_properties_stub>;
 
 	private:
 		using VerticesVecType = std::vector<VertexType>;
