@@ -14,12 +14,63 @@ namespace graph
 	struct StaticGraphTraversalCategory :
 			public boost::bidirectional_graph_tag,
 			public boost::vertex_list_graph_tag { };
+	
+	// adjacency_iterator
+	template <typename AdjacencyListIterator, typename VertexDescriptor>
+	class AdjacencyIterator
+		: public boost::iterator_adaptor<
+		AdjacencyIterator<AdjacencyListIterator, VertexDescriptor>,
+		AdjacencyListIterator,
+		VertexDescriptor> {
+		typedef boost::iterator_adaptor<
+			AdjacencyIterator<AdjacencyListIterator, VertexDescriptor>,
+			AdjacencyListIterator,
+			VertexDescriptor> BaseType;
+	public:
+		explicit AdjacencyIterator(const AdjacencyListIterator& p, bool isForInEdges)
+			: BaseType(p), isForInEdges(isForInEdges) {}
+
+	private:
+		friend class boost::iterator_core_access;
+		friend class edge_iterator;
+
+		VertexDescriptor& dereference() const {
+			return isForInEdges ? (*this->base_reference())->source : (*this->base_reference())->target;
+		}
+
+		bool isForInEdges;
+	};
+
+	// edge_iterator
+	template <typename AdjacencyListIterator, typename EdgeDescriptor>
+	class EdgeIterator
+		: public boost::iterator_adaptor<
+		EdgeIterator<AdjacencyListIterator, EdgeDescriptor>,
+		AdjacencyListIterator,
+		EdgeDescriptor,
+		boost::use_default,
+		EdgeDescriptor> {
+		typedef boost::iterator_adaptor<
+			EdgeIterator<AdjacencyListIterator, EdgeDescriptor>,
+			AdjacencyListIterator,
+			EdgeDescriptor,
+			boost::use_default,
+			EdgeDescriptor> BaseType;
+	public:
+		explicit EdgeIterator(const AdjacencyListIterator& p)
+			: BaseType(p) {}
+
+	private:
+		friend class boost::iterator_core_access;
+
+		EdgeDescriptor dereference() const {
+			return EdgeDescriptor(**this->base_reference());
+		}
+	};
 
 	class StaticGraph {
 		class VertexIterator;
 	public:
-		class edge_iterator;
-		class adjacency_iterator;
 
 		using edge_size_type = uint32_t;
 		using vertices_size_type = uint32_t;
@@ -30,12 +81,16 @@ namespace graph
 		using edge_parallel_category = boost::disallow_parallel_edge_tag;
 		using traversal_category = StaticGraphTraversalCategory;
 
-		using EdgeType = FancyEdge<vertex_descriptor>;
+		using EdgeType = FancyEdge<vertex_descriptor>; 
+		using edge_descriptor = FancyEdgeDescriptor<EdgeType::VertexType>;
 
 	private:
 		using AdjacenciesVecType = std::vector<EdgeType*>;
 		using AdjacenciesVecIteratorType = AdjacenciesVecType::const_iterator;
+		
 	public:
+		using edge_iterator = EdgeIterator<AdjacenciesVecIteratorType, edge_descriptor>;
+		using adjacency_iterator = AdjacencyIterator<AdjacenciesVecIteratorType, vertex_descriptor>;
 		using out_edge_iterator = edge_iterator;
 		using in_edge_iterator = edge_iterator;
 		using VertexType = Vertex<AdjacenciesVecIteratorType>;
@@ -54,7 +109,7 @@ namespace graph
 		class VertexPropertyMap;
 		class EdgePropertyMap;
 
-		using edge_descriptor = FancyEdgeDescriptor<EdgeType::VertexType>;
+		
 
 		StaticGraph();
 
@@ -81,47 +136,6 @@ namespace graph
 		std::unique_ptr<EdgePropertyMap> edgePropertyMap;
 		std::unique_ptr<VertexPropertyMap> vertexPropertyMap;
 		std::unique_ptr<VertexCollection> vertexCollection;
-	};
-
-	// adjacency_iterator
-	class StaticGraph::adjacency_iterator
-			: public boost::iterator_adaptor<
-				adjacency_iterator,
-				AdjacenciesVecIteratorType,
-				vertex_descriptor> {
-	public:
-		explicit adjacency_iterator(const AdjacenciesVecIteratorType& p, bool isForInEdges)
-			: iterator_adaptor_(p), isForInEdges(isForInEdges) {}
-
-	private:
-		friend class boost::iterator_core_access;
-		friend class edge_iterator;
-
-		vertex_descriptor& dereference() const {
-			return isForInEdges ? (*this->base_reference())->source : (*this->base_reference())->target;
-		}
-
-		bool isForInEdges;
-	};
-
-	// edge_iterator
-	class StaticGraph::edge_iterator
-			: public boost::iterator_adaptor<
-				edge_iterator,
-				AdjacenciesVecIteratorType,
-				edge_descriptor,
-				boost::use_default,
-				edge_descriptor> {
-	public:
-		explicit edge_iterator(const AdjacenciesVecIteratorType& p)
-			: iterator_adaptor_(p) {}
-
-	private:
-		friend class boost::iterator_core_access;
-
-		edge_descriptor dereference() const {
-			return edge_descriptor(**this->base_reference());
-		}
 	};
 
 	class StaticGraph::VertexCollection : public graphUtil::Collection<vertex_iterator> {
