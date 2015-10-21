@@ -7,36 +7,67 @@
 #include <memory>
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/property_map/property_map.hpp>
 #include "util/Collection.hpp"
+#include "properties.hpp"
 
 namespace graph
 {
+	struct vertex_properties{};
+	struct edge_properties{};
+
 	template <typename Iterator>
 	class Vertex { // inner struture
 	public:
 		Iterator begin;
+		vertex_properties properties;
 
 		Vertex(const Iterator& it) : begin(it) {}
 	};
 
-	template <typename point_descr>
-	class Edge { // inner struture
+	template <typename Vertex>
+	class Edge {
 	public:
-		point_descr source, target;
+		using VertexType = Vertex;
+		Vertex source, target;
+		
+		Edge() {}
 
-		Edge() { }
-
-		Edge(const point_descr& source, const point_descr& target)
+		Edge(const Vertex& source, const Vertex& target)
 			: source(source),
-			  target(target) { }
+			target(target) { }
+	};
 
-		friend bool operator==(const Edge& lhs, const Edge& rhs) {
-			return lhs.source == rhs.source
-					&& lhs.target == rhs.target;
+	template <typename Vertex>
+	class FancyEdge : public Edge<Vertex> { // inner struture
+	public:
+		edge_properties properties;
+
+		FancyEdge() {}
+
+		FancyEdge(const Vertex& source, const Vertex& target, const edge_properties& properties = edge_properties())
+			: Edge<Vertex>(source, target), properties(properties) {}
+	};
+
+	template <typename Vertex>
+	class FancyEdgeDescriptor : public Edge<Vertex> { // inner struture
+	public:
+		edge_properties* properties;
+
+		FancyEdgeDescriptor() : properties(nullptr) {}
+
+		FancyEdgeDescriptor(const Vertex& source, const Vertex& target)
+			: Edge<Vertex>(source, target), properties(nullptr) {}
+
+		explicit FancyEdgeDescriptor(FancyEdge<Vertex>& e) 
+			: Edge<Vertex>(e.source, e.target), properties(&e.properties) {}
+
+		friend bool operator==(const FancyEdgeDescriptor& lhs, const FancyEdgeDescriptor& rhs) {
+			return lhs.properties == rhs.properties;
 		}
 
-		friend bool operator!=(const Edge& lhs, const Edge& rhs) {
-			return !(lhs == rhs);
+		friend bool operator!=(const FancyEdgeDescriptor& lhs, const FancyEdgeDescriptor& rhs) {
+			return lhs.properties != rhs.properties;
 		}
 	};
 
@@ -59,7 +90,7 @@ namespace graph
 		using edge_parallel_category = boost::disallow_parallel_edge_tag;
 		using traversal_category = StaticGraphTraversalCategory;
 
-		using EdgeType = Edge<vertex_descriptor>;
+		using EdgeType = FancyEdge<vertex_descriptor>;
 
 	private:
 		using AdjacenciesVecType = std::vector<EdgeType*>;
@@ -80,8 +111,10 @@ namespace graph
 		class VertexCollection;
 		class AdjacencyCollection;
 		class EdgeCollection;
+		class VertexPropertyMap;
+		class EdgePropertyMap;
 
-		using edge_descriptor = EdgeType;
+		using edge_descriptor = FancyEdgeDescriptor<EdgeType::VertexType>;
 
 		StaticGraph();
 
@@ -95,6 +128,9 @@ namespace graph
 		EdgeCollection OutEdges(const vertex_descriptor& v) const;
 		EdgeCollection InEdges(const vertex_descriptor& v) const;
 		edges_size_type EdgesCount() const;
+
+		const EdgePropertyMap& GetEdgePropertyMap() const;
+		const VertexPropertyMap& GetVertexPropertyMap() const;
 	private:
 		void Initialize();
 
@@ -102,6 +138,8 @@ namespace graph
 		VerticesVecType vertices;
 		EdgesVecType edges;
 		AdjacenciesSeparatorsVecType edgesSeparators;
+		std::unique_ptr<EdgePropertyMap> edgePropertyMap;
+		std::unique_ptr<VertexPropertyMap> vertexPropertyMap;
 		std::unique_ptr<VertexCollection> vertexCollection;
 	};
 
@@ -125,14 +163,15 @@ namespace graph
 
 		bool isForInEdges;
 	};
-
-
+	
 	// edge_iterator
 	class StaticGraph::edge_iterator
 			: public boost::iterator_adaptor<
 				edge_iterator,
 				AdjacenciesVecIteratorType,
-				EdgeType> {
+				edge_descriptor,
+				boost::use_default,
+				edge_descriptor> {
 	public:
 		explicit edge_iterator(const AdjacenciesVecIteratorType& p)
 			: iterator_adaptor_(p) {}
@@ -140,11 +179,10 @@ namespace graph
 	private:
 		friend class boost::iterator_core_access;
 
-		EdgeType& dereference() const {
-			return **this->base_reference();
+		edge_descriptor dereference() const {
+			return edge_descriptor(**this->base_reference());
 		}
 	};
-
 
 	class StaticGraph::VertexCollection : public graphUtil::Collection<vertex_iterator> {
 	public:
@@ -166,7 +204,6 @@ namespace graph
 			: CollectionType(first, last) {}
 	};
 
-
 	class StaticGraph::EdgeCollection : public graphUtil::Collection<edge_iterator> {
 	private:
 		friend class StaticGraph;
@@ -181,15 +218,112 @@ namespace graph
 	public:
 		Builder(vertices_size_type vertexCount, edges_size_type edgesCount = 0);
 		virtual ~Builder();
-		void AddEdge(const edge_descriptor& e);
+		void AddEdge(const vertex_descriptor& from, const vertex_descriptor& to);
 		std::unique_ptr<StaticGraph> Build();
 	private:
 		void BuildGraph(StaticGraph& graph);
 		void SortEdgesAndCopyTo(StaticGraph& graph);
 
-		std::vector<edge_descriptor> unsortedEdges;
+		std::vector<EdgeType> unsortedEdges;
 		int vertexCount;
 	};
+}
+
+// VertexPropertyMap
+namespace graph
+{
+	class StaticGraph::VertexPropertyMap {
+	private:
+		friend class StaticGraph;
+
+		StaticGraph& graph;
+
+		explicit VertexPropertyMap(StaticGraph& graph)
+			: graph(graph) {}
+
+	public:
+		using key_type = vertex_descriptor;
+		using value_type = vertex_properties;
+		using reference = value_type&;
+		using category = boost::read_write_property_map_tag;
+
+		value_type& get(key_type& key) const {
+			return graph.vertices[key].properties;
+		}
+
+		void put(const key_type& key, const value_type& value) const {
+			graph.vertices[key].properties = value;
+		}
+	};
+
+
+	inline StaticGraph::VertexPropertyMap::value_type& get(
+		const StaticGraph::VertexPropertyMap& pm,
+		StaticGraph::VertexPropertyMap::key_type& key) {
+		return pm.get(key);
+	}
+
+	inline void put(
+		const StaticGraph::VertexPropertyMap& pm,
+		const StaticGraph::VertexPropertyMap::key_type& key,
+		const StaticGraph::VertexPropertyMap::value_type& value) {
+		pm.put(key, value);
+	}
+
+//	template<>
+//	struct property_map<StaticGraph, vertex_bundle_t> {
+//		using type = StaticGraph::VertexPropertyMap;
+//	};
+//
+//	template<>
+//	inline property_map<StaticGraph, vertex_bundle_t>::type
+//		get<StaticGraph>(const vertex_bundle_t&, StaticGraph& graph) {
+//		return graph.GetVertexPropertyMap();
+//	}
+}
+
+// EdgePropertyMap
+namespace graph
+{
+	class StaticGraph::EdgePropertyMap {
+	public:
+		using key_type = edge_descriptor;
+		using value_type = edge_properties;
+		using reference = value_type&;
+		using category = boost::read_write_property_map_tag;
+
+		value_type& get(key_type& key) const {
+			return *key.properties;
+		}
+
+		void put(const key_type& key, const value_type& value) const {
+			*key.properties = value;
+		}
+	};
+
+	inline StaticGraph::EdgePropertyMap::value_type& get(
+		const StaticGraph::EdgePropertyMap& pm,
+		StaticGraph::EdgePropertyMap::key_type& key) {
+		return pm.get(key);
+	}
+
+	inline void put(
+		const StaticGraph::EdgePropertyMap& pm,
+		const StaticGraph::EdgePropertyMap::key_type& key,
+		const StaticGraph::EdgePropertyMap::value_type& value) {
+		pm.put(key, value);
+	}
+
+//	template<>
+//	struct property_map<StaticGraph, edge_bundle_t> {
+//		using type = StaticGraph::EdgePropertyMap;
+//	};
+//
+//	template<>
+//	inline property_map<StaticGraph, edge_bundle_t>::type
+//		get<StaticGraph>(const edge_bundle_t&, StaticGraph& graph) {
+//		return graph.GetEdgePropertyMap();
+//	}
 }
 
 // external functions  
@@ -219,7 +353,7 @@ namespace graph
 					int to = reader.NextUnsignedInt();
 					int weight = reader.NextUnsignedInt();
 
-					builder->AddEdge(StaticGraph::EdgeType(from, to));
+					builder->AddEdge(from, to);
 					break;
 				}
 				default:
@@ -233,11 +367,9 @@ namespace graph
 	}
 
 	inline std::pair<StaticGraph::edge_descriptor, bool> edge(StaticGraph::vertex_descriptor u, StaticGraph::vertex_descriptor v, const StaticGraph& g) {
-		auto edge = StaticGraph::EdgeType(u, v);
-		return std::make_pair(edge, g.OutAdjacencies(u).contains(v));
+		throw std::exception("Not Supported");
 	}
-
-
+	
 	inline std::pair<StaticGraph::vertex_iterator, StaticGraph::vertex_iterator> vertices(const StaticGraph& g) {
 		return std::make_pair(g.Vertices().begin(), g.Vertices().end());
 	}
@@ -289,14 +421,14 @@ namespace graph
 // StaticGraph
 namespace graph
 {
-	inline StaticGraph::StaticGraph() : vertexCollection(nullptr) {}
+	inline StaticGraph::StaticGraph() : vertexCollection(nullptr), edgePropertyMap(), vertexPropertyMap(new VertexPropertyMap(*this)) {}
 
 	template <class PairIterator>
 	StaticGraph::StaticGraph(PairIterator begin, PairIterator end, vertices_size_type n, edges_size_type m) : StaticGraph() {
 		auto builder = new Builder(n, m);
 
 		for (auto& it = begin; it != end; ++it) {
-			builder->AddEdge(EdgeType(it->first, it->second));
+			builder->AddEdge(it->first, it->second);
 		}
 
 		builder->BuildGraph(*this);
@@ -336,6 +468,14 @@ namespace graph
 		this->vertexCollection = std::unique_ptr<VertexCollection>(new VertexCollection(*this));
 	}
 
+	inline const StaticGraph::VertexPropertyMap& StaticGraph::GetVertexPropertyMap() const {
+		return *vertexPropertyMap;
+	}
+
+	inline const StaticGraph::EdgePropertyMap& StaticGraph::GetEdgePropertyMap() const {
+		return *edgePropertyMap;
+	}
+
 	inline StaticGraph::edges_size_type StaticGraph::EdgesCount() const {
 		return edges.size();
 	}
@@ -364,8 +504,8 @@ namespace graph
 
 	inline StaticGraph::Builder::~Builder() {}
 
-	inline void StaticGraph::Builder::AddEdge(const edge_descriptor& e) {
-		unsortedEdges.push_back(e);
+	inline void StaticGraph::Builder::AddEdge(const vertex_descriptor& from, const vertex_descriptor& to) {
+		unsortedEdges.push_back(EdgeType(from, to));
 	}
 
 	inline std::unique_ptr<StaticGraph> StaticGraph::Builder::Build() {
@@ -392,8 +532,8 @@ namespace graph
 		linkPointers.reserve(this->vertexCount + 1);
 
 		for (auto& edge : this->unsortedEdges) {
-			outDegreeCounts[source(edge, graph)]++;
-			inDegreeCounts[target(edge, graph)]++;
+			outDegreeCounts[edge.source]++;
+			inDegreeCounts[edge.target]++;
 		}
 
 		linkPointers.push_back(graph.adjacencies.begin());
@@ -409,8 +549,8 @@ namespace graph
 		linkPointers.push_back(graph.adjacencies.end());
 
 		for (auto& edge : this->unsortedEdges) {
-			auto from = source(edge, graph);
-			auto to = target(edge, graph);
+			auto from = edge.source;
+			auto to = edge.target;
 			graph.edges.push_back(edge);
 			auto edge_ptr = &(graph.edges.back());
 			--outDegreeCounts[from];

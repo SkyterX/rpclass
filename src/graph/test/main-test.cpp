@@ -45,6 +45,16 @@ TEST(GraphConcepts, BidirectionalGraphConcept) {
 };
 
 
+TEST(PropertyGraph, StaticGraphProperties) {
+	using Graph = StaticGraph;
+	BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
+		graph::StaticGraph::VertexPropertyMap,
+		graph::StaticGraph::VertexPropertyMap::key_type>));
+	BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
+		graph::StaticGraph::EdgePropertyMap,
+		graph::StaticGraph::EdgePropertyMap::key_type>));
+};
+
 TEST(PropertyGraph, InternalProperties) {
     using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;
 
