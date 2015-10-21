@@ -10,6 +10,7 @@
 #include "StaticGraphIterators.hpp"
 #include "BasicGraphStructures.hpp"
 #include "StaticGraphPropertyMaps.hpp"
+#include "StaticGraphBuilder.hpp"
 #include "properties.hpp"
 
 namespace graph {
@@ -18,13 +19,11 @@ namespace graph {
 			public boost::vertex_list_graph_tag { };
 
 	struct vertex_properties_stub {};
+
 	struct edge_properties_stub {};
 
 
 	class StaticGraph {
-		class VertexIterator;
-		using VertexProperties = vertex_properties_stub;
-		using EdgeProperties = edge_properties_stub;
 	public:
 		using type = StaticGraph;
 
@@ -37,36 +36,57 @@ namespace graph {
 		using edge_parallel_category = boost::disallow_parallel_edge_tag;
 		using traversal_category = StaticGraphTraversalCategory;
 
-		using EdgeType = FancyEdge<vertex_descriptor, EdgeProperties>;
-		using edge_descriptor = FancyEdgeDescriptor<EdgeType::VertexType, EdgeType::EdgePropertiesType>;
+		using VertexProperties = vertex_properties_stub;
+		using EdgeProperties = edge_properties_stub;
+		using VertexPropertyMapType = VertexPropertyMap<VertexProperties, type>;
+		using EdgePropertyMapType = EdgePropertyMap<EdgeProperties, type>;
 
 	private:
+		using EdgeType = FancyEdge<vertex_descriptor, EdgeProperties>;
+		using EdgesVecType = std::vector<EdgeType>;
+
 		using AdjacenciesVecType = std::vector<EdgeType*>;
 		using AdjacenciesVecIteratorType = AdjacenciesVecType::const_iterator;
 
-	public:
-		using edge_iterator = EdgeIterator<AdjacenciesVecIteratorType, edge_descriptor>;
-		using adjacency_iterator = AdjacencyIterator<AdjacenciesVecIteratorType, vertex_descriptor>;
-		using out_edge_iterator = edge_iterator;
-		using in_edge_iterator = edge_iterator;
 		using VertexType = Vertex<AdjacenciesVecIteratorType, VertexProperties>;
-
-	private:
 		using VerticesVecType = std::vector<VertexType>;
-		using EdgesVecType = std::vector<EdgeType>;
+
 		using AdjacenciesSeparatorsVecType = std::vector<degree_size_type>;
 	public:
-
 		using vertex_iterator = boost::counting_iterator<vertex_descriptor>;
-		class Builder;
-		class VertexCollection;
-		class AdjacencyCollection;
-		class EdgeCollection;
-		using VertexPropertyMapType = VertexPropertyMap<VertexProperties, type>;
-		using EdgePropertyMapType = EdgePropertyMap<EdgeProperties, type>;
+		using adjacency_iterator = AdjacencyIterator<AdjacenciesVecIteratorType, vertex_descriptor>;
+		using edge_descriptor = FancyEdgeDescriptor<EdgeType::VertexType, EdgeType::EdgePropertiesType>;
+		using edge_iterator = EdgeIterator<AdjacenciesVecIteratorType, edge_descriptor>;
+		using out_edge_iterator = edge_iterator;
+		using in_edge_iterator = edge_iterator;
+
+
+		using EdgeCollection = graphUtil::Collection<edge_iterator>;
+		using AdjacencyCollection = graphUtil::ValueCollection<adjacency_iterator, adjacency_iterator::value_type, true>;
+
+		using Builder = GraphBuilder<type>;
+		friend Builder;
+
+
+		class VertexCollection : public graphUtil::Collection<vertex_iterator> {
+		public:
+			VertexType operator[](const vertex_descriptor& v) const {
+				if (v == this->size())
+					return VertexType(this->graph.adjacencies.end());
+				return this->graph.vertices[v];
+			}
+
+		private:
+			friend class StaticGraph;
+
+			explicit VertexCollection(const StaticGraph& g)
+				: CollectionType(vertex_iterator(0), vertex_iterator(g.vertices.size())), graph(g) {}
+
+			const StaticGraph& graph;
+		};
+
 		friend class VertexPropertyMapType;
 
-		
 
 		StaticGraph();
 
@@ -93,56 +113,6 @@ namespace graph {
 		std::unique_ptr<EdgePropertyMapType> edgePropertyMap;
 		std::unique_ptr<VertexPropertyMapType> vertexPropertyMap;
 		std::unique_ptr<VertexCollection> vertexCollection;
-	};
-
-	class StaticGraph::VertexCollection : public graphUtil::Collection<vertex_iterator> {
-	public:
-		VertexType operator[](const vertex_descriptor& v) const {
-			if (v == this->size())
-				return VertexType(this->graph.adjacencies.end());
-			return this->graph.vertices[v];
-		}
-
-	private:
-		friend class StaticGraph;
-
-		explicit VertexCollection(const StaticGraph& g)
-			: CollectionType(vertex_iterator(0), vertex_iterator(g.vertices.size())), graph(g) {}
-
-		const StaticGraph& graph;
-	};
-
-	class StaticGraph::AdjacencyCollection :
-			public graphUtil::ValueCollection<adjacency_iterator, adjacency_iterator::value_type, true> {
-	private:
-		friend class StaticGraph;
-
-		AdjacencyCollection(const adjacency_iterator& first, const adjacency_iterator& last)
-			: CollectionType(first, last) {}
-	};
-
-	class StaticGraph::EdgeCollection : public graphUtil::Collection<edge_iterator> {
-	private:
-		friend class StaticGraph;
-
-		EdgeCollection(const edge_iterator& first, const edge_iterator& last)
-			: CollectionType(first, last) {}
-	};
-
-	class StaticGraph::Builder {
-		friend class StaticGraph;
-
-	public:
-		Builder(vertices_size_type vertexCount, edges_size_type edgesCount = 0);
-		virtual ~Builder();
-		void AddEdge(const vertex_descriptor& from, const vertex_descriptor& to);
-		std::unique_ptr<StaticGraph> Build();
-	private:
-		void BuildGraph(StaticGraph& graph);
-		void SortEdgesAndCopyTo(StaticGraph& graph);
-
-		std::vector<EdgeType> unsortedEdges;
-		int vertexCount;
 	};
 }
 
@@ -173,7 +143,7 @@ namespace graph {
 }
 
 #include "StaticGraphTools.hpp"
-#include "StaticGraphBuilder.hpp"
+
 
 // StaticGraph
 namespace graph {
