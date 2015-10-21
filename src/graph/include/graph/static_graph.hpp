@@ -76,35 +76,79 @@ namespace graph {
 				return this->graph.vertices[v];
 			}
 
-		private:
-			friend class StaticGraph;
-
 			explicit VertexCollection(const StaticGraph& g)
 				: CollectionType(vertex_iterator(0), vertex_iterator(g.vertices.size())), graph(g) {}
 
+		private:
 			const StaticGraph& graph;
 		};
 
 		friend class VertexPropertyMapType;
 
 
-		StaticGraph();
+		StaticGraph()
+			: edgePropertyMap(),
+			  vertexPropertyMap(new VertexPropertyMapType(*this)),
+			  vertexCollection(nullptr) {}
 
 		template <class PairIterator>
 		StaticGraph(PairIterator begin, PairIterator end,
-					vertices_size_type n, edges_size_type m = 0);
+					vertices_size_type n, edges_size_type m = 0) : StaticGraph() {
+			auto builder = new Builder(n, m);
 
-		const VertexCollection& Vertices() const;
-		AdjacencyCollection OutAdjacencies(const vertex_descriptor& v) const;
-		AdjacencyCollection InAdjacencies(const vertex_descriptor& v) const;
-		EdgeCollection OutEdges(const vertex_descriptor& v) const;
-		EdgeCollection InEdges(const vertex_descriptor& v) const;
-		edges_size_type EdgesCount() const;
+			for (auto& it = begin; it != end; ++it) {
+				builder->AddEdge(it->first, it->second);
+			}
 
-		const EdgePropertyMapType& GetEdgePropertyMap() const;
-		const VertexPropertyMapType& GetVertexPropertyMap() const;
+			builder->BuildGraph(*this);
+
+			delete builder;
+		}
+
+		const VertexCollection& Vertices() const {
+			return *vertexCollection;
+		}
+
+		AdjacencyCollection OutAdjacencies(const vertex_descriptor& v) const {
+			return AdjacencyCollection(
+				adjacency_iterator(this->Vertices()[v].begin, true),
+				adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v], true));
+		}
+
+		AdjacencyCollection InAdjacencies(const vertex_descriptor& v) const {
+			return AdjacencyCollection(
+				adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v], false),
+				adjacency_iterator(this->Vertices()[v + 1].begin, false));
+		}
+
+		EdgeCollection OutEdges(const vertex_descriptor& v) const {
+			return EdgeCollection(
+				edge_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]),
+				edge_iterator(this->Vertices()[v + 1].begin));
+		}
+
+		EdgeCollection InEdges(const vertex_descriptor& v) const {
+			return EdgeCollection(
+				edge_iterator(this->Vertices()[v].begin),
+				edge_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]));
+		}
+
+		edges_size_type EdgesCount() const {
+			return edges.size();
+		}
+
+		const EdgePropertyMapType& GetEdgePropertyMap() const {
+			return *edgePropertyMap;
+		}
+
+		const VertexPropertyMapType& GetVertexPropertyMap() const {
+			return *vertexPropertyMap;
+		}
+
 	private:
-		void Initialize();
+		void Initialize() {
+			this->vertexCollection = std::make_unique<VertexCollection>(*this);
+		}
 
 		AdjacenciesVecType adjacencies;
 		VerticesVecType vertices;
@@ -143,69 +187,3 @@ namespace graph {
 }
 
 #include "StaticGraphTools.hpp"
-
-
-// StaticGraph
-namespace graph {
-	inline StaticGraph::StaticGraph()
-		: edgePropertyMap(),
-		  vertexPropertyMap(new VertexPropertyMapType(*this)),
-		  vertexCollection(nullptr) {}
-
-	template <class PairIterator>
-	StaticGraph::StaticGraph(PairIterator begin, PairIterator end, vertices_size_type n, edges_size_type m) : StaticGraph() {
-		auto builder = new Builder(n, m);
-
-		for (auto& it = begin; it != end; ++it) {
-			builder->AddEdge(it->first, it->second);
-		}
-
-		builder->BuildGraph(*this);
-
-		delete builder;
-	}
-
-	inline const StaticGraph::VertexCollection& StaticGraph::Vertices() const {
-		return *vertexCollection;
-	}
-
-	inline StaticGraph::AdjacencyCollection StaticGraph::InAdjacencies(const vertex_descriptor& v) const {
-		return AdjacencyCollection(
-			adjacency_iterator(this->Vertices()[v].begin, true),
-			adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v], true));
-	}
-
-	inline StaticGraph::AdjacencyCollection StaticGraph::OutAdjacencies(const vertex_descriptor& v) const {
-		return AdjacencyCollection(
-			adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v], false),
-			adjacency_iterator(this->Vertices()[v + 1].begin, false));
-	}
-
-	inline StaticGraph::EdgeCollection StaticGraph::InEdges(const vertex_descriptor& v) const {
-		return EdgeCollection(
-			edge_iterator(this->Vertices()[v].begin),
-			edge_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]));
-	}
-
-	inline StaticGraph::EdgeCollection StaticGraph::OutEdges(const vertex_descriptor& v) const {
-		return EdgeCollection(
-			edge_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]),
-			edge_iterator(this->Vertices()[v + 1].begin));
-	}
-
-	inline void StaticGraph::Initialize() {
-		this->vertexCollection = std::unique_ptr<VertexCollection>(new VertexCollection(*this));
-	}
-
-	inline const StaticGraph::VertexPropertyMapType& StaticGraph::GetVertexPropertyMap() const {
-		return *vertexPropertyMap;
-	}
-
-	inline const StaticGraph::EdgePropertyMapType& StaticGraph::GetEdgePropertyMap() const {
-		return *edgePropertyMap;
-	}
-
-	inline StaticGraph::edges_size_type StaticGraph::EdgesCount() const {
-		return edges.size();
-	}
-}
