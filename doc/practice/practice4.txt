@@ -1,0 +1,74 @@
+//some example not compiling code fro the excersice
+
+#include <graph/properties.hpp>
+#include <boost/graph/adjacency_list.hpp>
+
+class Iterator {};
+class Props {
+    double m_distance;
+    int m_dijkstra_run;
+};
+class Vertex {
+    Iterator beg;
+    Props m_props;
+};
+
+template <typename Iter, typename Prps> 
+class VertexType {
+    Iter beg;
+    Prps m_props;
+};
+
+using namespace graph;
+
+struct distance_t {};
+struct color_t {};
+struct edge_type_t {};
+
+
+
+using BFSBundledVertexProperties = Properties<Property<distance_t, uint32_t>, Property<color_t, char>>;
+using BFSBundledEdgeProperties = Properties<Property<edge_type_t, char>>;
+using BFSGraph = boost::adjacency_list<
+    boost::vecS, boost::vecS, boost::bidirectionalS,
+    BFSBundledVertexProperties, BFSBundledEdgeProperties>;
+
+class MyProxyVertexPropertyObject {
+    using key_type = vertex_descriptor;
+    using value_type = BFSBundledVertexProperties;
+    using refference = value_type&;
+    using category = graph::read_write_property_map_tag;
+};
+
+namespace graph {
+    template<>
+    struct property_map<BFSGraph, vertex_bundle_t> {
+        using type = boost::property_map<BFSGraph, boost::vertex_bundle_t>::type;
+    };
+    template<>
+    inline graph::property_map<BFSGraph, vertex_bundle_t>::type
+        get<BFSGraph>(const vertex_bundle_t&, BFSGraph& graph) {
+        return boost::get(boost::vertex_bundle, graph);
+    };
+    template<>
+    inline property_map<BFSGraph, vertex_bundle_t>::type::reference
+        get<property_map<BFSGraph, vertex_bundle_t>::type>(const property_map<BFSGraph, vertex_bundle_t>::type& pMap,
+            const property_map<BFSGraph, vertex_bundle_t>::type::key_type& key) {
+        return boost::get(pMap, key);
+    };
+
+}
+
+int main() {
+
+
+    
+    Vertex vrts;
+    VertexType<Iterator, Props> vrtxType;
+    VertexType<Iterator, BFSBundledVertexProperties> vrtxTypeTsk;
+    BFSGraph graph;
+
+    property_map<BFSGraph, vertex_bundle_t>::type vertexPM = get(vertex_bundle_t(), graph);
+
+    return 0;
+}
