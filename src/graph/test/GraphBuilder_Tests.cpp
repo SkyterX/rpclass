@@ -2,7 +2,6 @@
 
 #include <gtest/gtest.h>
 #include <graph/static_graph.hpp>
-#include <functional>
 #include <random>
 
 using namespace std;
@@ -10,7 +9,7 @@ using namespace graph;
 
 TEST(GraphBuilder, Correctness) {
 	int n = 1000;
-	int m = 50000;
+	int m = 100000;
 	vector<StaticGraph::edge_descriptor> possibleEdges;
 	for (int v = 0; v < n; ++v) {
 		for (int to = 0; to < n; ++to) {
@@ -29,6 +28,9 @@ TEST(GraphBuilder, Correctness) {
 		builder.AddEdge(e);
 	}
 	auto g = builder.Build();
+
+	EXPECT_EQ(g->Vertices().size(), n);
+	EXPECT_EQ(g->EdgesCount(), m);
 
 	for (auto& v : g->Vertices()) {
 		auto inAdjacencies = g->InAdjacencies(v);

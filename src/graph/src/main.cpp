@@ -34,7 +34,5 @@ int main() {
 	printf("Statistics time: %.3lf\n", (clock() - time) / CLOCKS_PER_SEC);
 	scanf("%lf", &time);
 
-	delete g;
-
 	return 0;
 }

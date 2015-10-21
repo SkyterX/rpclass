@@ -7,6 +7,7 @@
 #include <memory>
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
+#include "util/Collection.hpp"
 
 namespace graph
 {
@@ -95,6 +96,8 @@ namespace graph
 		EdgeCollection InEdges(const vertex_descriptor& v) const;
 		edges_size_type EdgesCount() const;
 	private:
+		void Initialize();
+
 		AdjacenciesVecType adjacencies;
 		VerticesVecType vertices;
 		EdgesVecType edges;
@@ -102,45 +105,74 @@ namespace graph
 		std::unique_ptr<VertexCollection> vertexCollection;
 	};
 
-
-	class StaticGraph::VertexCollection {
+	// adjacency_iterator
+	class StaticGraph::adjacency_iterator
+			: public boost::iterator_adaptor<
+				adjacency_iterator,
+				AdjacenciesVecIteratorType,
+				vertex_descriptor> {
 	public:
-		vertex_iterator begin() const;
-		vertex_iterator end() const;
-		vertices_size_type size() const;
+		explicit adjacency_iterator(const AdjacenciesVecIteratorType& p, bool isForInEdges)
+			: iterator_adaptor_(p), isForInEdges(isForInEdges) {}
+
+	private:
+		friend class boost::iterator_core_access;
+		friend class edge_iterator;
+
+		vertex_descriptor& dereference() const {
+			return isForInEdges ? (*this->base_reference())->source : (*this->base_reference())->target;
+		}
+
+		bool isForInEdges;
+	};
+
+
+	// edge_iterator
+	class StaticGraph::edge_iterator
+			: public boost::iterator_adaptor<
+				edge_iterator,
+				AdjacenciesVecIteratorType,
+				EdgeType> {
+	public:
+		explicit edge_iterator(const AdjacenciesVecIteratorType& p)
+			: iterator_adaptor_(p) {}
+
+	private:
+		friend class boost::iterator_core_access;
+
+		EdgeType& dereference() const {
+			return **this->base_reference();
+		}
+	};
+
+
+	class StaticGraph::VertexCollection : public graphUtil::Collection<vertex_iterator> {
+	public:
 		VertexType operator[](const vertex_descriptor& v) const;
 	private:
+		friend class StaticGraph;
+
 		explicit VertexCollection(const StaticGraph& g);
+
 		const StaticGraph& graph;
-		friend class StaticGraph;
 	};
 
-	class StaticGraph::AdjacencyCollection {
-	public:
-		adjacency_iterator begin() const;
-		adjacency_iterator end() const;
-		degree_size_type size() const;
-		bool contains(vertex_descriptor v) const;
+	class StaticGraph::AdjacencyCollection :
+			public graphUtil::ValueCollection<adjacency_iterator, adjacency_iterator::value_type, true> {
 	private:
-		AdjacencyCollection(const StaticGraph& g, const vertex_descriptor& v, const bool& forInEdges);
-		const StaticGraph& graph;
-		const vertex_descriptor& vertex;
-		const bool isForInEdges;
 		friend class StaticGraph;
+
+		AdjacencyCollection(const adjacency_iterator& first, const adjacency_iterator& last)
+			: CollectionType(first, last) {}
 	};
 
 
-	class StaticGraph::EdgeCollection {
-	public:
-		edge_iterator begin() const;
-		edge_iterator end() const;
-		degree_size_type size() const;
+	class StaticGraph::EdgeCollection : public graphUtil::Collection<edge_iterator> {
 	private:
-		EdgeCollection(const StaticGraph& g, const vertex_descriptor& v, const bool& forInEdges);
-		const StaticGraph& graph;
-		const vertex_descriptor& vertex;
-		const bool isForInEdges;
 		friend class StaticGraph;
+
+		EdgeCollection(const edge_iterator& first, const edge_iterator& last)
+			: CollectionType(first, last) {}
 	};
 
 	class StaticGraph::Builder {
@@ -152,53 +184,13 @@ namespace graph
 		void AddEdge(const edge_descriptor& e);
 		std::unique_ptr<StaticGraph> Build();
 	private:
+		void BuildGraph(StaticGraph& graph);
 		void SortEdgesAndCopyTo(StaticGraph& graph);
 
 		std::vector<edge_descriptor> unsortedEdges;
 		int vertexCount;
 	};
 }
-
-// adjacency_iterator
-class graph::StaticGraph::adjacency_iterator
-		: public boost::iterator_adaptor<
-			adjacency_iterator,
-			AdjacenciesVecIteratorType,
-			vertex_descriptor> {
-public:
-	explicit adjacency_iterator(const AdjacenciesVecIteratorType& p, bool isForInEdges)
-		: iterator_adaptor_(p), isForInEdges(isForInEdges) {}
-
-private:
-	friend class boost::iterator_core_access;
-	friend class edge_iterator;
-
-	vertex_descriptor& dereference() const {
-		return isForInEdges ? (*this->base_reference())->source : (*this->base_reference())->target;
-	}
-
-	bool isForInEdges;
-};
-
-
-// edge_iterator
-class graph::StaticGraph::edge_iterator
-		: public boost::iterator_adaptor<
-			edge_iterator,
-			AdjacenciesVecIteratorType,
-			EdgeType> {
-public:
-	explicit edge_iterator(const AdjacenciesVecIteratorType& p)
-		: iterator_adaptor_(p) {}
-
-private:
-	friend class boost::iterator_core_access;
-
-	EdgeType& dereference() const {
-		return **this->base_reference();
-	}
-};
-
 
 // external functions  
 namespace graph
@@ -277,7 +269,7 @@ namespace graph
 	}
 
 	inline StaticGraph::edges_size_type num_edges(const StaticGraph& g) {
-		return g.EdgesCount() / 2;
+		return g.EdgesCount();
 	}
 
 	inline std::pair<StaticGraph::out_edge_iterator, StaticGraph::out_edge_iterator> in_edges(StaticGraph::vertex_descriptor v, const StaticGraph& g) {
@@ -297,7 +289,7 @@ namespace graph
 // StaticGraph
 namespace graph
 {
-	inline StaticGraph::StaticGraph() : vertexCollection(new VertexCollection(*this)) {}
+	inline StaticGraph::StaticGraph() : vertexCollection(nullptr) {}
 
 	template <class PairIterator>
 	StaticGraph::StaticGraph(PairIterator begin, PairIterator end, vertices_size_type n, edges_size_type m) : StaticGraph() {
@@ -307,7 +299,7 @@ namespace graph
 			builder->AddEdge(EdgeType(it->first, it->second));
 		}
 
-		builder->SortEdgesAndCopyTo(*this);
+		builder->BuildGraph(*this);
 
 		delete builder;
 	}
@@ -317,96 +309,48 @@ namespace graph
 	}
 
 	inline StaticGraph::AdjacencyCollection StaticGraph::InAdjacencies(const vertex_descriptor& v) const {
-		return AdjacencyCollection(*this, v, true);
+		return AdjacencyCollection(
+			adjacency_iterator(this->Vertices()[v].begin, true),
+			adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v], true));
 	}
 
 	inline StaticGraph::AdjacencyCollection StaticGraph::OutAdjacencies(const vertex_descriptor& v) const {
-		return AdjacencyCollection(*this, v, false);
+		return AdjacencyCollection(
+			adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v], false),
+			adjacency_iterator(this->Vertices()[v + 1].begin, false));
 	}
 
 	inline StaticGraph::EdgeCollection StaticGraph::InEdges(const vertex_descriptor& v) const {
-		return EdgeCollection(*this, v, true);
+		return EdgeCollection(
+			edge_iterator(this->Vertices()[v].begin),
+			edge_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]));
 	}
 
 	inline StaticGraph::EdgeCollection StaticGraph::OutEdges(const vertex_descriptor& v) const {
-		return EdgeCollection(*this, v, false);
+		return EdgeCollection(
+			edge_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]),
+			edge_iterator(this->Vertices()[v + 1].begin));
+	}
+
+	inline void StaticGraph::Initialize() {
+		this->vertexCollection = std::unique_ptr<VertexCollection>(new VertexCollection(*this));
 	}
 
 	inline StaticGraph::edges_size_type StaticGraph::EdgesCount() const {
-		return adjacencies.size();
+		return edges.size();
 	}
 }
 
 // VertexCollection  
 namespace graph
 {
-	inline StaticGraph::VertexCollection::VertexCollection(const StaticGraph& g) : graph(g) {}
-
-	inline StaticGraph::vertex_iterator StaticGraph::VertexCollection::begin() const {
-		return vertex_iterator(0);
-	}
-
-	inline StaticGraph::vertex_iterator StaticGraph::VertexCollection::end() const {
-		return vertex_iterator(this->graph.vertices.size());
-	}
-
-	inline StaticGraph::vertices_size_type StaticGraph::VertexCollection::size() const {
-		return this->graph.vertices.size();
-	}
+	inline StaticGraph::VertexCollection::VertexCollection(const StaticGraph& g)
+		: CollectionType(vertex_iterator(0), vertex_iterator(g.vertices.size())), graph(g) {}
 
 	inline StaticGraph::VertexType StaticGraph::VertexCollection::operator[](const vertex_descriptor& v) const {
 		if (v == this->size())
 			return VertexType(this->graph.adjacencies.end());
 		return this->graph.vertices[v];
-	}
-}
-
-// AdjacencyCollection  
-namespace graph
-{
-	inline StaticGraph::AdjacencyCollection::AdjacencyCollection(const StaticGraph& g, const vertex_descriptor& v, const bool& forInEdges)
-		:graph(g), vertex(v), isForInEdges(forInEdges) {}
-
-	inline StaticGraph::adjacency_iterator StaticGraph::AdjacencyCollection::begin() const {
-		return adjacency_iterator(graph.Vertices()[vertex].begin + (isForInEdges ? 0 : graph.edgesSeparators[vertex])
-		                          , isForInEdges);
-	}
-
-	inline StaticGraph::adjacency_iterator StaticGraph::AdjacencyCollection::end() const {
-		return adjacency_iterator(isForInEdges
-			                          ? graph.Vertices()[vertex].begin + graph.edgesSeparators[vertex]
-			                          : graph.Vertices()[vertex + 1].begin
-		                          , isForInEdges);
-	}
-
-	inline StaticGraph::degree_size_type StaticGraph::AdjacencyCollection::size() const {
-		return (degree_size_type)(end() - begin());
-	}
-
-	inline bool StaticGraph::AdjacencyCollection::contains(vertex_descriptor v) const {
-		auto result = std::lower_bound(this->begin(), this->end(), v);
-		return result != this->end() && *result == v;
-	}
-}
-
-// EdgeCollection  
-namespace graph
-{
-	inline StaticGraph::EdgeCollection::EdgeCollection(const StaticGraph& g, const vertex_descriptor& v, const bool& forInEdges)
-		:graph(g), vertex(v), isForInEdges(forInEdges) {}
-
-	inline StaticGraph::edge_iterator StaticGraph::EdgeCollection::begin() const {
-		return edge_iterator(graph.Vertices()[vertex].begin) + (isForInEdges ? 0 : graph.edgesSeparators[vertex]);
-	}
-
-	inline StaticGraph::edge_iterator StaticGraph::EdgeCollection::end() const {
-		return isForInEdges
-			       ? edge_iterator(graph.Vertices()[vertex].begin) + graph.edgesSeparators[vertex]
-			       : edge_iterator(graph.Vertices()[vertex + 1].begin);
-	}
-
-	inline StaticGraph::degree_size_type StaticGraph::EdgeCollection::size() const {
-		return (degree_size_type)(end() - begin());
 	}
 }
 
@@ -426,8 +370,13 @@ namespace graph
 
 	inline std::unique_ptr<StaticGraph> StaticGraph::Builder::Build() {
 		auto graph = std::make_unique<StaticGraph>();
-		SortEdgesAndCopyTo(*graph);
+		BuildGraph(*graph);
 		return graph;
+	}
+
+	inline void StaticGraph::Builder::BuildGraph(StaticGraph& graph) {
+		SortEdgesAndCopyTo(graph);
+		graph.Initialize();
 	}
 
 	inline void StaticGraph::Builder::SortEdgesAndCopyTo(StaticGraph& graph) {
