@@ -6,15 +6,16 @@
 
 using namespace std;
 using namespace graph;
+using namespace graphUtil;
 
 TEST(GraphBuilder, Correctness) {
 	using EmptyStaticGraph = StaticGraph<Properties<>>;
 
-	int n = 1000;
-	int m = 100000;
+	int n = 100;
+	int m = 1000;
 	vector<pair<int, int>> possibleEdges;
-	for (int v = 0; v < n; ++v) {
-		for (int to = 0; to < n; ++to) {
+	for (auto& v : Range(0, n)) {
+		for (auto& to : Range(0, n)) {
 			if (v == to) continue;
 			possibleEdges.push_back(make_pair(v, to));
 		}
@@ -27,29 +28,29 @@ TEST(GraphBuilder, Correctness) {
 
 	auto g = EmptyStaticGraph(possibleEdges.begin(), possibleEdges.end(), n, m);
 
-	EXPECT_EQ(g.Vertices().size(), n);
-	EXPECT_EQ(g.EdgesCount(), m);
+	EXPECT_EQ(num_vertices(g), n);
+	EXPECT_EQ(num_edges(g), m);
 
-	for (auto& v : g.Vertices()) {
-		auto inAdjacencies = g.InAdjacencies(v);
+	auto graphVertices = SortedValuesRange(vertices(g));
+	EXPECT_TRUE(graphVertices.contains(0));
+	EXPECT_FALSE(graphVertices.contains(n));
+
+	for (auto& v : graphVertices) {
+		auto inAdjacencies = Range(in_adjacent_vertices(v, g));
 		EXPECT_TRUE(std::is_sorted(inAdjacencies.begin(), inAdjacencies.end()));
-		auto outAdjacencies = g.OutAdjacencies(v);
+		auto outAdjacencies = Range(adjacent_vertices(v, g));
 		EXPECT_TRUE(std::is_sorted(outAdjacencies.begin(), outAdjacencies.end()));
 
-		auto outEdges = g.OutEdges(v);
-		for (auto& e : outEdges) {
+		for (auto& e : Range(out_edges(v, g))) {
 			auto to = target(e, g);
-			auto toInEdges = g.InEdges(to);
-			bool contains = find(toInEdges.begin(), toInEdges.end(), e) != toInEdges.end();
-			EXPECT_TRUE(contains);
+			auto toInEdges = ValuesRange(in_edges(to, g));
+			EXPECT_TRUE(toInEdges.contains(e));
 		}
 
-		auto inEdges = g.InEdges(v);
-		for (auto& e : inEdges) {
-			auto to = target(e, g);
-			auto toInEdges = g.InEdges(to);
-			bool contains = find(toInEdges.begin(), toInEdges.end(), e) != toInEdges.end();
-			EXPECT_TRUE(contains);
+		for (auto& e : Range(in_edges(v, g))) {
+			auto to = source(e, g);
+			auto toOutEdges = ValuesRange(out_edges(to, g));
+			EXPECT_TRUE(toOutEdges.contains(e));
 		}
 	}
 }

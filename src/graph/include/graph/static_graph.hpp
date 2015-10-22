@@ -4,7 +4,6 @@
 #include <boost/graph/graph_traits.hpp>
 #include <memory>
 #include <boost/iterator/counting_iterator.hpp>
-#include <boost/property_map/property_map.hpp>
 #include "util/Collection.hpp"
 #include "StaticGraphIterators.hpp"
 #include "BasicGraphStructures.hpp"
@@ -64,8 +63,8 @@ namespace graph {
 
 
 		using EdgeCollection = graphUtil::Collection<edge_iterator>;
-		using InAdjacencyCollection = graphUtil::ValueCollection<in_adjacency_iterator, typename in_adjacency_iterator::value_type, true>;
-		using OutAdjacencyCollection = graphUtil::ValueCollection<out_adjacency_iterator, typename out_adjacency_iterator::value_type, true>;
+		using InAdjacencyCollection = graphUtil::ValueCollection<in_adjacency_iterator, graphUtil::SortedTag>;
+		using OutAdjacencyCollection = graphUtil::ValueCollection<out_adjacency_iterator, graphUtil::SortedTag>;
 
 		using Builder = GraphBuilder<type>;
 		friend Builder;

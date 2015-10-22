@@ -65,6 +65,13 @@ namespace graph {
 	}
 
 	template <typename VertexProperties, typename EdgeProperties>
+	inline std::pair<typename StaticGraph<Properties>::in_adjacency_iterator, typename StaticGraph<Properties>::in_adjacency_iterator>
+	in_adjacent_vertices(typename StaticGraph<Properties>::vertex_descriptor u, const StaticGraph<Properties>& g) {
+		auto edgesCollection = g.InAdjacencies(u);
+		return std::make_pair(edgesCollection.begin(), edgesCollection.end());
+	}
+
+	template <typename VertexProperties, typename EdgeProperties>
 	inline typename StaticGraph<Properties>::vertex_descriptor source(
 		typename StaticGraph<Properties>::edge_descriptor e, const StaticGraph<Properties>&) {
 		return e.source;

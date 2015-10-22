@@ -30,7 +30,7 @@ TEST(GraphConcepts, VertexListGraphConcept) {
 };
 
 TEST(GraphConcepts, AdjacencyGraphConcept) {
-    using Graph = FancyStaticGraph;
+    using Graph = StaticGraph<>;
 	BOOST_CONCEPT_ASSERT((boost::concepts::AdjacencyGraphConcept<Graph>));
 };
 
@@ -42,17 +42,6 @@ TEST(GraphConcepts, IncidenceGraphConcept) {
 TEST(GraphConcepts, BidirectionalGraphConcept) {
     using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;
     BOOST_CONCEPT_ASSERT((boost::concepts::BidirectionalGraphConcept<Graph>));
-};
-
-
-TEST(PropertyGraph, StaticGraphProperties) {
-	using Graph = StaticGraph;
-	BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
-		graph::StaticGraph::VertexPropertyMap,
-		graph::StaticGraph::VertexPropertyMap::key_type>));
-	BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
-		graph::StaticGraph::EdgePropertyMap,
-		graph::StaticGraph::EdgePropertyMap::key_type>));
 };
 
 TEST(PropertyGraph, InternalProperties) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graph.hpp"
+#include <boost/property_map/property_map.hpp>
 
 // VertexPropertyMap
 namespace graph {
