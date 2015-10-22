@@ -4,7 +4,6 @@
 #include <boost/graph/graph_traits.hpp>
 #include <memory>
 #include <boost/iterator/counting_iterator.hpp>
-#include <boost/iterator/iterator_facade.hpp>
 #include <boost/property_map/property_map.hpp>
 #include "util/Collection.hpp"
 #include "StaticGraphIterators.hpp"
@@ -24,7 +23,7 @@ namespace graph {
 	template <typename VertexProperties = NoProperties, typename EdgeProperties = NoProperties>
 	class StaticGraph {
 	public:
-		using type = StaticGraph;
+		using type = StaticGraph<VertexProperties, EdgeProperties>;
 
 		using edge_size_type = uint32_t;
 		using vertices_size_type = uint32_t;
@@ -51,7 +50,9 @@ namespace graph {
 		using AdjacenciesSeparatorsVecType = std::vector<degree_size_type>;
 	public:
 		using vertex_iterator = boost::counting_iterator<vertex_descriptor>;
-		using adjacency_iterator = AdjacencyIterator<AdjacenciesVecIteratorType, vertex_descriptor>;
+		using in_adjacency_iterator = AdjacencyIterator<AdjacenciesVecIteratorType, vertex_descriptor, internals::EdgeDirection::In>;
+		using out_adjacency_iterator = AdjacencyIterator<AdjacenciesVecIteratorType, vertex_descriptor, internals::EdgeDirection::Out>;
+		using adjacency_iterator = out_adjacency_iterator;
 		using edge_descriptor = FancyEdgeDescriptor<typename EdgeType::VertexType, typename EdgeType::EdgePropertiesType>;
 		using edge_iterator = EdgeIterator<AdjacenciesVecIteratorType, edge_descriptor>;
 		using out_edge_iterator = edge_iterator;
@@ -59,12 +60,12 @@ namespace graph {
 
 
 		using EdgeCollection = graphUtil::Collection<edge_iterator>;
-		using AdjacencyCollection = graphUtil::ValueCollection<adjacency_iterator, typename adjacency_iterator::value_type, true>;
+		using InAdjacencyCollection = graphUtil::ValueCollection<in_adjacency_iterator, typename in_adjacency_iterator::value_type, true>;
+		using OutAdjacencyCollection = graphUtil::ValueCollection<out_adjacency_iterator, typename out_adjacency_iterator::value_type, true>;
 
 		using Builder = GraphBuilder<type>;
 		friend Builder;
-
-
+		
 		class VertexCollection : public graphUtil::Collection<vertex_iterator> {
 		public:
 			VertexType operator[](const vertex_descriptor& v) const {
@@ -106,16 +107,17 @@ namespace graph {
 			return *vertexCollection;
 		}
 
-		AdjacencyCollection OutAdjacencies(const vertex_descriptor& v) const {
-			return AdjacencyCollection(
-				adjacency_iterator(this->Vertices()[v].begin, true),
-				adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v], true));
+		OutAdjacencyCollection OutAdjacencies(const vertex_descriptor& v) const {
+			return OutAdjacencyCollection(
+				out_adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]),
+				out_adjacency_iterator(this->Vertices()[v + 1].begin));
+				
 		}
 
-		AdjacencyCollection InAdjacencies(const vertex_descriptor& v) const {
-			return AdjacencyCollection(
-				adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v], false),
-				adjacency_iterator(this->Vertices()[v + 1].begin, false));
+		InAdjacencyCollection InAdjacencies(const vertex_descriptor& v) const {
+			return InAdjacencyCollection(
+				in_adjacency_iterator(this->Vertices()[v].begin),
+				in_adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]));
 		}
 
 		EdgeCollection OutEdges(const vertex_descriptor& v) const {
