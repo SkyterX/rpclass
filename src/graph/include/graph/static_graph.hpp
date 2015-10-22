@@ -13,12 +13,14 @@
 #include "properties.hpp"
 
 namespace graph {
-	struct StaticGraphTraversalCategory :
-			public boost::adjacency_graph_tag,
-			public boost::bidirectional_graph_tag,
-			public boost::vertex_list_graph_tag { };
 
-	struct NoProperties {};
+	struct StaticGraphTraversalCategory :
+		public adjacency_graph_tag, public boost::adjacency_graph_tag,
+		public bidirectional_graph_tag, public boost::bidirectional_graph_tag,
+		public vertex_list_graph_tag, public boost::vertex_list_graph_tag
+	{ };
+
+	struct NoProperties : public Properties<> {};
 
 	template <typename VertexProperties = NoProperties, typename EdgeProperties = NoProperties>
 	class StaticGraph {
@@ -30,12 +32,14 @@ namespace graph {
 		using edges_size_type = uint32_t;
 		using degree_size_type = uint16_t;
 		using vertex_descriptor = vertices_size_type;
-		using directed_category = boost::directed_tag;
-		using edge_parallel_category = boost::disallow_parallel_edge_tag;
+		using directed_category = directed_tag;
+		using edge_parallel_category = disallow_parallel_edge_tag;
 		using traversal_category = StaticGraphTraversalCategory;
 
 		using VertexPropertyMapType = VertexPropertyMap<VertexProperties, type>;
 		using EdgePropertyMapType = EdgePropertyMap<EdgeProperties, type>;
+		using vertex_bundled = VertexProperties;
+		using edge_bundled = EdgeProperties;
 
 	private:
 		using EdgeType = FancyEdge<vertex_descriptor, EdgeProperties>;
@@ -159,31 +163,41 @@ namespace graph {
 	};
 }
 
+// graph_traits
+namespace graph {
+	template<typename VertexProperties, typename EdgeProperties>
+	struct graph_traits<StaticGraph<VertexProperties, EdgeProperties>> 	: 
+		public virtual graph_traits<StaticGraph<VertexProperties, EdgeProperties>, adjacency_graph_tag>,
+		public virtual graph_traits<StaticGraph<VertexProperties, EdgeProperties>, bidirectional_graph_tag>,
+		public virtual graph_traits<StaticGraph<VertexProperties, EdgeProperties>, vertex_list_graph_tag>	
+	{};
+}
+
 // PropertyMaps
 namespace graph {
 #define StaticGraphType StaticGraph<VertexProperties, EdgeProperties>
-//
-//	template <typename VertexProperties, typename EdgeProperties>
-//	struct property_map<StaticGraphType, vertex_bundle_t> {
-//		using type = typename StaticGraphType::VertexPropertyMapType;
-//	};
-//
-//	template <typename VertexProperties, typename EdgeProperties>
-//	struct property_map<StaticGraphType, edge_bundle_t> {
-//		using type = typename StaticGraphType::EdgePropertyMapType;
-//	};
-//
-//	template <typename VertexProperties, typename EdgeProperties>
-//	inline typename property_map<StaticGraphType, vertex_bundle_t>::type
-//	get(const vertex_bundle_t&, StaticGraphType& graph) {
-//		return graph.GetVertexPropertyMap();
-//	}
-//
-//	template <typename VertexProperties, typename EdgeProperties>
-//	inline typename property_map<StaticGraphType, edge_bundle_t>::type
-//	get(const edge_bundle_t&, StaticGraphType& graph) {
-//		return graph.GetEdgePropertyMap();
-//	}
+
+	template <typename VertexProperties, typename EdgeProperties>
+	struct property_map<StaticGraphType, vertex_bundle_t> {
+		using type = typename StaticGraphType::VertexPropertyMapType;
+	};
+
+	template <typename VertexProperties, typename EdgeProperties>
+	struct property_map<StaticGraphType, edge_bundle_t> {
+		using type = typename StaticGraphType::EdgePropertyMapType;
+	};
+
+	template <typename VertexProperties, typename EdgeProperties>
+	inline typename property_map<StaticGraphType, vertex_bundle_t>::type
+	get(const vertex_bundle_t&, StaticGraphType& graph) {
+		return graph.GetVertexPropertyMap();
+	}
+
+	template <typename VertexProperties, typename EdgeProperties>
+	inline typename property_map<StaticGraphType, edge_bundle_t>::type
+	get(const edge_bundle_t&, StaticGraphType& graph) {
+		return graph.GetEdgePropertyMap();
+	}
 #undef StaticGraphType
 }
 

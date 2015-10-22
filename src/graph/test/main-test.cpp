@@ -9,28 +9,23 @@
 #include <graph/properties.hpp>
 #include "generator.hpp"
 
-
 using namespace std;
 using namespace graph;
-
 
 //BFS related properties
 struct distance_t {};
 struct color_t {};
 struct edge_type_t {};
-using NoProperties = Properties<>;
 using BFSBundledVertexProperties = Properties<Property<distance_t, uint32_t>, Property<color_t, char>>;
 using BFSBundledEdgeProperties = Properties<Property<edge_type_t, char>>;
 
-
-
 TEST(GraphConcepts, GraphConcept) {
-    using Graph = StaticGraph<NoProperties,NoProperties>;
+    using Graph = StaticGraph<>;
     BOOST_CONCEPT_ASSERT((boost::concepts::GraphConcept<Graph>));
 };
 
 TEST(GraphConcepts, VertexListGraphConcept) {
-    using Graph = StaticGraph<NoProperties, NoProperties>;
+    using Graph = StaticGraph<>;
     BOOST_CONCEPT_ASSERT((boost::concepts::VertexListGraphConcept<Graph>));
 };
 
@@ -40,7 +35,7 @@ TEST(GraphConcepts, AdjacencyGraphConcept) {
 };
 
 TEST(GraphConcepts, IncidenceGraphConcept) {
-    using Graph = StaticGraph<NoProperties, NoProperties>;
+    using Graph = StaticGraph<>;
     BOOST_CONCEPT_ASSERT((boost::concepts::IncidenceGraphConcept<Graph>));
 };
 
@@ -92,7 +87,7 @@ TEST(PropertyGraph, InternalColorEdgeTypeProperties) {
 //};
 
 TEST(GraphStructure, ListGraph) {
-    using Graph = StaticGraph<NoProperties, NoProperties>;
+    using Graph = StaticGraph<>;
 
     using SizeT = uint32_t;
     using VecPair = vector<pair<SizeT, SizeT>>;

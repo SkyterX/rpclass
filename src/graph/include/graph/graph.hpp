@@ -54,11 +54,12 @@ struct graph_traits_helper:Base{};
 
 template <typename Graph>
 struct graph_traits_helper<Graph, void, void, std::enable_if_t<IsGraph<Graph>::value>> {
-    using vertex_descriptor = typename Graph::vertex_descriptor;
-    using edge_descriptor = typename Graph::edge_descriptor;
-    using directed_category = typename Graph::directed_category;
+    using vertex_descriptor      = typename Graph::vertex_descriptor;
+    using edge_descriptor        = typename Graph::edge_descriptor;
+	using edges_size_type        = typename Graph::edges_size_type;
+    using directed_category      = typename Graph::directed_category;
     using edge_parallel_category = typename Graph::edge_parallel_category;
-    using traversal_category = typename Graph::traversal_category;
+    using traversal_category     = typename Graph::traversal_category;
     using vertices_size_type = typename Graph::vertices_size_type;
     using edges_size_type = typename Graph::edges_size_type;
 };
@@ -79,7 +80,7 @@ struct graph_traits_helper<Graph, Base, incidence_graph_tag,
 template <typename Graph, typename Base>
 struct graph_traits_helper<Graph, Base, adjacency_graph_tag,
     std::enable_if_t<IsAdjacency<Graph>::value >> :Base {
-    using adjacency_iterator = typename Graph::adjacency_iterator;
+    using adjacency_iterator = typename Graph::adjacency_iterator;    
 };
 
 template <typename Graph, typename Base>
