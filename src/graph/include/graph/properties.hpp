@@ -1,3 +1,4 @@
+#pragma once
 #include <tuple>
 #include <type_traits>
 #include <graph/graph.hpp>
@@ -58,6 +59,18 @@ namespace graph {
         struct FindPropertyByTag < Tag, Properties < >, I > {
             using type = void;
         };
+        
+        template <typename T>
+        class HasType {
+            template < typename C, typename = typename C::type>
+            static std::true_type check(const C&) {};
+            static std::false_type check(...) {};
+        public:
+            using value_type = bool;
+            using type = decltype(check(std::declval<T>()));
+            static const bool value = type::value;
+
+        };
 
 // Usefull predicates (to replace with concepts at some point)
         template < typename PropertyMap >
@@ -101,17 +114,22 @@ namespace graph {
     };
 
 // Generic property traits class
-    template <typename PropertyMap, typename EnableIf = void>
-    struct property_traits;
+    template <typename PropertyMap, typename EnableIf = typename PropertyMap::category>
+    struct property_traits {
+            using value_type = typename PropertyMap::value_type;
+            using reference = typename PropertyMap::reference;
+            using key_type = typename PropertyMap::key_type;
+            using category = typename PropertyMap::category;
+    };
 
 // Restricts default property traits to property maps only
-    template <typename PropertyMap>
-    struct property_traits<PropertyMap, std::enable_if_t<detail::IsPropertyMap<PropertyMap>::value>> {
-        using value_type = typename PropertyMap::value_type;
-        using reference = typename PropertyMap::reference;
-        using key_type = typename PropertyMap::key_type;
-        using category = typename PropertyMap::category;
-    };
+    //template <typename PropertyMap>
+    //struct property_traits<PropertyMap, std::enable_if_t<detail::IsPropertyMap<PropertyMap>::value>> {
+    //    using value_type = typename PropertyMap::value_type;
+    //    using reference = typename PropertyMap::reference;
+    //    using key_type = typename PropertyMap::key_type;
+    //    using category = typename PropertyMap::category;
+    //};
 
 // Generic property map type. Is to specialize for each property map in the user code
     template <typename Graph, typename Tag, typename EnableIf = void>
@@ -122,21 +140,37 @@ namespace graph {
 
 
 // Generic property map functions declarations. Are to define for each property map in the user code
-    template <typename PropertyMap>
-    typename property_traits<PropertyMap>::reference
-        get(const PropertyMap&,
-            const typename property_traits<PropertyMap>::key_type&);
+    //template <typename PropertyMap>
+    //typename property_traits<PropertyMap>::reference
+    //    get(const PropertyMap&,
+    //        const typename property_traits<PropertyMap>::key_type&);
 
-    template <typename PropertyMap>
-    void put(PropertyMap&,
-        const typename property_traits<PropertyMap>::key_type&,
-        const typename property_traits<PropertyMap>::value_type&);
+    //template <typename PropertyMap>
+    //void put(PropertyMap&,
+    //    const typename property_traits<PropertyMap>::key_type&,
+    //    const typename property_traits<PropertyMap>::value_type&);
 
 
 
 // Bundled properties section 
     struct vertex_bundle_t {};
     struct edge_bundle_t {};
+    struct vertex_index_t {};
+
+    template<typename Graph>
+    struct vertex_bundle_type {
+        using type = typename Graph::vertex_bundled;
+    };
+    template <typename Graph>
+    using vertex_bundle_type_t = typename vertex_bundle_type<Graph>::type;
+
+    template<typename Graph>
+    struct edge_bundle_type {
+        using type = typename Graph::edge_bundled;
+    };
+    template <typename Graph>
+    using edge_bundle_type_t = typename edge_bundle_type<Graph>::type;
+
 
     template <typename Graph>
     typename property_map<Graph, vertex_bundle_t>::type get(const vertex_bundle_t&, Graph&);
@@ -146,6 +180,7 @@ namespace graph {
 
 
     namespace detail {
+
 
 // A property map type to map subproperties of internal properties 
         template <typename Tag, typename BaseBundledPM>
@@ -162,71 +197,87 @@ namespace graph {
             BundledSubPropertyMap():BaseBundledPM() {};
         };
 
+        template <typename Graph>
+        struct HasBundledVertexProperty:HasType<vertex_bundle_type<Graph>>{};
+
+        template <typename Graph>
+        struct HasBundledEdgeProperty:HasType<edge_bundle_type<Graph>>{};
+
 
         template <typename Graph, typename Tag, typename BundleTag, typename EnableIf = void>
-        struct IsTagNotInBundleTag : public std::true_type {};
+        struct IsTagNotInBundleTag: std::true_type {};
         
         template <typename Graph, typename Tag>
-        struct IsTagNotInBundleTag<Graph,Tag,vertex_bundle_t, std::enable_if_t<IsGraph<Graph>::value>>:
-            public std::is_same<
+        struct IsTagNotInBundleTag<Graph,Tag,vertex_bundle_t,
+            std::enable_if_t<HasBundledVertexProperty<Graph>::value>>
+            :std::is_same<
                 void,
                 detail::FindPropertyByTag_t<
                     Tag, 
-                    typename property_traits<typename property_map<Graph,vertex_bundle_t>::type>::value_type>
+                    vertex_bundle_type_t<Graph>>
             >{};
 
         template <typename Graph, typename Tag>
-        struct IsTagNotInBundleTag<Graph,Tag,edge_bundle_t, std::enable_if_t<IsGraph<Graph>::value>>:
-            public std::is_same<
+        struct IsTagNotInBundleTag<Graph,Tag, edge_bundle_t,
+            std::enable_if_t<HasBundledEdgeProperty<Graph>::value>>
+            :std::is_same<
                 void,
                 detail::FindPropertyByTag_t<
                     Tag, 
-                    typename property_traits<typename property_map<Graph,edge_bundle_t>::type>::value_type>
+                    edge_bundle_type_t<Graph>>
             >{};
 
+        template <typename Graph, typename BundleTag, typename Tag, typename EnableIf = void>
+        struct IsGraphAndNotInBundleTag :std::true_type {};
+        template <typename Graph, typename BundleTag, typename Tag>
+        struct IsGraphAndNotInBundleTag < Graph, BundleTag, Tag,
+            std::enable_if_t < IsGraph<Graph>::value >>
+            : IsTagNotInBundleTag<Graph, BundleTag, Tag>{};
     };
 
 // Property map type generators for internal subproperties
     template <class Graph, class Tag>
-    struct property_map<Graph, Tag, std::enable_if_t<!detail::IsTagNotInBundleTag<Graph, Tag, vertex_bundle_t>::value>> {
+    struct property_map<Graph, Tag, 
+        std::enable_if_t<!detail::IsGraphAndNotInBundleTag<Graph, Tag, vertex_bundle_t>::value>> {
         using type = detail::BundledSubPropertyMap<Tag, typename property_map<Graph, vertex_bundle_t>::type>;
     };
 
     template <class Graph, class Tag>
-    struct property_map<Graph, Tag, std::enable_if_t<!detail::IsTagNotInBundleTag<Graph, Tag, edge_bundle_t>::value>> {
+    struct property_map<Graph, Tag, 
+        std::enable_if_t<!detail::IsGraphAndNotInBundleTag<Graph, Tag, edge_bundle_t>::value>> {
         using type = detail::BundledSubPropertyMap<Tag, typename property_map<Graph, edge_bundle_t>::type>;
     };
 
 // Property map functions for internal subproperties
     template <typename Graph, typename Tag> 
     inline typename property_map<Graph, Tag>::type get(Tag, Graph& graph, 
-        std::enable_if_t<!detail::IsTagNotInBundleTag<Graph, Tag, vertex_bundle_t>::value>* = nullptr) {
+        std::enable_if_t<!detail::IsGraphAndNotInBundleTag<Graph, Tag, vertex_bundle_t>::value>* = nullptr) {
         using VertexBundledPM = typename property_map<Graph, vertex_bundle_t>::type;                
         return detail::BundledSubPropertyMap<Tag, VertexBundledPM>(
-            graph::get(vertex_bundle_t(), graph));
+            get(vertex_bundle_t(), graph));
     };
 
     template <typename Graph, typename Tag>
     inline typename property_map<Graph, Tag>::type get(Tag, Graph& graph,
-        std::enable_if_t<!detail::IsTagNotInBundleTag<Graph, Tag, edge_bundle_t>::value>* = nullptr) {
+        std::enable_if_t<!detail::IsGraphAndNotInBundleTag<Graph, Tag, edge_bundle_t>::value>* = nullptr) {
         using EdgeBundledPM = typename property_map<Graph, edge_bundle_t>::type;
         return detail::BundledSubPropertyMap<Tag, EdgeBundledPM>(
-            graph::get(edge_bundle_t(), graph));
+            get(edge_bundle_t(), graph));
     };
  
     template <typename Tag, typename BaseBundledPM>
     inline typename detail::BundledSubPropertyMap<Tag, BaseBundledPM>::reference get(
         const detail::BundledSubPropertyMap<Tag, BaseBundledPM>& pMap,
         const typename detail::BundledSubPropertyMap<Tag, BaseBundledPM>::key_type& key) {        
-        return graph::get<Tag>(graph::get(static_cast<const BaseBundledPM&>(pMap), key));
+        return get<Tag>(get(static_cast<const BaseBundledPM&>(pMap), key));
     };
 
     template <typename Tag, typename BaseBundledPM>
     inline void  put(detail::BundledSubPropertyMap<Tag, BaseBundledPM>& pMap,
         const typename detail::BundledSubPropertyMap<Tag, BaseBundledPM>::key_type& key,
         const typename detail::BundledSubPropertyMap<Tag, BaseBundledPM>::value_type& value) {
-        auto tpl = graph::get(static_cast<BaseBundledPM&>(pMap), key);
+        auto tpl = get(static_cast<BaseBundledPM&>(pMap), key);
         get<Tag>(tpl) = value;
-        graph::put(static_cast<BaseBundledPM&>(pMap), key, tpl);
+        put(static_cast<BaseBundledPM&>(pMap), key, tpl);
     };
 }
