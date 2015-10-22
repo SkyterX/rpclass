@@ -8,6 +8,8 @@ using namespace std;
 using namespace graph;
 
 TEST(GraphBuilder, Correctness) {
+	using EmptyStaticGraph = StaticGraph<Properties<>>;
+
 	int n = 1000;
 	int m = 100000;
 	vector<pair<int, int>> possibleEdges;
@@ -23,7 +25,7 @@ TEST(GraphBuilder, Correctness) {
 	shuffle(possibleEdges.begin(), possibleEdges.end(), generator);
 	possibleEdges.erase(possibleEdges.begin() + m, possibleEdges.end());
 
-	auto g = StaticGraph(possibleEdges.begin(), possibleEdges.end(), n, m);
+	auto g = EmptyStaticGraph(possibleEdges.begin(), possibleEdges.end(), n, m);
 
 	EXPECT_EQ(g.Vertices().size(), n);
 	EXPECT_EQ(g.EdgesCount(), m);

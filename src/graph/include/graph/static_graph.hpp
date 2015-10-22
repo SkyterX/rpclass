@@ -18,11 +18,9 @@ namespace graph {
 			public boost::bidirectional_graph_tag,
 			public boost::vertex_list_graph_tag { };
 
-	struct vertex_properties_stub {};
+	struct NoProperties {};
 
-	struct edge_properties_stub {};
-
-
+	template <typename VertexProperties = NoProperties, typename EdgeProperties = NoProperties>
 	class StaticGraph {
 	public:
 		using type = StaticGraph;
@@ -36,8 +34,6 @@ namespace graph {
 		using edge_parallel_category = boost::disallow_parallel_edge_tag;
 		using traversal_category = StaticGraphTraversalCategory;
 
-		using VertexProperties = vertex_properties_stub;
-		using EdgeProperties = edge_properties_stub;
 		using VertexPropertyMapType = VertexPropertyMap<VertexProperties, type>;
 		using EdgePropertyMapType = EdgePropertyMap<EdgeProperties, type>;
 
@@ -46,7 +42,7 @@ namespace graph {
 		using EdgesVecType = std::vector<EdgeType>;
 
 		using AdjacenciesVecType = std::vector<EdgeType*>;
-		using AdjacenciesVecIteratorType = AdjacenciesVecType::const_iterator;
+		using AdjacenciesVecIteratorType = typename AdjacenciesVecType::const_iterator;
 
 		using VertexType = Vertex<AdjacenciesVecIteratorType, VertexProperties>;
 		using VerticesVecType = std::vector<VertexType>;
@@ -55,14 +51,14 @@ namespace graph {
 	public:
 		using vertex_iterator = boost::counting_iterator<vertex_descriptor>;
 		using adjacency_iterator = AdjacencyIterator<AdjacenciesVecIteratorType, vertex_descriptor>;
-		using edge_descriptor = FancyEdgeDescriptor<EdgeType::VertexType, EdgeType::EdgePropertiesType>;
+		using edge_descriptor = FancyEdgeDescriptor<typename EdgeType::VertexType, typename EdgeType::EdgePropertiesType>;
 		using edge_iterator = EdgeIterator<AdjacenciesVecIteratorType, edge_descriptor>;
 		using out_edge_iterator = edge_iterator;
 		using in_edge_iterator = edge_iterator;
 
 
 		using EdgeCollection = graphUtil::Collection<edge_iterator>;
-		using AdjacencyCollection = graphUtil::ValueCollection<adjacency_iterator, adjacency_iterator::value_type, true>;
+		using AdjacencyCollection = graphUtil::ValueCollection<adjacency_iterator, typename adjacency_iterator::value_type, true>;
 
 		using Builder = GraphBuilder<type>;
 		friend Builder;
@@ -87,7 +83,7 @@ namespace graph {
 
 
 		StaticGraph()
-			: edgePropertyMap(),
+			: edgePropertyMap(new EdgePropertyMapType()),
 			  vertexPropertyMap(new VertexPropertyMapType(*this)),
 			  vertexCollection(nullptr) {}
 
@@ -162,28 +158,30 @@ namespace graph {
 
 // PropertyMaps
 namespace graph {
-
-	template <>
-	struct property_map<StaticGraph, vertex_bundle_t> {
-		using type = StaticGraph::VertexPropertyMapType;
-	};
-
-	template <>
-	struct property_map<StaticGraph, edge_bundle_t> {
-		using type = StaticGraph::EdgePropertyMapType;
-	};
-
-	template <>
-	inline property_map<StaticGraph, vertex_bundle_t>::type
-	get<StaticGraph>(const vertex_bundle_t&, StaticGraph& graph) {
-		return graph.GetVertexPropertyMap();
-	}
-
-	template <>
-	inline property_map<StaticGraph, edge_bundle_t>::type
-	get<StaticGraph>(const edge_bundle_t&, StaticGraph& graph) {
-		return graph.GetEdgePropertyMap();
-	}
+#define StaticGraphType StaticGraph<VertexProperties, EdgeProperties>
+//
+//	template <typename VertexProperties, typename EdgeProperties>
+//	struct property_map<StaticGraphType, vertex_bundle_t> {
+//		using type = typename StaticGraphType::VertexPropertyMapType;
+//	};
+//
+//	template <typename VertexProperties, typename EdgeProperties>
+//	struct property_map<StaticGraphType, edge_bundle_t> {
+//		using type = typename StaticGraphType::EdgePropertyMapType;
+//	};
+//
+//	template <typename VertexProperties, typename EdgeProperties>
+//	inline typename property_map<StaticGraphType, vertex_bundle_t>::type
+//	get(const vertex_bundle_t&, StaticGraphType& graph) {
+//		return graph.GetVertexPropertyMap();
+//	}
+//
+//	template <typename VertexProperties, typename EdgeProperties>
+//	inline typename property_map<StaticGraphType, edge_bundle_t>::type
+//	get(const edge_bundle_t&, StaticGraphType& graph) {
+//		return graph.GetEdgePropertyMap();
+//	}
+#undef StaticGraphType
 }
 
 #include "StaticGraphTools.hpp"

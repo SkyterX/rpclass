@@ -5,8 +5,12 @@
 #include <algorithm>
 
 namespace GraphStatistics {
-	inline graph::StaticGraph::degree_size_type GetMaximalVertexDegree(const graph::StaticGraph& graph) {
-		graph::StaticGraph::degree_size_type maxDegree = 0;
+#define Properties VertexProperties, EdgeProperties
+
+	template <typename VertexProperties, typename EdgeProperties>
+	inline typename graph::StaticGraph<Properties>::degree_size_type GetMaximalVertexDegree(
+		const graph::StaticGraph<Properties>& graph) {
+		typename graph::StaticGraph<Properties>::degree_size_type maxDegree = 0;
 
 		for (auto& v : graph.Vertices()) {
 			maxDegree = std::max(maxDegree, out_degree(v, graph));
@@ -15,8 +19,10 @@ namespace GraphStatistics {
 		return maxDegree;
 	}
 
-	inline graph::StaticGraph::degree_size_type GetMinimalVertexDegree(const graph::StaticGraph& graph) {
-		graph::StaticGraph::degree_size_type minDegree = 1;
+	template <typename VertexProperties, typename EdgeProperties>
+	inline typename graph::StaticGraph<Properties>::degree_size_type GetMinimalVertexDegree(
+		const graph::StaticGraph<Properties>& graph) {
+		typename graph::StaticGraph<Properties>::degree_size_type minDegree = 1;
 
 		for (auto& v : graph.Vertices()) {
 			auto vertexDegree = out_degree(v, graph);
@@ -27,8 +33,9 @@ namespace GraphStatistics {
 		return minDegree;
 	}
 
-	inline double GetAverageVertexDegree(const graph::StaticGraph& graph) {
-		graph::StaticGraph::vertices_size_type nonEmptyVertexCount = 0;
+	template <typename VertexProperties, typename EdgeProperties>
+	inline double GetAverageVertexDegree(const graph::StaticGraph<Properties>& graph) {
+		typename graph::StaticGraph<Properties>::vertices_size_type nonEmptyVertexCount = 0;
 
 		for (auto& v : graph.Vertices()) {
 			auto vertexDegree = out_degree(v, graph);
@@ -39,8 +46,10 @@ namespace GraphStatistics {
 		return (double)num_edges(graph) / (double)nonEmptyVertexCount;
 	}
 
-	inline graph::StaticGraph::edges_size_type GetSingleOrientedEdgesCount(const graph::StaticGraph& graph) {
-		graph::StaticGraph::edges_size_type result = 0;
+	template <typename VertexProperties, typename EdgeProperties>
+	inline typename graph::StaticGraph<Properties>::edges_size_type GetSingleOrientedEdgesCount(
+		const graph::StaticGraph<Properties>& graph) {
+		typename graph::StaticGraph<Properties>::edges_size_type result = 0;
 
 		for (auto& source : graph.Vertices()) {
 			for (auto& target : graph.OutAdjacencies(source)) {
