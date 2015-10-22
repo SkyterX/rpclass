@@ -2,7 +2,6 @@
 #include <utility>
 #include <cassert>
 #include <queue>
-#include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <gtest/gtest.h>
 #include <graph/static_graph.hpp>
@@ -20,23 +19,24 @@ struct distance_t {};
 struct color_t {};
 struct edge_type_t {};
 using namespace graph;
+using NoProperties = Properties<>;
 using BFSBundledVertexProperties = Properties<Property<distance_t, uint32_t>, Property<color_t, char>>;
 using BFSBundledEdgeProperties = Properties<Property<edge_type_t, char>>;
 
 
 
 TEST(GraphConcepts, GraphConcept) {
-    using Graph = StaticGraph<BFSBundledVertexProperties,BFSBundledEdgeProperties>;
+    using Graph = StaticGraph<NoProperties,NoProperties>;
     BOOST_CONCEPT_ASSERT((boost::concepts::GraphConcept<Graph>));
 };
 
 TEST(GraphConcepts, VertexListGraphConcept) {
-    using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;;
+    using Graph = StaticGraph<NoProperties, NoProperties>;
     BOOST_CONCEPT_ASSERT((boost::concepts::VertexListGraphConcept<Graph>));
 };
 
 TEST(GraphConcepts, IncidenceGraphConcept) {
-    using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;;
+    using Graph = StaticGraph<NoProperties, NoProperties>;
     BOOST_CONCEPT_ASSERT((boost::concepts::IncidenceGraphConcept<Graph>));
 };
 
@@ -78,7 +78,7 @@ TEST(PropertyGraph, InternalColorEdgeTypeProperties) {
 //};
 
 TEST(GraphStructure, ListGraph) {
-    using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;;
+    using Graph = StaticGraph<NoProperties, NoProperties>;
 
     using SizeT = uint32_t;
     using VecPair = vector<pair<SizeT, SizeT>>;
@@ -120,12 +120,12 @@ TEST(GraphStructure, ListGraph) {
             EXPECT_EQ(1, degree);
             numEdges += degree;
             graph_traits<Graph>::vertices_size_type length = 1;
-            auto outRange = adjacent_vertices(*vIt, graph);
+            auto outRange = out_edges(*vIt, graph);
             graph_traits<Graph>::vertex_descriptor curVertex;
-            while ( (curVertex =*outRange.first) != *vIt) {
+            while ( (curVertex = target(*outRange.first, graph)) != *vIt) {
                 ++length;
                 visited[curVertex] = true;
-                outRange = adjacent_vertices(curVertex, graph);
+                outRange = out_edges(curVertex, graph);
                 degree = out_degree(curVertex, graph);
                 EXPECT_EQ(1, degree);
                 numEdges += degree;

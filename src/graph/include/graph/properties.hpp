@@ -122,34 +122,12 @@ namespace graph {
             using category = typename PropertyMap::category;
     };
 
-// Restricts default property traits to property maps only
-    //template <typename PropertyMap>
-    //struct property_traits<PropertyMap, std::enable_if_t<detail::IsPropertyMap<PropertyMap>::value>> {
-    //    using value_type = typename PropertyMap::value_type;
-    //    using reference = typename PropertyMap::reference;
-    //    using key_type = typename PropertyMap::key_type;
-    //    using category = typename PropertyMap::category;
-    //};
-
 // Generic property map type. Is to specialize for each property map in the user code
     template <typename Graph, typename Tag, typename EnableIf = void>
     struct property_map {};
 
     template <typename Graph, typename Tag>
     using property_map_t = typename property_map<Graph, Tag>::type;
-
-
-// Generic property map functions declarations. Are to define for each property map in the user code
-    //template <typename PropertyMap>
-    //typename property_traits<PropertyMap>::reference
-    //    get(const PropertyMap&,
-    //        const typename property_traits<PropertyMap>::key_type&);
-
-    //template <typename PropertyMap>
-    //void put(PropertyMap&,
-    //    const typename property_traits<PropertyMap>::key_type&,
-    //    const typename property_traits<PropertyMap>::value_type&);
-
 
 
 // Bundled properties section 

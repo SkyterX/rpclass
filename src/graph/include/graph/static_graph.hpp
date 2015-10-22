@@ -19,18 +19,18 @@ namespace graph {
         : boost::graph_traits<StaticGraph<BundledVertexProperties, BundledEdgeProperties>> {};
 
     template <typename BundledVertexProperties, typename BundledEdgeProperties>
-    struct graph::property_map<
+    struct property_map<
         StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
-        graph::vertex_bundle_t,
+        vertex_bundle_t,
         void > {
         using type = typename boost::property_map<
             StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
             boost::vertex_bundle_t>::type;
     };
     template <typename BundledVertexProperties, typename BundledEdgeProperties>
-    struct graph::property_map< 
+    struct property_map< 
         StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
-        graph::edge_bundle_t,
+        edge_bundle_t,
         void > {
         using type = typename boost::property_map<
             StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
@@ -38,20 +38,20 @@ namespace graph {
     };
 
     template <typename BundledVertexProperties, typename BundledEdgeProperties>
-    inline typename graph::property_map<
-        graph::StaticGraph<BundledVertexProperties, BundledEdgeProperties>,
-        graph::vertex_bundle_t>::type
-        get(const graph::vertex_bundle_t&,
-            graph::StaticGraph<BundledVertexProperties, BundledEdgeProperties>& graph) {
+    inline typename property_map<
+        StaticGraph<BundledVertexProperties, BundledEdgeProperties>,
+        vertex_bundle_t>::type
+        get(const vertex_bundle_t&,
+            StaticGraph<BundledVertexProperties, BundledEdgeProperties>& graph) {
         return boost::get(boost::vertex_bundle, graph);
     };
 
     template <typename BundledVertexProperties, typename BundledEdgeProperties>
-    inline typename graph::property_map<
-        graph::StaticGraph<BundledVertexProperties, BundledEdgeProperties>,
-        graph::edge_bundle_t>::type
-        get(const graph::edge_bundle_t&,
-            graph::StaticGraph<BundledVertexProperties, BundledEdgeProperties>& graph) {
+    inline typename property_map<
+        StaticGraph<BundledVertexProperties, BundledEdgeProperties>,
+        edge_bundle_t>::type
+        get(const edge_bundle_t&,
+            StaticGraph<BundledVertexProperties, BundledEdgeProperties>& graph) {
         return boost::get(boost::edge_bundle, graph);
     };
 
@@ -59,9 +59,13 @@ namespace graph {
 
 // Supress boost get functions instantiation by supressing instantiation of boost::property_map template.
 
-template <typename Graph>
-struct boost::property_map<Graph, graph::vertex_bundle_t, void> {};
+namespace boost {
 
 template <typename Graph>
-struct boost::property_map<Graph, graph::edge_bundle_t, void> {};
+struct property_map<Graph, ::graph::vertex_bundle_t, void> {};
+
+template <typename Graph>
+struct property_map<Graph, ::graph::edge_bundle_t, void> {};
+
+}
 
