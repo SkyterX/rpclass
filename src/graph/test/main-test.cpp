@@ -4,7 +4,6 @@
 #include <queue>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_concepts.hpp>
-#include <boost/property_map/property_map.hpp>
 #include <gtest/gtest.h>
 #include <graph/static_graph.hpp>
 #include <graph/graph.hpp>
@@ -15,129 +14,75 @@
 using namespace std;
 using namespace graph;
 
-//Graph without any internal properties
-using NoInternalPropertiesGraph = boost::adjacency_list<>;
-namespace graph {
-    template<>
-    struct graph_traits<NoInternalPropertiesGraph> :
-        boost::graph_traits<NoInternalPropertiesGraph> {};
-}
 
-
-//BFS graph and related structures 
+//BFS related properties
 struct distance_t {};
 struct color_t {};
 struct edge_type_t {};
 using namespace graph;
 using BFSBundledVertexProperties = Properties<Property<distance_t, uint32_t>, Property<color_t, char>>;
 using BFSBundledEdgeProperties = Properties<Property<edge_type_t, char>>;
-using BFSGraph = boost::adjacency_list<
-    boost::vecS, boost::vecS, boost::bidirectionalS,
-    BFSBundledVertexProperties, BFSBundledEdgeProperties>;
 
-namespace graph {
-    template<>
-    struct graph_traits<BFSGraph> : boost::graph_traits<BFSGraph> {};
 
-    template<>
-    struct property_map<BFSGraph, vertex_bundle_t> {
-        using type = boost::property_map<BFSGraph, boost::vertex_bundle_t>::type;
-    };
-
-    template<>
-    struct property_map<BFSGraph, edge_bundle_t> {
-        using type = boost::property_map<BFSGraph, boost::edge_bundle_t>::type;
-    };
-
-    template<>
-    inline graph::property_map<BFSGraph, vertex_bundle_t>::type
-        get<BFSGraph>(const vertex_bundle_t&, BFSGraph& graph) {
-        return boost::get(boost::vertex_bundle, graph);
-    };
-
-    template<>
-    inline property_map<BFSGraph, edge_bundle_t>::type
-        get<BFSGraph>(const edge_bundle_t&, BFSGraph& graph) {
-        return boost::get(boost::edge_bundle, graph);
-    }
-
-    template<>
-    inline property_map<BFSGraph, vertex_bundle_t>::type::reference
-        get<property_map<BFSGraph, vertex_bundle_t>::type>(const property_map<BFSGraph, vertex_bundle_t>::type& pMap,
-            const property_map<BFSGraph, vertex_bundle_t>::type::key_type& key) {
-        return boost::get(pMap, key);
-    };
-
-    template<>
-    inline property_map<BFSGraph, edge_bundle_t>::type::reference
-        get<property_map<BFSGraph, edge_bundle_t>::type>(const property_map<BFSGraph, edge_bundle_t>::type& pMap,
-            const property_map<BFSGraph, edge_bundle_t>::type::key_type& key) {
-        return boost::get(pMap, key);
-    };
-
-    template<>
-    inline void put<property_map<BFSGraph, vertex_bundle_t>::type> (property_map<BFSGraph, vertex_bundle_t>::type& pMap,
-        const property_map<BFSGraph, vertex_bundle_t>::type::key_type& key, 
-        const property_map<BFSGraph, vertex_bundle_t>::type::value_type& value) {
-        boost::put(pMap, key, value);
-    };
-
-    template<>
-    inline void put<property_map<BFSGraph, edge_bundle_t>::type>(property_map<BFSGraph, edge_bundle_t>::type& pMap,
-        const property_map<BFSGraph, edge_bundle_t>::type::key_type& key,
-        const property_map<BFSGraph, edge_bundle_t>::type::value_type& value) {
-        boost::put(pMap, key, value);
-    };
-
-}
 
 TEST(GraphConcepts, GraphConcept) {
-    using Graph = BFSGraph;
+    using Graph = StaticGraph<BFSBundledVertexProperties,BFSBundledEdgeProperties>;
     BOOST_CONCEPT_ASSERT((boost::concepts::GraphConcept<Graph>));
 };
 
 TEST(GraphConcepts, VertexListGraphConcept) {
-    using Graph = BFSGraph;
+    using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;;
     BOOST_CONCEPT_ASSERT((boost::concepts::VertexListGraphConcept<Graph>));
 };
 
 TEST(GraphConcepts, IncidenceGraphConcept) {
-    using Graph = BFSGraph;
+    using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;;
     BOOST_CONCEPT_ASSERT((boost::concepts::IncidenceGraphConcept<Graph>));
 };
 
 TEST(GraphConcepts, BidirectionalGraphConcept) {
-    using Graph = BFSGraph;
+    using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;
     BOOST_CONCEPT_ASSERT((boost::concepts::BidirectionalGraphConcept<Graph>));
 };
 
 
 TEST(PropertyGraph, InternalProperties) {
-    using Graph = BFSGraph;
+    using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;
+
     BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
-        graph::property_map<BFSGraph, graph::vertex_bundle_t>::type, 
-        graph::property_map<BFSGraph, graph::vertex_bundle_t>::type::key_type>));
+        graph::property_map<Graph, graph::vertex_bundle_t>::type,
+        graph::property_map<Graph, graph::vertex_bundle_t>::type::key_type>));
     BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
-        graph::property_map<BFSGraph, graph::edge_bundle_t>::type, 
-        graph::property_map<BFSGraph, graph::edge_bundle_t>::type::key_type>));
+        graph::property_map<Graph, graph::edge_bundle_t>::type,
+        graph::property_map<Graph, graph::edge_bundle_t>::type::key_type>));
 };
 
 TEST(PropertyGraph, InternalColorEdgeTypeProperties) {
+    using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;
+
     BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
-        graph::property_map<BFSGraph, color_t>::type,
-        graph::property_map<BFSGraph, color_t>::type::key_type>));
+        graph::property_map<Graph, color_t>::type,
+        graph::property_map<Graph, color_t>::type::key_type>));
     BOOST_CONCEPT_ASSERT((boost::ReadWritePropertyMapConcept<
-        graph::property_map<BFSGraph, edge_type_t>::type,
-        graph::property_map<BFSGraph, edge_type_t>::type::key_type>));
+        graph::property_map<Graph, edge_type_t>::type,
+        graph::property_map<Graph, edge_type_t>::type::key_type>));
 };
 
+//TEST(PropertyGraph, VertexIndexProperty) {
+//    using Graph = BFSGraph;
+//    using Vertex = typename graph_traits<Graph>::vertex_descriptor;
+//    using Map = typename property_map<Graph, graph::vertex_index_t>::type;
+//    using Index = Graph::vertices_size_type;
+//    Map m = get(vertex_index_t{}, g);
+//    Index x = get(vertex_index_t{}, g, Vertex())
+//};
 
 TEST(GraphStructure, ListGraph) {
-    using Graph = NoInternalPropertiesGraph;
+    using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;;
 
     using SizeT = uint32_t;
     using VecPair = vector<pair<SizeT, SizeT>>;
-    const SizeT n = 1 << 10;
+    const SizeT n = 1 << 2;
     VecPair input;
     input.reserve(n);
     back_insert_iterator<VecPair> backInserter(input);
@@ -199,10 +144,10 @@ TEST(GraphStructure, ListGraph) {
 
 
 TEST(GraphAlgorithms, BFS) {
-    using Graph = BFSGraph;
+    using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;;
     using SizeT = uint32_t;
     using VecPair = vector<pair<SizeT, SizeT>>;
-    const SizeT n = 1 << 16;
+    const SizeT n = 1 << 10;
     VecPair input;
     input.reserve(n);
     back_insert_iterator<VecPair> backInserter(input);

@@ -1,65 +1,67 @@
 #pragma once
 
-#include <vector>
-#include <cinttypes>
+#include <graph/graph.hpp>
+#include <graph/properties.hpp>
+#include <boost/property_map/property_map.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/adjacency_list.hpp>
 
-using namespace std;
 
 namespace graph {
-template <typename Iterator>
-class Vertex {
-    Iterator begin;
+
+    template <typename BundledVertexProperties, typename BundledEdgeProperties>
+    using StaticGraph = boost::adjacency_list<
+        boost::vecS, boost::vecS, boost::bidirectionalS,
+        BundledVertexProperties, BundledEdgeProperties>;
+  
+    template <typename BundledVertexProperties, typename BundledEdgeProperties>
+    struct graph_traits<StaticGraph<BundledVertexProperties, BundledEdgeProperties>>
+        : boost::graph_traits<StaticGraph<BundledVertexProperties, BundledEdgeProperties>> {};
+
+    template <typename BundledVertexProperties, typename BundledEdgeProperties>
+    struct graph::property_map<
+        StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
+        graph::vertex_bundle_t,
+        void > {
+        using type = typename boost::property_map<
+            StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
+            boost::vertex_bundle_t>::type;
+    };
+    template <typename BundledVertexProperties, typename BundledEdgeProperties>
+    struct graph::property_map< 
+        StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
+        graph::edge_bundle_t,
+        void > {
+        using type = typename boost::property_map<
+            StaticGraph<BundledVertexProperties, BundledEdgeProperties>, 
+            boost::edge_bundle_t>::type;
+    };
+
+    template <typename BundledVertexProperties, typename BundledEdgeProperties>
+    inline typename graph::property_map<
+        graph::StaticGraph<BundledVertexProperties, BundledEdgeProperties>,
+        graph::vertex_bundle_t>::type
+        get(const graph::vertex_bundle_t&,
+            graph::StaticGraph<BundledVertexProperties, BundledEdgeProperties>& graph) {
+        return boost::get(boost::vertex_bundle, graph);
+    };
+
+    template <typename BundledVertexProperties, typename BundledEdgeProperties>
+    inline typename graph::property_map<
+        graph::StaticGraph<BundledVertexProperties, BundledEdgeProperties>,
+        graph::edge_bundle_t>::type
+        get(const graph::edge_bundle_t&,
+            graph::StaticGraph<BundledVertexProperties, BundledEdgeProperties>& graph) {
+        return boost::get(boost::edge_bundle, graph);
+    };
+
 };
 
-class StaticGraph {
+// Supress boost get functions instantiation by supressing instantiation of boost::property_map template.
 
-    class VertexIterator;
-public:
-    using edge_size_type = uint32_t;
-    using vertices_size_type = uint32_t;
-    using edges_size_type = uint32_t;
-    using degree_size_type = uint16_t;
-    using vertex_descriptor = vertices_size_type;
-private:
-    using EdgesVecType = std::vector<vertex_descriptor>;
-public:
-    using adjacency_iterator = EdgesVecType::const_iterator;
-    using VertexType = Vertex<EdgesVecType::const_iterator>;
-private:
-    using VerticesVecType = std::vector<VertexType>;
-public:
-    class vertex_iterator {};
-    using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
-    StaticGraph() {};
-    template <class PairIterator>
-    StaticGraph(PairIterator begin, PairIterator end,
-        vertices_size_type n, edges_size_type m);
+template <typename Graph>
+struct boost::property_map<Graph, graph::vertex_bundle_t, void> {};
 
-};
+template <typename Graph>
+struct boost::property_map<Graph, graph::edge_bundle_t, void> {};
 
-std::pair<StaticGraph::vertex_iterator, StaticGraph::vertex_iterator>
-vertices(const StaticGraph& g);
-
-std::pair<StaticGraph::adjacency_iterator, StaticGraph::adjacency_iterator>
-adjacent_vertices(StaticGraph::vertex_descriptor u, const StaticGraph& g);
-
-std::pair<StaticGraph::edge_descriptor, bool>
-edge(StaticGraph::vertex_descriptor u, StaticGraph::vertex_descriptor v,
-    const StaticGraph& g);
-
-StaticGraph::vertex_descriptor
-source(StaticGraph::edge_descriptor e, const StaticGraph& g);
-
-StaticGraph::vertex_descriptor
-target(StaticGraph::edge_descriptor e, const StaticGraph& g);
-
-StaticGraph::degree_size_type
-out_degree(StaticGraph::vertex_descriptor u, const StaticGraph& g);
-
-StaticGraph::vertices_size_type
-num_vertices(const StaticGraph& g);
-
-StaticGraph::edges_size_type
-num_edges(const StaticGraph& g);
-
-}
