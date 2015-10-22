@@ -34,6 +34,11 @@ TEST(GraphConcepts, VertexListGraphConcept) {
     BOOST_CONCEPT_ASSERT((boost::concepts::VertexListGraphConcept<Graph>));
 };
 
+TEST(GraphConcepts, AdjacencyGraphConcept) {
+    using Graph = FancyStaticGraph;
+	BOOST_CONCEPT_ASSERT((boost::concepts::AdjacencyGraphConcept<Graph>));
+};
+
 TEST(GraphConcepts, IncidenceGraphConcept) {
     using Graph = StaticGraph<NoProperties, NoProperties>;
     BOOST_CONCEPT_ASSERT((boost::concepts::IncidenceGraphConcept<Graph>));

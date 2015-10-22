@@ -15,6 +15,7 @@
 
 namespace graph {
 	struct StaticGraphTraversalCategory :
+			public boost::adjacency_graph_tag,
 			public boost::bidirectional_graph_tag,
 			public boost::vertex_list_graph_tag { };
 
