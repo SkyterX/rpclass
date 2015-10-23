@@ -1,48 +1,8 @@
 #pragma once
-#include "static_graph.hpp"
-#include <graph/io/IReader.hpp>
 
 namespace graph {
 #define Properties VertexProperties, EdgeProperties
-
-	template <typename VertexProperties = NoProperties, typename EdgeProperties = NoProperties>
-	inline std::unique_ptr<StaticGraph<Properties>> ReadGraphFrom(graphIO::IReader& reader) {
-		std::unique_ptr<typename StaticGraph<Properties>::Builder> builder = nullptr;
-
-		while (char c = reader.NextChar()) {
-			switch (c) {
-				case 'c': {
-					reader.ReadLine();
-					break;
-				}
-				case 'p': {
-					reader.NextChar();
-					reader.NextChar();
-
-					int vertexCount = reader.NextUnsignedInt() + 1;
-					int linksCount = reader.NextUnsignedInt();
-
-					builder = std::make_unique<typename StaticGraph<Properties>::Builder>(vertexCount, linksCount);
-					break;
-				}
-				case 'a': {
-					int from = reader.NextUnsignedInt();
-					int to = reader.NextUnsignedInt();
-					int weight = reader.NextUnsignedInt();
-
-					builder->AddEdge(from, to);
-					break;
-				}
-				default:
-					throw std::runtime_error("Unexpected token " + c);
-			}
-		}
-
-		auto graph = builder->Build();
-
-		return graph;
-	}
-
+	
 	template <typename VertexProperties, typename EdgeProperties>
 	inline std::pair<typename StaticGraph<Properties>::edge_descriptor, bool> edge(
 		typename StaticGraph<Properties>::vertex_descriptor,

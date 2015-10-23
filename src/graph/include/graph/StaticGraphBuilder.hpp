@@ -12,6 +12,7 @@ namespace graph {
 		using degree_size_type = typename Graph::degree_size_type;
 
 		using EdgeType = typename Graph::EdgeType;
+		using EdgePropertiesType = typename EdgeType::EdgePropertiesType;
 		using VertexType = typename Graph::VertexType;
 		using AdjacenciesVecType = typename Graph::AdjacenciesVecType;
 
@@ -20,9 +21,10 @@ namespace graph {
 			this->unsortedEdges.reserve(edgesCount);
 			this->vertexCount = vertexCount;
 		}
-
-		void AddEdge(const vertex_descriptor& from, const vertex_descriptor& to) {
-			unsortedEdges.push_back(EdgeType(from, to));
+		
+		void AddEdge(const vertex_descriptor& from, const vertex_descriptor& to, 
+			const EdgePropertiesType& properties = EdgePropertiesType()) {
+			unsortedEdges.push_back(EdgeType(from, to, properties));
 		}
 
 		std::unique_ptr<Graph> Build() {

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <iostream>
-#include <graph/static_graph.hpp>
+#include <graph/OSMGraph.hpp>
 #include <graph/GraphStatistics.hpp>
 #include <graph/io/FileReader.hpp>
 #include <ctime>
@@ -11,6 +11,7 @@
 using namespace std;
 using namespace graph;
 using namespace graphIO;
+using namespace graphOSM;
 
 
 int main() {
