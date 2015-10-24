@@ -40,6 +40,7 @@ namespace graph {
 		using vertex_bundled = VertexProperties;
 		using edge_bundled = EdgeProperties;
 
+		friend class VertexPropertyMapType;
 	private:
 		using EdgeType = FancyEdge<vertex_descriptor, EdgeProperties>;
 		using EdgesVecType = std::vector<EdgeType>;
@@ -83,9 +84,6 @@ namespace graph {
 		private:
 			const StaticGraph& graph;
 		};
-
-		friend class VertexPropertyMapType;
-
 
 		StaticGraph()
 			: edgePropertyMap(new EdgePropertyMapType()),

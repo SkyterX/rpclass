@@ -1,6 +1,6 @@
 #pragma once
 
-#include <graph/static_graph.hpp>;
+#include <graph/static_graph.hpp>
 #include <cinttypes>
 #include <graph/io/IReader.hpp>
 #include <graph/properties.hpp>
@@ -45,7 +45,7 @@ namespace graphOSM {
 				break;
 			}
 			default:
-				throw std::runtime_error("Unexpected token " + c);
+				throw std::runtime_error("Unexpected token ");
 			}
 		}
 

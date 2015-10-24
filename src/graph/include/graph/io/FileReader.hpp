@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include <cstring>
 
 namespace graphIO {
 	class FileReader : public IReader {

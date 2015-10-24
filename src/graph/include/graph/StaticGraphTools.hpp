@@ -8,7 +8,7 @@ namespace graph {
 		typename StaticGraph<Properties>::vertex_descriptor,
 		typename StaticGraph<Properties>::vertex_descriptor,
 		const StaticGraph<Properties>&) {
-		throw std::exception("Not Supported");
+		throw std::runtime_error("Not Supported");
 	}
 
 	template <typename VertexProperties, typename EdgeProperties>

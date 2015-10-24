@@ -1,5 +1,3 @@
-#pragma once
-
 #include <gtest/gtest.h>
 #include <graph/static_graph.hpp>
 #include <random>
@@ -41,13 +39,13 @@ TEST(GraphBuilder, Correctness) {
 		auto outAdjacencies = Range(adjacent_vertices(v, g));
 		EXPECT_TRUE(std::is_sorted(outAdjacencies.begin(), outAdjacencies.end()));
 
-		for (auto& e : Range(out_edges(v, g))) {
+		for (const auto& e : Range(out_edges(v, g))) {
 			auto to = target(e, g);
 			auto toInEdges = ValuesRange(in_edges(to, g));
 			EXPECT_TRUE(toInEdges.contains(e));
 		}
 
-		for (auto& e : Range(in_edges(v, g))) {
+		for (const auto& e : Range(in_edges(v, g))) {
 			auto to = source(e, g);
 			auto toOutEdges = ValuesRange(out_edges(to, g));
 			EXPECT_TRUE(toOutEdges.contains(e));
