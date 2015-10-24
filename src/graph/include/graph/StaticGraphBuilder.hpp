@@ -5,15 +5,15 @@ namespace graph {
 	template <typename Graph>
 	class GraphBuilder {
 		friend Graph;
-
 		using vertices_size_type = typename Graph::vertices_size_type;
 		using edges_size_type = typename Graph::edges_size_type;
 		using vertex_descriptor = typename Graph::vertex_descriptor;
 		using degree_size_type = typename Graph::degree_size_type;
 
-		using EdgeType = typename Graph::EdgeType;
-		using EdgePropertiesType = typename EdgeType::EdgePropertiesType;
+		using EdgePropertiesType = typename Graph::edge_bundled;
+		using EdgeType = FancyEdge<vertex_descriptor, EdgePropertiesType>;
 		using VertexType = typename Graph::VertexType;
+		using StoredAdjacencyType = typename Graph::StoredAdjacencyType;
 		using AdjacenciesVecType = typename Graph::AdjacenciesVecType;
 
 	public:
@@ -21,9 +21,9 @@ namespace graph {
 			this->unsortedEdges.reserve(edgesCount);
 			this->vertexCount = vertexCount;
 		}
-		
-		void AddEdge(const vertex_descriptor& from, const vertex_descriptor& to, 
-			const EdgePropertiesType& properties = EdgePropertiesType()) {
+
+		void AddEdge(const vertex_descriptor& from, const vertex_descriptor& to,
+					 const EdgePropertiesType& properties = EdgePropertiesType()) {
 			unsortedEdges.push_back(EdgeType(from, to, properties));
 		}
 
@@ -44,7 +44,7 @@ namespace graph {
 			graph.vertices.reserve(this->vertexCount);
 			graph.edgesSeparators.reserve(this->vertexCount);
 			graph.adjacencies.resize(2 * this->unsortedEdges.size());
-			graph.edges.reserve(this->unsortedEdges.size());
+			graph.edgeProperties.reserve(this->unsortedEdges.size());
 
 			auto inDegreeCounts = std::vector<degree_size_type>(this->vertexCount, 0);
 			auto outDegreeCounts = std::vector<degree_size_type>(this->vertexCount, 0);
@@ -71,24 +71,24 @@ namespace graph {
 			for (auto& edge : this->unsortedEdges) {
 				auto from = edge.source;
 				auto to = edge.target;
-				graph.edges.push_back(edge);
-				auto edge_ptr = &(graph.edges.back());
+				graph.edgeProperties.push_back(edge.properties);
+				auto propertyPtr = &graph.edgeProperties.back();
 				--outDegreeCounts[from];
-				*(linkPointers[from] + outDegreeCounts[from]) = edge_ptr;
+				*(linkPointers[from] + outDegreeCounts[from]) = StoredAdjacencyType(to, propertyPtr);
 				--inDegreeCounts[to];
-				*(linkPointers[to] + inDegreeCounts[to]) = edge_ptr;
+				*(linkPointers[to] + inDegreeCounts[to]) = StoredAdjacencyType(from, propertyPtr);
 			}
 
 			for (int i = 0; i < this->vertexCount; ++i) {
 				auto start = linkPointers[i];
 				auto end = linkPointers[i + 1];
 				std::sort(start, start + graph.edgesSeparators[i],
-						  [](const EdgeType* a, const EdgeType* b) {
-							  return a->source < b->source; // in edges are differintiated by source
+						  [](const StoredAdjacencyType& a, const StoredAdjacencyType& b) {
+							  return a.target < b.target;
 						  });
 				std::sort(start + graph.edgesSeparators[i], end,
-						  [](const EdgeType* a, const EdgeType* b) {
-							  return a->target < b->target; // out edges are diferentiated by taget
+						  [](const StoredAdjacencyType& a, const StoredAdjacencyType& b) {
+							  return a.target < b.target;
 						  });
 				start = end;
 			}

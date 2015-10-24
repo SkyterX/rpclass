@@ -1,7 +1,6 @@
 #pragma once
 
-namespace graph
-{
+namespace graph {
 	template <typename Iterator, typename VertexProperties>
 	class Vertex { // inner struture
 	public:
@@ -49,11 +48,8 @@ namespace graph
 
 		FancyEdgeDescriptor() : properties(nullptr) {}
 
-		FancyEdgeDescriptor(const Vertex& source, const Vertex& target)
-			: Edge<Vertex>(source, target), properties(nullptr) {}
-
-		explicit FancyEdgeDescriptor(FancyEdge<Vertex, EdgeProperties>& e)
-			: Edge<Vertex>(e.source, e.target), properties(&e.properties) {}
+		FancyEdgeDescriptor(const Vertex& source, const Vertex& target, EdgeProperties* properties)
+			: Edge<Vertex>(source, target), properties(properties) {}
 
 		friend bool operator==(const FancyEdgeDescriptor& lhs, const FancyEdgeDescriptor& rhs) {
 			return lhs.properties == rhs.properties;
@@ -62,5 +58,36 @@ namespace graph
 		friend bool operator!=(const FancyEdgeDescriptor& lhs, const FancyEdgeDescriptor& rhs) {
 			return lhs.properties != rhs.properties;
 		}
+	};
+
+	template <typename Vertex>
+	class Link {
+	public:
+		using VertexType = Vertex;
+
+		Vertex target;
+
+		Link() {}
+
+		explicit Link(const Vertex& target)
+			: target(target) {}
+	};
+
+	template <typename Vertex, typename EdgeProperties>
+	class FancyLink : public Link<Vertex> {
+	public:
+		using EdgePropertiesType = EdgeProperties;
+
+		EdgePropertiesType* properties;
+
+		FancyLink() : properties(nullptr) {}
+
+
+		explicit FancyLink(const Vertex& target)
+			: Link<Vertex>(target), properties(nullptr) {}
+
+
+		FancyLink(const Vertex& target, EdgeProperties* properties)
+			:Link<Vertex>(target), properties(properties) {}
 	};
 }

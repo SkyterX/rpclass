@@ -40,12 +40,13 @@ namespace graph {
 		using vertex_bundled = VertexProperties;
 		using edge_bundled = EdgeProperties;
 
-		friend class VertexPropertyMapType;
+		friend VertexPropertyMapType;
 	private:
-		using EdgeType = FancyEdge<vertex_descriptor, EdgeProperties>;
-		using EdgesVecType = std::vector<EdgeType>;
+		
+		using EdgePropertiesVecType = std::vector<EdgeProperties>;
 
-		using AdjacenciesVecType = std::vector<EdgeType*>;
+		using StoredAdjacencyType = FancyLink<vertex_descriptor, EdgeProperties>;
+		using AdjacenciesVecType = std::vector<StoredAdjacencyType>;
 		using AdjacenciesVecIteratorType = typename AdjacenciesVecType::const_iterator;
 
 		using VertexType = Vertex<AdjacenciesVecIteratorType, VertexProperties>;
@@ -54,18 +55,15 @@ namespace graph {
 		using AdjacenciesSeparatorsVecType = std::vector<degree_size_type>;
 	public:
 		using vertex_iterator = boost::counting_iterator<vertex_descriptor>;
-		using in_adjacency_iterator = AdjacencyIterator<AdjacenciesVecIteratorType, vertex_descriptor, internals::EdgeDirection::In>;
-		using out_adjacency_iterator = AdjacencyIterator<AdjacenciesVecIteratorType, vertex_descriptor, internals::EdgeDirection::Out>;
-		using adjacency_iterator = out_adjacency_iterator;
-		using edge_descriptor = FancyEdgeDescriptor<typename EdgeType::VertexType, typename EdgeType::EdgePropertiesType>;
-		using edge_iterator = EdgeIterator<AdjacenciesVecIteratorType, edge_descriptor>;
-		using out_edge_iterator = edge_iterator;
-		using in_edge_iterator = edge_iterator;
+		using adjacency_iterator = AdjacencyIterator<AdjacenciesVecIteratorType, vertex_descriptor>;
+		using edge_descriptor = FancyEdgeDescriptor<typename StoredAdjacencyType::VertexType, typename StoredAdjacencyType::EdgePropertiesType>;
+		using out_edge_iterator = EdgeIterator<AdjacenciesVecIteratorType, edge_descriptor, internals::EdgeDirection::Out>;
+		using in_edge_iterator = EdgeIterator<AdjacenciesVecIteratorType, edge_descriptor, internals::EdgeDirection::In>;
 
 
-		using EdgeCollection = graphUtil::Collection<edge_iterator>;
-		using InAdjacencyCollection = graphUtil::ValueCollection<in_adjacency_iterator, graphUtil::SortedTag>;
-		using OutAdjacencyCollection = graphUtil::ValueCollection<out_adjacency_iterator, graphUtil::SortedTag>;
+		using InEdgeCollection = graphUtil::Collection<in_edge_iterator>;
+		using OutEdgeCollection = graphUtil::Collection<out_edge_iterator>;
+		using AdjacencyCollection = graphUtil::ValueCollection<adjacency_iterator, graphUtil::SortedTag>;
 
 		using Builder = GraphBuilder<type>;
 		friend Builder;
@@ -108,33 +106,33 @@ namespace graph {
 			return *vertexCollection;
 		}
 
-		OutAdjacencyCollection OutAdjacencies(const vertex_descriptor& v) const {
-			return OutAdjacencyCollection(
-				out_adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]),
-				out_adjacency_iterator(this->Vertices()[v + 1].begin));
+		AdjacencyCollection OutAdjacencies(const vertex_descriptor& v) const {
+			return AdjacencyCollection(
+				adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]),
+				adjacency_iterator(this->Vertices()[v + 1].begin));
 				
 		}
 
-		InAdjacencyCollection InAdjacencies(const vertex_descriptor& v) const {
-			return InAdjacencyCollection(
-				in_adjacency_iterator(this->Vertices()[v].begin),
-				in_adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]));
+		AdjacencyCollection InAdjacencies(const vertex_descriptor& v) const {
+			return AdjacencyCollection(
+				adjacency_iterator(this->Vertices()[v].begin),
+				adjacency_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]));
 		}
 
-		EdgeCollection OutEdges(const vertex_descriptor& v) const {
-			return EdgeCollection(
-				edge_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]),
-				edge_iterator(this->Vertices()[v + 1].begin));
+		OutEdgeCollection OutEdges(const vertex_descriptor& v) const {
+			return OutEdgeCollection(
+				out_edge_iterator(v, this->Vertices()[v].begin + this->edgesSeparators[v]),
+				out_edge_iterator(v, this->Vertices()[v + 1].begin));
 		}
 
-		EdgeCollection InEdges(const vertex_descriptor& v) const {
-			return EdgeCollection(
-				edge_iterator(this->Vertices()[v].begin),
-				edge_iterator(this->Vertices()[v].begin + this->edgesSeparators[v]));
+		InEdgeCollection InEdges(const vertex_descriptor& v) const {
+			return InEdgeCollection(
+				in_edge_iterator(v, this->Vertices()[v].begin),
+				in_edge_iterator(v, this->Vertices()[v].begin + this->edgesSeparators[v]));
 		}
 
 		edges_size_type EdgesCount() const {
-			return edges.size();
+			return edgeProperties.size();
 		}
 
 		const EdgePropertyMapType& GetEdgePropertyMap() const {
@@ -152,7 +150,7 @@ namespace graph {
 
 		AdjacenciesVecType adjacencies;
 		VerticesVecType vertices;
-		EdgesVecType edges;
+		EdgePropertiesVecType edgeProperties;
 		AdjacenciesSeparatorsVecType edgesSeparators;
 		std::unique_ptr<EdgePropertyMapType> edgePropertyMap;
 		std::unique_ptr<VertexPropertyMapType> vertexPropertyMap;
