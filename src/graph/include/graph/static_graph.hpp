@@ -158,16 +158,6 @@ namespace graph {
 	};
 }
 
-// graph_traits
-namespace graph {
-	template<typename VertexProperties, typename EdgeProperties>
-	struct graph_traits<StaticGraph<VertexProperties, EdgeProperties>> 	: 
-		public virtual graph_traits<StaticGraph<VertexProperties, EdgeProperties>, adjacency_graph_tag>,
-		public virtual graph_traits<StaticGraph<VertexProperties, EdgeProperties>, bidirectional_graph_tag>,
-		public virtual graph_traits<StaticGraph<VertexProperties, EdgeProperties>, vertex_list_graph_tag>	
-	{};
-}
-
 // PropertyMaps
 namespace graph {
 #define StaticGraphType StaticGraph<VertexProperties, EdgeProperties>

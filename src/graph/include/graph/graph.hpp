@@ -56,12 +56,11 @@ template <typename Graph>
 struct graph_traits_helper<Graph, void, void, std::enable_if_t<IsGraph<Graph>::value>> {
     using vertex_descriptor      = typename Graph::vertex_descriptor;
     using edge_descriptor        = typename Graph::edge_descriptor;
-	using edges_size_type        = typename Graph::edges_size_type;
     using directed_category      = typename Graph::directed_category;
     using edge_parallel_category = typename Graph::edge_parallel_category;
     using traversal_category     = typename Graph::traversal_category;
-    using vertices_size_type = typename Graph::vertices_size_type;
-    using edges_size_type = typename Graph::edges_size_type;
+    using vertices_size_type     = typename Graph::vertices_size_type;
+    using edges_size_type        = typename Graph::edges_size_type;
 };
 
 template <typename Graph, typename Base>
