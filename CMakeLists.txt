@@ -41,4 +41,5 @@ list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/thirdparty/boost")
 #
 
 add_subdirectory(src/graph)
+add_subdirectory(src/arc-flags)
 #add_subdirectory(test)

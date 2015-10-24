@@ -2,8 +2,8 @@
 #include <utility>
 #include <cassert>
 #include <queue>
-#include <boost/graph/graph_concepts.hpp>
 #include <gtest/gtest.h>
+#include <boost/graph/graph_concepts.hpp>
 #include <graph/static_graph.hpp>
 #include <graph/graph.hpp>
 #include <graph/properties.hpp>
@@ -18,7 +18,6 @@ using namespace graph;
 struct distance_t {};
 struct color_t {};
 struct edge_type_t {};
-using namespace graph;
 using NoProperties = Properties<>;
 using BFSBundledVertexProperties = Properties<Property<distance_t, uint32_t>, Property<color_t, char>>;
 using BFSBundledEdgeProperties = Properties<Property<edge_type_t, char>>;

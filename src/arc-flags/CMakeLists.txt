@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.0)
-project (graph)
+project (arc-flags)
 
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
@@ -16,25 +16,12 @@ list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/tools")
 #
 # Libraries 
 #
-# BOOST
-#
-list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/thirdparty/boost")
-
-find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
 #
 # Project Search Paths
 #
 set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include
-								 ${Boost_INCLUDE_DIRS}
-	CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE)
+								 ${graph_INCLUDE_DIRS})
 include_directories(${${PROJECT_NAME}_INCLUDE_DIRS})
-
-MESSAGE(${${PROJECT_NAME}_INCLUDE_DIRS})
-#
-# Project Lib Paths
-#
-link_directories(${Boost_LIBRARY_DIRS})
-link_directories("${PROJECT_SOURCE_DIR}/lib")
 
 add_subdirectory(src)
 add_subdirectory(test)
