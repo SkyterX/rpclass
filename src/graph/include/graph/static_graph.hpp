@@ -4,11 +4,11 @@
 #include <boost/graph/graph_traits.hpp>
 #include <memory>
 #include <boost/iterator/counting_iterator.hpp>
-#include "util/Collection.hpp"
-#include "StaticGraphIterators.hpp"
-#include "BasicGraphStructures.hpp"
-#include "StaticGraphPropertyMaps.hpp"
-#include "StaticGraphBuilder.hpp"
+#include "detail/util/Collection.hpp"
+#include "detail/StaticGraphIterators.hpp"
+#include "detail/BasicGraphStructures.hpp"
+#include "detail/StaticGraphPropertyMaps.hpp"
+#include "detail/StaticGraphBuilder.hpp"
 #include "properties.hpp"
 
 namespace graph {
@@ -186,4 +186,4 @@ namespace graph {
 #undef StaticGraphType
 }
 
-#include "StaticGraphTools.hpp"
+#include "detail/StaticGraphTools.hpp"
