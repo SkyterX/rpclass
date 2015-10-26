@@ -1,0 +1,20 @@
+FROM library/ubuntu:15.10
+
+RUN apt-get update &&\
+  apt-get install -yy --force-yes build-essential libboost-dev cmake \
+        openssh-server default-jdk \
+        apparmor wget apt-transport-https &&\
+  mkdir /var/run/sshd &&\
+  adduser jenkins &&\
+  (echo  jenkins; echo jenkins) | passwd jenkins
+
+RUN wget -qO- https://get.docker.com/ | sh
+RUN usermod -aG docker sudo jenkins \&&
+
+ENV CODE_DIR '/src'
+ENV BUILD_DIR '/build'
+
+WORKDIR $CODE_DIR
+VOLUME ["$CODE_DIR", "${BUILD_DIR}"]
+
+CMD /usr/sbin/sshd -D
