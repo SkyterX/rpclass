@@ -9,8 +9,8 @@
 #include <graph/properties.hpp>
 #include <graph/breadth_first_search.hpp>
 #include <graph/dijkstra.hpp>
+#include "graph/io.hpp"
 #include "generator.hpp"
-#include "io.hpp"
 
 using namespace std;
 using namespace graph;
