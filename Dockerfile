@@ -1,4 +1,4 @@
-FROM library/ubuntu:15.04
+FROM library/ubuntu:15.10
 
 RUN apt-get update &&\
  apt-get install -yy --force-yes build-essential libboost-dev cmake
