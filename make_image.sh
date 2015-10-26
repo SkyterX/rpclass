@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sudo docker build -t rpclass/graph-test .
+sudo docker build -t lastg/graph-test .
