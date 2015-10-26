@@ -7,6 +7,7 @@
 #include <graph/static_graph.hpp>
 #include <graph/graph.hpp>
 #include <graph/properties.hpp>
+#include <graph/breadth_first_search.hpp>
 #include "generator.hpp"
 
 using namespace std;
@@ -140,6 +141,31 @@ TEST(GraphStructure, ListGraph) {
     EXPECT_EQ(n, num_edges(graph));    
 };
 
+template <typename Graph, typename PropertyMap>
+struct MyBFSVisitor
+    : graph::DefaultBFSVisitor<Graph,typename property_map<Graph,color_t>::type> {
+    using Base = graph::DefaultBFSVisitor<Graph, typename property_map<Graph, color_t>::type>;
+    MyBFSVisitor(Graph& graph):
+        Base(graph::get(color_t(), graph)), 
+        distance(graph::get(distance_t(),graph)),
+        edgeType(graph::get(edge_type_t(),graph))
+        {};
+    void initialize_vertex(const typename graph_traits<Graph>::vertex_descriptor&, Graph&) {};
+    void discover_vertex(const typename graph_traits<Graph>::vertex_descriptor& u, Graph&) {
+        graph::put(distance, u, graph::get(distance, u) + 1);        
+    };
+    void tree_edge(const typename graph_traits<Graph>::edge_descriptor& e, Graph&) {        
+        graph::put(edgeType, e, 0);
+    };
+    void gray_target(const typename graph_traits<Graph>::edge_descriptor& e, Graph&) {
+        graph::put(edgeType, e, 1);
+    };
+    void black_target(const typename graph_traits<Graph>::edge_descriptor& e, Graph&) {
+        graph::put(edgeType, e, 2);
+    };
+    typename graph::property_map<Graph, distance_t>::type distance;
+    typename graph::property_map<Graph, edge_type_t>::type edgeType;
+};
 
 TEST(GraphAlgorithms, BFS) {
     using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;;
@@ -150,45 +176,23 @@ TEST(GraphAlgorithms, BFS) {
     input.reserve(n);
     back_insert_iterator<VecPair> backInserter(input);
     generate_list_graph(backInserter, n);
+
     Graph graph(input.begin(), input.end(), n);
     auto colorPM = graph::get(color_t(), graph);
-    auto distancePM = graph::get(distance_t(), graph);
-    auto edgeTypePM = graph::get(edge_type_t(), graph);
+    using BFSVisitor = MyBFSVisitor<Graph, property_map<Graph,color_t>::type>;    
     auto vRange = vertices(graph);
-    for (auto vIt = vRange.first; vIt != vRange.second; ++vIt)
-        graph::put(colorPM, *vIt, 0);
-    std::queue<graph_traits<Graph>::vertex_descriptor> vQueue;
     for (auto vIt = vRange.first; vIt != vRange.second; ++vIt) {
-        if (graph::get(colorPM, *vIt) == 0) {
-            auto start = *vIt;
-            vQueue.push(start);
-            while (!vQueue.empty()) {
-                auto src = vQueue.front();
-                vQueue.pop();
-                auto outRange = out_edges(src, graph);
-                graph::put(colorPM, src, 2);
-                for (auto outIt = outRange.first; outIt != outRange.second; ++outIt) {
-                    auto e = *outIt;
-                    auto tgt = target(e,graph);
-                    if (graph::get(colorPM, tgt) == 0) {
-                        graph::put(colorPM, tgt, 1);
-                        graph::put(distancePM, tgt, graph::get(distancePM, tgt) + 1);
-                        graph::put(edgeTypePM, e, 0);
-                        vQueue.push(tgt);
-                    }
-                    else
-                        if (graph::get(colorPM, tgt) == 1) graph::put(edgeTypePM, e, 1);
-                        else  graph::put(edgeTypePM, e, 2);
-                }
-            }
-        }
+        graph::put(colorPM, *vIt, 0);
     };
+    for (auto vIt = vRange.first; vIt != vRange.second; ++vIt)
+        breadth_first_search(graph,*vIt, colorPM, BFSVisitor(graph));
+
+    auto distancePM = graph::get(distance_t(), graph);
     for (auto vIt = vRange.first; vIt != vRange.second; ++vIt) {
         EXPECT_EQ(2,graph::get(colorPM, *vIt));
         EXPECT_LT(graph::get(distancePM, *vIt), n);
     };
 };
-
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

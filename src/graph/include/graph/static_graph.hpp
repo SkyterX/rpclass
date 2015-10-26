@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <boost/graph/graph_traits.hpp>
 #include <memory>
+#include <limits>
 #include <boost/iterator/counting_iterator.hpp>
 #include "detail/util/Collection.hpp"
 #include "detail/StaticGraphIterators.hpp"
@@ -82,6 +83,10 @@ namespace graph {
 		private:
 			const StaticGraph& graph;
 		};
+
+        static vertex_descriptor null_vertex() { 
+            return std::numeric_limits<vertex_descriptor>::max(); 
+        };
 
 		StaticGraph()
 			: edgePropertyMap(new EdgePropertyMapType()),

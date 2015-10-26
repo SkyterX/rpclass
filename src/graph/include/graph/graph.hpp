@@ -61,6 +61,9 @@ struct graph_traits_helper<Graph, void, void, std::enable_if_t<IsGraph<Graph>::v
     using traversal_category     = typename Graph::traversal_category;
     using vertices_size_type     = typename Graph::vertices_size_type;
     using edges_size_type        = typename Graph::edges_size_type;
+    static vertex_descriptor null_vertex() {
+        return Graph::null_vertex();
+    }
 };
 
 template <typename Graph, typename Base>
