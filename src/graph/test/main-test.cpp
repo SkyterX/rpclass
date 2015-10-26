@@ -8,7 +8,9 @@
 #include <graph/graph.hpp>
 #include <graph/properties.hpp>
 #include <graph/breadth_first_search.hpp>
+#include <graph/dijkstra.hpp>
 #include "generator.hpp"
+#include "io.hpp"
 
 using namespace std;
 using namespace graph;
@@ -17,6 +19,8 @@ using namespace graph;
 struct distance_t {};
 struct color_t {};
 struct edge_type_t {};
+struct predecessor_t {};
+struct weight_t {};
 using BFSBundledVertexProperties = Properties<Property<distance_t, uint32_t>, Property<color_t, char>>;
 using BFSBundledEdgeProperties = Properties<Property<edge_type_t, char>>;
 
@@ -168,7 +172,9 @@ struct MyBFSVisitor
 };
 
 TEST(GraphAlgorithms, BFS) {
-    using Graph = StaticGraph<BFSBundledVertexProperties, BFSBundledEdgeProperties>;;
+    using  Graph = GenerateBFSGraph<color_t, 
+        Properties<Property<distance_t, uint32_t>>,
+        Properties<Property<edge_type_t, char>>>::type;
     using SizeT = uint32_t;
     using VecPair = vector<pair<SizeT, SizeT>>;
     const SizeT n = 1 << 10;
@@ -192,6 +198,19 @@ TEST(GraphAlgorithms, BFS) {
         EXPECT_EQ(2,graph::get(colorPM, *vIt));
         EXPECT_LT(graph::get(distancePM, *vIt), n);
     };
+};
+
+TEST(GraphAlgorithms, Dijkstra) {
+    using Graph = GenerateDijkstraGraph<predecessor_t, distance_t, weight_t,
+        vertex_index_t, color_t, Properties<>,Properties<>>::type;
+    Graph graph;
+    auto predecessor = get(distance_t(), graph);
+    auto distance = get(distance_t(), graph);
+    auto weight = get(weight_t(), graph);
+    auto vertex_index = get(vertex_bundle_t(), graph);
+    auto color = get(color_t(), graph);
+    read_ddsg<Graph,weight_t>(graph, "PathToFile");
+    dijkstra(graph, graph_traits<Graph>::vertex_descriptor(), predecessor, distance, weight, vertex_index, color);
 };
 
 int main(int argc, char **argv) {

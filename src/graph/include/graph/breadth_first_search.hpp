@@ -7,6 +7,14 @@
 
 namespace graph {
 
+    template <typename ColorMapTag, typename V, typename E>
+    struct GenerateBFSGraph {};
+
+    template <typename ColorMapTag, typename... P1s, typename... P2s>
+    struct GenerateBFSGraph<ColorMapTag, Properties<P1s...>, Properties<P2s...>> {
+        using type = StaticGraph<Properties<Property<ColorMapTag,char>,P1s...>,Properties<P2s...>>;
+    };
+
 template <typename Graph, typename ColorMap>
 struct DefaultBFSVisitor {
     //is invoked on every vertex before the start of the search.
