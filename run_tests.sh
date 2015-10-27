@@ -1,3 +1,7 @@
 #!/bin/bash
 
-sudo docker run --rm -i -t -v `pwd`:/src lastg/graph-test
+for tst in build/bin/*-test
+do
+    echo Running $tst
+    $tst --gtest_output=xml:${tst}_details.xml
+done
