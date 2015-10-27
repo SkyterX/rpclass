@@ -16,7 +16,7 @@ target_link_libraries(${PROJECT_NAME}-test gtest gtest_main)
 #
 # Set compiler flags
 #
-set_property(TARGET ${PROJECT_NAME}-test PROPERTY CXX_STANDARD 11) 
+set_property(TARGET ${PROJECT_NAME}-test PROPERTY CXX_STANDARD 14)
 #
 # Add Install Targets
 #
