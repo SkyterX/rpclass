@@ -1,4 +1,4 @@
 #pragma once
 
-template <typename Graph, typename EdgeWeightTag>
+template <typename EdgeWeightTag, typename Graph>
 void read_ddsg(Graph& graph, const char* filePath) {};

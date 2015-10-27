@@ -212,7 +212,7 @@ TEST(GraphAlgorithms, Dijkstra) {
     auto weight = get(weight_t(), graph);
     auto vertex_index = get(vertex_bundle_t(), graph);
     auto color = get(color_t(), graph);
-    read_ddsg<Graph,weight_t>(graph, "PathToFile");
+    read_ddsg<weight_t>(graph, "PathToFile");
     dijkstra(graph, graph_traits<Graph>::vertex_descriptor(), predecessor, distance, weight, vertex_index, color);
 };
 
@@ -228,7 +228,7 @@ TEST(GraphAlgorithms, BiDijkstra) {
     auto weight = get(weight_t(), graph);
     auto vertex_index = get(vertex_bundle_t(), graph);
     auto color = get(color_t(), graph);
-    read_ddsg<Graph, weight_t>(graph, "PathToFile");
+    read_ddsg<weight_t>(graph, "PathToFile");
     bidirectional_dijkstra(graph, graph_traits<Graph>::vertex_descriptor(),
         graph_traits<Graph>::vertex_descriptor(), predecessorF, predecessorB,
         distanceF, distanceB, weight, vertex_index, color);
