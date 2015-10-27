@@ -9,6 +9,7 @@
 #include <graph/properties.hpp>
 #include <graph/breadth_first_search.hpp>
 #include <graph/dijkstra.hpp>
+#include <graph/bidirectional_dijkstra.hpp>
 #include "graph/io.hpp"
 #include "generator.hpp"
 
@@ -17,9 +18,11 @@ using namespace graph;
 
 //BFS related properties
 struct distance_t {};
+struct distanceB_t {};
 struct color_t {};
 struct edge_type_t {};
 struct predecessor_t {};
+struct predecessorB_t {};
 struct weight_t {};
 using BFSBundledVertexProperties = Properties<Property<distance_t, uint32_t>, Property<color_t, char>>;
 using BFSBundledEdgeProperties = Properties<Property<edge_type_t, char>>;
@@ -204,13 +207,31 @@ TEST(GraphAlgorithms, Dijkstra) {
     using Graph = GenerateDijkstraGraph<predecessor_t, distance_t, weight_t,
         vertex_index_t, color_t, Properties<>,Properties<>>::type;
     Graph graph;
-    auto predecessor = get(distance_t(), graph);
+    auto predecessor = get(predecessor_t(), graph);
     auto distance = get(distance_t(), graph);
     auto weight = get(weight_t(), graph);
     auto vertex_index = get(vertex_bundle_t(), graph);
     auto color = get(color_t(), graph);
     read_ddsg<Graph,weight_t>(graph, "PathToFile");
     dijkstra(graph, graph_traits<Graph>::vertex_descriptor(), predecessor, distance, weight, vertex_index, color);
+};
+
+TEST(GraphAlgorithms, BiDijkstra) {
+    using Graph = GenerateBiDijkstraGraph<predecessor_t, predecessorB_t, 
+        distance_t, distanceB_t, weight_t, vertex_index_t, color_t,
+        Properties<>, Properties< >> ::type;
+    Graph graph;
+    auto predecessorF = get(predecessor_t(), graph);
+    auto predecessorB = get(predecessor_t(), graph);
+    auto distanceF = get(distance_t(), graph);
+    auto distanceB = get(distanceB_t(), graph);
+    auto weight = get(weight_t(), graph);
+    auto vertex_index = get(vertex_bundle_t(), graph);
+    auto color = get(color_t(), graph);
+    read_ddsg<Graph, weight_t>(graph, "PathToFile");
+    bidirectional_dijkstra(graph, graph_traits<Graph>::vertex_descriptor(),
+        graph_traits<Graph>::vertex_descriptor(), predecessorF, predecessorB,
+        distanceF, distanceB, weight, vertex_index, color);
 };
 
 int main(int argc, char **argv) {
