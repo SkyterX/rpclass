@@ -11,10 +11,6 @@ RUN apt-get update &&\
 RUN wget -qO- https://get.docker.com/ | sh
 RUN usermod -aG docker sudo jenkins \&&
 
-ENV CODE_DIR '/src'
-ENV BUILD_DIR '/build'
-
-WORKDIR $CODE_DIR
-VOLUME ["$CODE_DIR", "${BUILD_DIR}"]
+VOLUME [/var/data/]
 
 CMD /usr/sbin/sshd -D
