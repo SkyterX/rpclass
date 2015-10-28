@@ -68,34 +68,34 @@ template <class Graph, class ColorMap,
     std::queue<typename graph_traits<Graph>::vertex_descriptor> vQueue;
     auto vRange = vertices(graph);
     for (auto vIt = vRange.first; vIt != vRange.second; ++vIt) {
-        if (graph::get(color, *vIt) == 0) {
-            auto start = *vIt;
-            vQueue.push(start);
-            while (!vQueue.empty()) {
-                auto src = vQueue.front();
-                visitor.examine_vertex(src, graph);                    
-                auto outRange = out_edges(src, graph);
-                graph::put(color, src, 2);
-                for (auto outIt = outRange.first; outIt != outRange.second; ++outIt) {
-                    auto e = *outIt;
-                    auto tgt = target(e, graph);
-                    visitor.examine_edge(e, graph);
-                    if (graph::get(color, tgt) == 0) {
-                        visitor.discover_vertex(tgt, graph);
-                        visitor.tree_edge(e, graph);
-                        graph::put(color, tgt, 1);
-                        vQueue.push(tgt);
-                    }
-                    else
-                        if (graph::get(color, tgt) == 1) visitor.gray_target(e, graph);
-                        else visitor.black_target(e,graph);
-                        
-                };
-                visitor.finish_vertex(src,graph);
-                vQueue.pop();
-            }
-        }
+        visitor.initialize_vertex(*vIt,graph);
     };
+    if (graph::get(color, s) == 0) {
+        vQueue.push(s);
+        while (!vQueue.empty()) {
+            auto src = vQueue.front();
+            visitor.examine_vertex(src, graph);                    
+            auto outRange = out_edges(src, graph);
+            graph::put(color, src, 2);
+            for (auto outIt = outRange.first; outIt != outRange.second; ++outIt) {
+                auto e = *outIt;
+                auto tgt = target(e, graph);
+                visitor.examine_edge(e, graph);
+                if (graph::get(color, tgt) == 0) {
+                    visitor.discover_vertex(tgt, graph);
+                    visitor.tree_edge(e, graph);
+                    graph::put(color, tgt, 1);
+                    vQueue.push(tgt);
+                }
+                else
+                    if (graph::get(color, tgt) == 1) visitor.gray_target(e, graph);
+                    else visitor.black_target(e,graph);
+                        
+            };
+            visitor.finish_vertex(src,graph);
+            vQueue.pop();
+        }
+    }
 };
 
 }

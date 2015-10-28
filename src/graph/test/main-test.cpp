@@ -222,7 +222,7 @@ TEST(GraphAlgorithms, BiDijkstra) {
         Properties<>, Properties< >> ::type;
     Graph graph;
     auto predecessorF = get(predecessor_t(), graph);
-    auto predecessorB = get(predecessor_t(), graph);
+    auto predecessorB = get(predecessorB_t(), graph);
     auto distanceF = get(distance_t(), graph);
     auto distanceB = get(distanceB_t(), graph);
     auto weight = get(weight_t(), graph);

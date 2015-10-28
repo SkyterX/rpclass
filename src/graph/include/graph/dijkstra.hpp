@@ -48,7 +48,7 @@ struct DefaultDijkstraVisitor {
     void finish_vertex(const typename graph_traits<Graph>::vertex_descriptor&, Graph&) {};
     // A predicate which is invoked on every out - edge of each vertex to check if the algorithm should relax it
     bool should_relax(const typename graph_traits<Graph>::edge_descriptor&, Graph&) { return true; };
-    // A predicate  which is invoked after finish_vertex to check if the algorithm should continue
+    // A predicate  which is invoked after examine_vertex to check if the algorithm should continue
     bool should_continue() { return true; };
 };
 
