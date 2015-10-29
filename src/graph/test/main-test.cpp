@@ -10,7 +10,7 @@
 #include <graph/breadth_first_search.hpp>
 #include <graph/dijkstra.hpp>
 #include <graph/bidirectional_dijkstra.hpp>
-//#include "graph/io.hpp"
+#include "graph/io.hpp"
 #include "generator.hpp"
 
 using namespace std;
@@ -206,13 +206,24 @@ TEST(GraphAlgorithms, BFS) {
 TEST(GraphAlgorithms, Dijkstra) {
     using Graph = GenerateDijkstraGraph<predecessor_t, distance_t, weight_t,
         vertex_index_t, color_t, Properties<>,Properties<>>::type;
+    using DdsgVecType = std::vector<std::pair<std::pair<Graph::vertices_size_type,
+        Graph::vertices_size_type>,Property<weight_t,double>>>;
+    //DdsgVecType ddsgVec;
+    //back_insert_iterator<DdsgVecType> ddsgVecBackInserter(ddsgVec);
+    //Graph::vertices_size_type numOfNodes;
+    //Graph::edges_size_type numOfEdges;
+    //read_ddsg<Property<weight_t,double>>(ddsgVecBackInserter, numOfNodes, numOfEdges,"FileName");
+    //std::sort(ddsgVec.begin(), ddsgVec.end(),
+    //    [&](DdsgVecType::value_type left, DdsgVecType::value_type right) {
+    //        return left.first.first < right.first.first;
+    //    });
+    //Graph graph(ddsgVec.begin(), ddsgVec.end(),numOfNodes,numOfEdges);
     Graph graph;
     auto predecessor = get(predecessor_t(), graph);
     auto distance = get(distance_t(), graph);
     auto weight = get(weight_t(), graph);
     auto vertex_index = get(vertex_bundle_t(), graph);
     auto color = get(color_t(), graph);
-    //read_ddsg<weight_t>(graph, "PathToFile");
     dijkstra(graph, graph_traits<Graph>::vertex_descriptor(), predecessor, distance, weight, vertex_index, color);
 };
 
@@ -228,7 +239,6 @@ TEST(GraphAlgorithms, BiDijkstra) {
     auto weight = get(weight_t(), graph);
     auto vertex_index = get(vertex_bundle_t(), graph);
     auto color = get(color_t(), graph);
-//    read_ddsg(, "PathToFile");
     bidirectional_dijkstra(graph, graph_traits<Graph>::vertex_descriptor(),
         graph_traits<Graph>::vertex_descriptor(), predecessorF, predecessorB,
         distanceF, distanceB, weight, vertex_index, color);

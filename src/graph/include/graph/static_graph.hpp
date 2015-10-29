@@ -99,13 +99,29 @@ namespace graph {
 			auto builder = new Builder(n, m);
 
 			for (auto& it = begin; it != end; ++it) {
-				builder->AddEdge(it->first, it->second);
+                EdgeProperties edgeProperties = make_properties(it->second);
+				builder->AddEdge((it->first).first, (it->first).second, edgeProperties);
 			}
 
 			builder->BuildGraph(*this);
 
 			delete builder;
 		}
+
+        StaticGraph(std::vector<std::pair<vertices_size_type, vertices_size_type>>::iterator begin,
+            std::vector<std::pair<vertices_size_type, vertices_size_type>>::iterator end,
+            vertices_size_type n, edges_size_type m = 0) : StaticGraph() {
+            auto builder = new Builder(n, m);
+
+            for (auto& it = begin; it != end; ++it) {
+                builder->AddEdge(it->first, it->second);
+            }
+
+            builder->BuildGraph(*this);
+
+            delete builder;
+        }
+
 
 		const VertexCollection& Vertices() const {
 			return *vertexCollection;
