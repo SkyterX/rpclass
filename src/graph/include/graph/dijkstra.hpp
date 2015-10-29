@@ -57,6 +57,6 @@ class IndexMap, class ColorMap, class DijkstraVisitor = DefaultDijkstraVisitor<G
     void dijkstra(Graph& graph,
         const typename graph_traits<Graph>::vertex_descriptor& s,
         PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
-        IndexMap& index, ColorMap& color, DijkstraVisitor& visitor = DefaultDijkstraVisitor<Graph>() ) {};
+        IndexMap& index, ColorMap& color, DijkstraVisitor visitor = DefaultDijkstraVisitor<Graph>() ) {};
 
 };

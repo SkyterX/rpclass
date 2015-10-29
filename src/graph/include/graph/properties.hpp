@@ -30,10 +30,17 @@ namespace graph {
 
 // Stores several properties 
     template <typename... Ps>
-    struct Properties :public std::tuple<Ps...> {
-        using Base = std::tuple<Ps...>;
+    struct Properties;
+
+    template< typename... Tags, typename... Values >
+    auto make_properties(const Property<Tags,Values>&... ps) {
+        return Properties<Property<Tags, Values>...>(make_tuple(ps...));
     };
 
+    template< typename... Tags, typename... Values >
+    auto make_properties(Property<Tags, Values>&&... ps) {
+        return Properties<Property<Tags, Values>...>(make_tuple(ps...));
+    };
 
     namespace detail {
         template <typename T, typename U>
@@ -121,6 +128,70 @@ namespace graph {
             using key_type = typename PropertyMap::key_type;
             using category = typename PropertyMap::category;
     };
+
+    template <>
+    struct Properties<> :public std::tuple<> {
+        using Base = std::tuple<>;
+        template <typename... P2s>
+        Properties<>& operator=(const Properties<P2s...>& other) { return *this; };
+    };
+
+    template <typename... Ps>
+    struct Properties :public std::tuple<Ps...> {
+        using Base = std::tuple<Ps...>;
+        Properties() :Base() {};
+        Properties(const Ps&... props) :Base(props...) {};
+        Properties(const Ps&&... props) :Base(props...) {};
+        Properties(Ps&&... props) :Base(props...) {};
+        Properties(const Base& base) :Base(base) {};
+        Properties(Base& base) :Base(base) {};
+        Properties(Base&& base) :Base(base) {};
+
+        template <size_t I, size_t J, typename... P2s>
+        void assign(const Properties<P2s...>& other,
+            std::integral_constant<size_t, I>,
+            std::integral_constant<size_t, J>) {
+            using P = typename std::tuple_element<J, Base>::type;
+            using Tag = typename P::tag_type;
+            get<Tag>(*this) = get<Tag>(other);
+            assign(other, std::integral_constant<size_t,I-1>(),
+                (detail::FindPropertyByTag_t<
+                    typename std::tuple_element<I-1,Base>::type::tag_type,
+                    Properties<P2s...> >*)(nullptr));
+        };
+
+        template <size_t I, typename... P2s>
+        void assign(const Properties<P2s...>& other,
+            std::integral_constant<size_t, I>, void*) {
+            assign(other, std::integral_constant<size_t,I-1>(),
+                (detail::FindPropertyByTag_t<
+                    typename std::tuple_element<I-1,Base>::type::tag_type,
+                    Properties<P2s...> >*)(nullptr));
+        };
+
+        template <size_t J, typename... P2s>
+        void assign(const Properties<P2s...>& other,
+            std::integral_constant<size_t, 0>,
+            std::integral_constant<size_t,J>*) {
+            using P = typename std::tuple_element<J, Base>::type;
+            using Tag = typename P::tag_type;
+            get<Tag>(*this) = get<Tag>(other);
+        }
+
+        template <typename... P2s>
+        void assign(const Properties<P2s...>& other,
+            std::integral_constant<size_t, 0>, void*) {}
+
+        template <typename... P2s>
+        Properties<Ps...>& operator=(const Properties<P2s...>& other) {
+            using Size = typename std::tuple_size<Base>::type;
+            assign(other, std::integral_constant<size_t, Size::value - 1>(),
+                (detail::FindPropertyByTag_t<
+                    typename std::tuple_element<Size::value -1,Base>::type::tag_type,
+                    Properties<P2s...> >*)(nullptr));
+            return *this;
+        };
+    };    
 
 // Generic property map type. Is to specialize for each property map in the user code
     template <typename Graph, typename Tag, typename EnableIf = void>

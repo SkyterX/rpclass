@@ -27,7 +27,7 @@ struct GenerateArcFlagsGraph<PredecessorMapTag, DisanceMapTag, WeightMapTag,
             P1s...>,
         graph::Properties<
             graph::Property<WeightMapTag, double>,
-            graph::Property<ArcFlagsMapTag, uint32_t[N<<3]>,
+            graph::Property<ArcFlagsMapTag, uint64_t>,
             P2s...>>;
 };
 // read partitionining from a file
@@ -39,5 +39,5 @@ template <size_t NumOfParts, typename Graph, typename PredecessorMap, typename D
     typename IndexMap, typename ColorMap, typename ArcFlagsMap, typename PartitionMap>
     void arcflags_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& distance,
         WeightMap& weight, IndexMap& index, ColorMap& color, PartitionMap& partition,
-        ArcFlagsMap& arcflags, double filter = 0) {};
+        ArcFlagsMap& arcflags, double filter = 0 ) {};
 };

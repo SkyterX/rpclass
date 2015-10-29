@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <graph/static_graph.hpp>
-#include <graph/io.hpp>
+//#include <graph/io.hpp>
 #include <arc-flags/arc-flags.hpp>
 
 struct distance_t {};
@@ -26,7 +26,7 @@ TEST(GraphAlgorithms, ArcFlags) {
     auto color = get(color_t(), graph);
     auto partition = get(partition_t(), graph);
     auto arcflags = get(arc_flags_t(), graph);
-    read_ddsg<weight_t>(graph, "PathToFile");
+//    read_ddsg<weight_t>(graph, "PathToFile");
     read_partitioning<NumOfParts, partition_t>(graph, "PathToFile");
     arcflags_preprocess<NumOfParts>(graph, predecessor, distance, weight, vertex_index, color, partition, arcflags);
 };
