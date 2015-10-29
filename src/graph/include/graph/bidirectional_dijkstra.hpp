@@ -44,5 +44,7 @@ class  DijkstraVisitorB = DefaultDijkstraVisitor<Graph>>
         const typename graph_traits<Graph>::vertex_descriptor& t,
         PredecessorMapF& predecessorF, PredecessorMapB& predecessorB, 
         DistanceMapF& distanceF, DistanceMapB& distanceB, WeightMap& weight,
-        IndexMap& index, ColorMap& color) {};
+        IndexMap& index, ColorMap& color, 
+        DijkstraVisitorF visitorF = DijkstraVisitorF(),
+        DijkstraVisitorF visitorB = DijkstraVisitorB()) {};
 }
