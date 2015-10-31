@@ -28,8 +28,6 @@ set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include
 								 ${Boost_INCLUDE_DIRS}
 	CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE)
 include_directories(${${PROJECT_NAME}_INCLUDE_DIRS})
-
-MESSAGE(${${PROJECT_NAME}_INCLUDE_DIRS})
 #
 # Project Lib Paths
 #
