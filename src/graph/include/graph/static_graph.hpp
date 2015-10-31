@@ -99,7 +99,8 @@ namespace graph {
 			auto builder = new Builder(n, m);
 
 			for (auto& it = begin; it != end; ++it) {
-                EdgeProperties edgeProperties = make_properties(it->second);
+                EdgeProperties edgeProperties;
+                edgeProperties = make_properties(it->second);
 				builder->AddEdge((it->first).first, (it->first).second, edgeProperties);
 			}
 
