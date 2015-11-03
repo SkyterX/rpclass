@@ -76,7 +76,7 @@ namespace graphOSM {
 		graph::graph_traits<OSMGraph>::edges_size_type linksCount = reader.NextUnsignedInt();
 		std::cout << "ddsg graph has " << vertexCount << " nodes and " << linksCount << " edges." << std::endl;
 
-		std::unique_ptr<OSMGraph::Builder> builder = std::make_unique<OSMGraph::Builder>(vertexCount, linksCount);
+		std::unique_ptr<OSMGraph::Builder> builder = std::make_unique<OSMGraph::Builder>(vertexCount, linksCount*2); // DIR_BOTH edges are duplicated. reading time ? x2
 
 		while (reader.HasNext()) {
 			// each line = 4 ints = (from to weight direction)
