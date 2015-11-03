@@ -33,9 +33,10 @@ class DdsgGraphAlgorithm : public ::testing::TestWithParam<const char*> {
 protected:
     DdsgGraphAlgorithm() :m_ddsgVecBackInserter(m_ddsgVec) {};
     virtual void SetUp() {
-        string fileName = globalPathToFiles;
-        fileName+=GetParam();
-        read_ddsg<Property<weight_t, double>>(m_ddsgVecBackInserter, m_numOfNodes, m_numOfEdges, fileName.c_str());
+        string fileName(globalPathToFiles);
+        fileName+=GetParam();        
+        if (read_ddsg<Property<weight_t, double>>(m_ddsgVecBackInserter, m_numOfNodes, m_numOfEdges, fileName.c_str())) 
+            FAIL();        
         std::sort(m_ddsgVec.begin(), m_ddsgVec.end(),
             [&](DdsgVecType::value_type left, DdsgVecType::value_type right) {
             return left.first.first < right.first.first;
@@ -57,7 +58,7 @@ struct CorrectnessBFSVisitor
         const typename graph_traits<Graph>::vertex_descriptor& s)
         : Base(graph::get(color_t(), graph)),
         distance(graph::get(distance_t(), graph)) {
-        put(distance, s, 0);
+        graph::put(distance, s, 0);
     };
     void initialize_vertex(const typename graph_traits<Graph>::vertex_descriptor&, Graph&) {};
     typename graph::property_map<Graph, distance_t>::type distance;
@@ -115,11 +116,11 @@ TEST_P(DdsgGraphAlgorithm, DijkstraOne2All) {
         vertex_index_t, color_t, Properties<>, Properties< >> ::type;
     Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);
     //    Graph graph;
-    auto predecessor = get(predecessor_t(), graph);
-    auto distance = get(distance_t(), graph);
-    auto weight = get(weight_t(), graph);
-    auto vertex_index = get(vertex_bundle_t(), graph);
-    auto color = get(color_t(), graph);
+    auto predecessor = graph::get(predecessor_t(), graph);
+    auto distance = graph::get(distance_t(), graph);
+    auto weight = graph::get(weight_t(), graph);
+    auto vertex_index = graph::get(vertex_index_t(), graph);
+    auto color = graph::get(color_t(), graph);
     dijkstra(graph, graph_traits<Graph>::vertex_descriptor(), predecessor, distance, weight, vertex_index, color);
 };
 
@@ -128,14 +129,14 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
         distance_t, distanceB_t, weight_t, vertex_index_t, color_t, colorB_t,
         Properties<>, Properties<>> ::type;
     Graph graph;
-    auto predecessorF = get(predecessor_t(), graph);
-    auto predecessorB = get(predecessorB_t(), graph);
-    auto distanceF = get(distance_t(), graph);
-    auto distanceB = get(distanceB_t(), graph);
-    auto weight = get(weight_t(), graph);
-    auto vertex_index = get(vertex_bundle_t(), graph);
-    auto colorF = get(color_t(), graph);
-    auto colorB = get(color_t(), graph);
+    auto predecessorF = graph::get(predecessor_t(), graph);
+    auto predecessorB = graph::get(predecessorB_t(), graph);
+    auto distanceF = graph::get(distance_t(), graph);
+    auto distanceB = graph::get(distanceB_t(), graph);
+    auto weight = graph::get(weight_t(), graph);
+    auto vertex_index = graph::get(vertex_index_t(), graph);
+    auto colorF = graph::get(color_t(), graph);
+    auto colorB = graph::get(color_t(), graph);
     bidirectional_dijkstra(graph, graph_traits<Graph>::vertex_descriptor(),
         graph_traits<Graph>::vertex_descriptor(),predecessorF, predecessorB,
         distanceF, distanceB, weight, vertex_index, colorF,colorB);
@@ -143,7 +144,7 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
 
 
 INSTANTIATE_TEST_CASE_P(CommandLine, DdsgGraphAlgorithm,
-    ::testing::Values("bel.ddsg","nld.ddsg"));
+    ::testing::Values("nld.ddsg","bel.ddsg"));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

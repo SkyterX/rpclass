@@ -17,15 +17,15 @@ TEST(GraphAlgorithms, ArcFlags) {
     using namespace graph;
     using Graph = GenerateArcFlagsGraph<predecessor_t, distance_t, weight_t,
         vertex_index_t, color_t, arc_flags_t,partition_t, NumOfParts,
-        Properties<>, Properties< >> ::type;
+        Properties<>, Properties<>> ::type;
     Graph graph;
-    auto predecessor = get(predecessor_t(), graph);
-    auto distance = get(distance_t(), graph);
-    auto weight = get(weight_t(), graph);
-    auto vertex_index = get(vertex_bundle_t(), graph);
-    auto color = get(color_t(), graph);
-    auto partition = get(partition_t(), graph);
-    auto arcflags = get(arc_flags_t(), graph);
+    auto predecessor = graph::get(predecessor_t(), graph);
+    auto distance = graph::get(distance_t(), graph);
+    auto weight = graph::get(weight_t(), graph);
+    auto vertex_index = graph::get(vertex_index_t(), graph);
+    auto color = graph::get(color_t(), graph);
+    auto partition = graph::get(partition_t(), graph);
+    auto arcflags = graph::get(arc_flags_t(), graph);
 //    read_ddsg<weight_t>(graph, "PathToFile");
     read_partitioning<NumOfParts, partition_t>(graph, "PathToFile");
     arcflags_preprocess<NumOfParts>(graph, predecessor, distance, weight, vertex_index, color, partition, arcflags);

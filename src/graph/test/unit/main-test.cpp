@@ -83,7 +83,7 @@ TEST(PropertyGraph, InternalColorEdgeTypeProperties) {
 TEST(GraphStructure, ListGraph) {
     using Graph = StaticGraph<>;
 
-    using SizeT = uint32_t;
+    using SizeT = size_t;
     using VecPair = vector<pair<SizeT, SizeT>>;
     const SizeT n = 1 << 2;
     VecPair input;
