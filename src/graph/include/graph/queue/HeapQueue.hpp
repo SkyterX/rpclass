@@ -2,13 +2,17 @@
 #include <graph/queue/PriorityQueue.hpp>
 #include <queue>
 #include <cassert>
+#include <functional>
+#include <vector>
 
 namespace graph {
 	namespace queue {
 		template <typename TKey, typename TDataId>
 		class HeapQueue {
 		private:
-			std::priority_queue<QueueItem<TKey, TDataId>> q;
+			using QueueItemType = QueueItem<TKey, TDataId>;
+
+			std::priority_queue<QueueItemType, std::vector<QueueItemType>, std::greater<QueueItemType>> q;
 			std::vector<bool> isDeleted;
 
 			void SkipDeleted() {

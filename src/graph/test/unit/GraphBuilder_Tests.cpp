@@ -7,11 +7,11 @@ using namespace graph;
 using namespace graphUtil;
 
 TEST(GraphBuilder, Correctness) {
-	using EmptyStaticGraph = StaticGraph<Properties<>>;
+	using EmptyStaticGraph = StaticGraph<>;
 
 	int n = 100;
 	int m = 1000;
-	vector<pair<int, int>> possibleEdges;
+	vector<pair<EmptyStaticGraph::vertices_size_type, EmptyStaticGraph::vertices_size_type>> possibleEdges;
 	for (auto& v : Range(0, n)) {
 		for (auto& to : Range(0, n)) {
 			if (v == to) continue;

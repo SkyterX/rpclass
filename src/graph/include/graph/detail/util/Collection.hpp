@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <type_traits>
+#include <boost/iterator/counting_iterator.hpp>
 
 namespace graphUtil {
 	template <typename Iterator>
