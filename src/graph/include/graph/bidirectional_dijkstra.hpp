@@ -23,15 +23,13 @@ struct GenerateBiDijkstraGraph<PredecessorMapFTag, PredecessorMapBTag,
                 typename graph_traits<StaticGraph<Properties<>,Properties<>>>::vertex_descriptor>,
             Property<PredecessorMapBTag,
                 typename graph_traits<StaticGraph<Properties<>, Properties<>>>::vertex_descriptor>,
-            Property<DisanceMapFTag, double>,
-            Property<DisanceMapBTag, double>,
-            Property<IndexMapTag, 
-                typename graph_traits<StaticGraph<Properties<>, Properties<>>>::vertices_size_type>,
+            Property<DisanceMapFTag, uint32_t>,
+            Property<DisanceMapBTag, uint32_t>,
             Property<ColorMapFTag, char>,
             Property<ColorMapBTag, char>,
             P1s...>,
         Properties<
-            Property<WeightMapTag, double>,
+            Property<WeightMapTag, uint32_t>,
             P2s...>>;
 };
 

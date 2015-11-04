@@ -19,14 +19,12 @@ struct GenerateArcFlagsGraph<PredecessorMapTag, DisanceMapTag, WeightMapTag,
         graph::Properties<
             graph::Property<PredecessorMapTag, 
                 typename graph::graph_traits<graph::StaticGraph<graph::Properties<>,graph::Properties<>>>::vertex_descriptor>,
-            graph::Property<DisanceMapTag, double>,
-            graph::Property<IndexMapTag, 
-                typename graph::graph_traits<graph::StaticGraph<graph::Properties<>, graph::Properties<>>>::vertices_size_type>,
+            graph::Property<DisanceMapTag, uint32_t>,
             graph::Property<ColorMapTag, char>,
             graph::Property<PartitionMapTag, char>,
             P1s...>,
         graph::Properties<
-            graph::Property<WeightMapTag, double>,
+            graph::Property<WeightMapTag, uint32_t>,
             graph::Property<ArcFlagsMapTag, uint64_t>,
             P2s...>>;
 };

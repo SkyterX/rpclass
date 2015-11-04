@@ -35,14 +35,14 @@ protected:
     virtual void SetUp() {
         string fileName(globalPathToFiles);
         fileName+=GetParam();        
-        if (read_ddsg<Property<weight_t, double>>(m_ddsgVecBackInserter, m_numOfNodes, m_numOfEdges, fileName.c_str())) 
+        if (read_ddsg<Property<weight_t, uint32_t>>(m_ddsgVecBackInserter, m_numOfNodes, m_numOfEdges, fileName.c_str()))
             FAIL();        
         std::sort(m_ddsgVec.begin(), m_ddsgVec.end(),
             [&](DdsgVecType::value_type left, DdsgVecType::value_type right) {
             return left.first.first < right.first.first;
         });
     };
-    using DdsgVecType = std::vector<std::pair<std::pair<size_t,size_t>,Property<weight_t, double>>>;
+    using DdsgVecType = std::vector<std::pair<std::pair<size_t,size_t>,Property<weight_t, uint32_t>>>;
     DdsgVecType m_ddsgVec;
     back_insert_iterator<DdsgVecType> m_ddsgVecBackInserter;
     size_t m_numOfNodes;
