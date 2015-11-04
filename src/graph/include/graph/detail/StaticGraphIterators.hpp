@@ -47,6 +47,7 @@ namespace graph {
 	public:
 		explicit EdgeIterator(const VertexType& v, const AdjacencyListIterator& p)
 			: BaseType(p), source(v) {}
+        EdgeIterator(){};
 
 	private:
 		friend class boost::iterator_core_access;

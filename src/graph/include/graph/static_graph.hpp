@@ -109,9 +109,9 @@ namespace graph {
 			delete builder;
 		}
 
-        StaticGraph(std::vector<std::pair<vertices_size_type, vertices_size_type>>::iterator begin,
-            std::vector<std::pair<vertices_size_type, vertices_size_type>>::iterator end,
-            vertices_size_type n, edges_size_type m = 0) : StaticGraph() {
+        StaticGraph(std::vector<std::pair<size_t, size_t>>::iterator begin,
+            std::vector<std::pair<size_t, size_t>>::iterator end,
+            size_t n, size_t m = 0) : StaticGraph() {
             auto builder = new Builder(n, m);
 
             for (auto& it = begin; it != end; ++it) {
@@ -205,6 +205,37 @@ namespace graph {
 	get(const edge_bundle_t&, StaticGraphType& graph) {
 		return graph.GetEdgePropertyMap();
 	}
+
+
+    template <typename Graph>
+    struct VertexIndexPropertyMap{};
+
+    template <typename VertexProperties, typename EdgeProperties>
+    struct VertexIndexPropertyMap<StaticGraphType> {
+        using key_type = typename graph_traits<StaticGraphType>::vertex_descriptor;
+        using value_type = typename graph_traits<StaticGraphType>::vertices_size_type;
+        using reference = value_type&;
+        using category = boost::readable_property_map_tag;
+    };
+
+    template <typename VertexProperties, typename EdgeProperties>
+    struct property_map<StaticGraphType, vertex_index_t> {
+        using type = VertexIndexPropertyMap<StaticGraphType>;
+    };
+
+    template <typename VertexProperties, typename EdgeProperties>
+    typename VertexIndexPropertyMap<StaticGraphType>::value_type
+        get(const VertexIndexPropertyMap<StaticGraphType>& index,
+        const typename VertexIndexPropertyMap<StaticGraphType>::key_type& key) {
+        return key;
+    };
+
+    template<typename VertexProperties, typename EdgeProperties>
+    inline typename property_map<StaticGraphType, vertex_index_t>::type
+    get(const vertex_index_t&, StaticGraphType&) {
+        return VertexIndexPropertyMap<StaticGraphType>();
+    };
+
 #undef StaticGraphType
 }
 
