@@ -27,26 +27,45 @@ struct predecessor_t {};
 struct predecessorB_t {};
 struct weight_t {};
 
+std::string baseFileName(const std::string& path) {
+    std::string str = path.substr(path.find_last_of("/\\") + 1);
+    std::string::size_type const p(str.find_last_of('.'));
+    std::string base = str.substr(0, p);
+    return base;
+}
+
 char* globalPathToFiles = nullptr;
 
 class DdsgGraphAlgorithm : public ::testing::TestWithParam<const char*> {
 protected:
-    DdsgGraphAlgorithm() :m_ddsgVecBackInserter(m_ddsgVec) {};
+    DdsgGraphAlgorithm() :m_ddsgVecBackInserter(m_ddsgVec), m_path(globalPathToFiles), m_baseName(baseFileName(GetParam())) {};
     virtual void SetUp() {
-        string fileName(globalPathToFiles);
-        fileName+=GetParam();        
-        if (read_ddsg<Property<weight_t, uint32_t>>(m_ddsgVecBackInserter, m_numOfNodes, m_numOfEdges, fileName.c_str()))
+        if (read_ddsg<Property<weight_t, uint32_t>>(m_ddsgVecBackInserter, m_numOfNodes, m_numOfEdges, (m_path+GetParam()).c_str()))
             FAIL();        
         std::sort(m_ddsgVec.begin(), m_ddsgVec.end(),
             [&](DdsgVecType::value_type left, DdsgVecType::value_type right) {
             return left.first.first < right.first.first;
         });
+        stringstream ss;
+        ss << m_path << "/" << m_baseName << "/" << m_baseName<<".sources";
+        ifstream input(ss.str());
+        if (!input.is_open()) {
+            cerr << "Could not open respective test file: " << ss.str() << endl;
+            FAIL();
+        };
+        size_t src;
+        while (input >> src) m_sources.push_back(src);
+        input.close();
     };
+
     using DdsgVecType = std::vector<std::pair<std::pair<size_t,size_t>,Property<weight_t, uint32_t>>>;
     DdsgVecType m_ddsgVec;
     back_insert_iterator<DdsgVecType> m_ddsgVecBackInserter;
+    string m_path;
+    string m_baseName;
     size_t m_numOfNodes;
     size_t m_numOfEdges;
+    std::vector<size_t> m_sources;
 
 };
 
@@ -121,7 +140,31 @@ TEST_P(DdsgGraphAlgorithm, DijkstraOne2All) {
     auto weight = graph::get(weight_t(), graph);
     auto vertex_index = graph::get(vertex_index_t(), graph);
     auto color = graph::get(color_t(), graph);
-    dijkstra(graph, graph_traits<Graph>::vertex_descriptor(), predecessor, distance, weight, vertex_index, color);
+    ifstream verificationFile;
+    for (size_t src:m_sources) {
+        cout << "Testing source " << src << endl;
+        dijkstra(graph, graph_traits<Graph>::vertex_descriptor(src), predecessor, distance, weight, vertex_index, color);
+        stringstream ss;
+        ss << m_path << "/" << m_baseName << "/" << m_baseName << "_" << src << ".sssp";
+        verificationFile.open(ss.str());
+        if (!verificationFile.is_open()) {
+            cerr << "Verification file " << ss.str() << " for the source " << src << " not found." << endl;
+            FAIL();
+        };
+        size_t file_src, file_dist;
+        verificationFile >> file_src;
+        if (src != file_src) {
+            cerr << "Source in the file is different from the expected";
+            FAIL();
+        }
+        auto vRange = vertices(graph);
+        for (auto vIt = vRange.first; vIt != vRange.second; ++vIt) {
+            verificationFile >> file_src >> file_dist;
+            EXPECT_EQ(file_src, *vIt);
+            EXPECT_EQ(file_dist, get(distance, *vIt));
+        };
+        verificationFile.close();
+    };
 };
 
 TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
@@ -144,7 +187,7 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
 
 
 INSTANTIATE_TEST_CASE_P(CommandLine, DdsgGraphAlgorithm,
-    ::testing::Values("nld.ddsg","bel.ddsg"));
+    ::testing::Values("bel.ddsg"));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
