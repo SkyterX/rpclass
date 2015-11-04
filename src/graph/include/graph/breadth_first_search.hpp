@@ -20,7 +20,7 @@ struct DefaultBFSVisitor {
     //is invoked on every vertex before the start of the search.
     void initialize_vertex(const typename graph_traits<Graph>::vertex_descriptor& v,
         Graph&) {
-        graph::put(color, v, 0);
+        graph::put(color, v, typename property_traits<ColorMap>::value_type(0));
     };
     // is invoked in each vertex as it is removed from the queue.
     void examine_vertex(const typename graph_traits<Graph>::vertex_descriptor&,
@@ -67,28 +67,32 @@ template <class Graph, class ColorMap,
         ColorMap& color, BFSVisitor visitor = BFSVisitor{}) {
     std::queue<typename graph_traits<Graph>::vertex_descriptor> vQueue;
     auto vRange = vertices(graph);
+    typename property_traits<ColorMap>::value_type white = 0;
+    typename property_traits<ColorMap>::value_type grey = 1;
+    typename property_traits<ColorMap>::value_type black = 2;
+
     for (auto vIt = vRange.first; vIt != vRange.second; ++vIt) {
         visitor.initialize_vertex(*vIt,graph);
     };
-    if (graph::get(color, s) == 0) {
+    if (graph::get(color, s) == white) {
         vQueue.push(s);
         while (!vQueue.empty()) {
             auto src = vQueue.front();
             visitor.examine_vertex(src, graph);                    
             auto outRange = out_edges(src, graph);
-            graph::put(color, src, 2);
+            graph::put(color, src, black);
             for (auto outIt = outRange.first; outIt != outRange.second; ++outIt) {
                 auto e = *outIt;
                 auto tgt = target(e, graph);
                 visitor.examine_edge(e, graph);
-                if (graph::get(color, tgt) == 0) {
+                if (graph::get(color, tgt) == white) {
                     visitor.discover_vertex(tgt, graph);
                     visitor.tree_edge(e, graph);
-                    graph::put(color, tgt, 1);
+                    graph::put(color, tgt, grey);
                     vQueue.push(tgt);
                 }
                 else
-                    if (graph::get(color, tgt) == 1) visitor.gray_target(e, graph);
+                    if (graph::get(color, tgt) == grey) visitor.gray_target(e, graph);
                     else visitor.black_target(e,graph);
                         
             };
