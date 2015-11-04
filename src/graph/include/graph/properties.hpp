@@ -24,6 +24,7 @@ namespace graph {
     struct Property :public std::tuple<Value> {
         using Base = std::tuple<Value>;
         using tag_type = Tag;
+        using value_type = Value;
         Property(const Value& v) :Base(v) {};
         Property() :Base() {};
     };

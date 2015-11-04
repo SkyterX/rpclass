@@ -22,7 +22,7 @@ int read_ddsg(BackInsertIterator backInserter, size_t& numOfNodes, size_t& numOf
     };
     input >> numOfNodes >> numOfEdges;
     size_t u, v, d;
-    double w;
+    typename EdgeWeightProperty::value_type w;
     while (input >> u >> v >> w >> d) {
         switch (d) {
         case 0:
@@ -32,8 +32,6 @@ int read_ddsg(BackInsertIterator backInserter, size_t& numOfNodes, size_t& numOf
             ++numOfEdges;
              break;
         case 1:
-            *backInserter++ = make_pair(make_pair(u, v), EdgeWeightProperty(w));
-            break;
         case 2:
             *backInserter++ = make_pair(make_pair(v, u), EdgeWeightProperty(w));
              break;
