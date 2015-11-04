@@ -2,6 +2,7 @@
 #include <graph/graph.hpp>
 #include <graph/properties.hpp>
 #include <graph/static_graph.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
 
 namespace graph {
 
@@ -18,13 +19,11 @@ struct GenerateDijkstraGraph<PredecessorMapTag, DisanceMapTag, WeightMapTag,
         Properties<
             Property<PredecessorMapTag, 
                 typename graph_traits<StaticGraph<Properties<>,Properties<>>>::vertex_descriptor>,
-            Property<DisanceMapTag, double>,
-            Property<IndexMapTag, 
-                typename graph_traits<StaticGraph<Properties<>, Properties<>>>::vertices_size_type>,
-            Property<ColorMapTag, char>,
+            Property<DisanceMapTag, uint32_t>,
+            Property<ColorMapTag, boost::two_bit_color_type>,
             P1s...>,
         Properties<
-            Property<WeightMapTag, double>,
+            Property<WeightMapTag, uint32_t>,
             P2s...>>;
 };
 
@@ -57,6 +56,14 @@ class IndexMap, class ColorMap, class DijkstraVisitor = DefaultDijkstraVisitor<G
     void dijkstra(Graph& graph,
         const typename graph_traits<Graph>::vertex_descriptor& s,
         PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
-        IndexMap& index, ColorMap& color, DijkstraVisitor visitor = DefaultDijkstraVisitor<Graph>() ) {};
+        IndexMap& index, ColorMap& color, DijkstraVisitor visitor = DefaultDijkstraVisitor<Graph>() ) {
+    boost::dijkstra_shortest_paths(graph, s, predecessor, distance, weight, index,
+        std::less<typename property_traits<DistanceMap>::value_type>(),
+        boost::closed_plus<typename property_traits<DistanceMap>::value_type>(),
+        std::numeric_limits<typename property_traits<DistanceMap>::value_type>::max(), 
+        static_cast<typename property_traits<DistanceMap>::value_type>(0),
+        boost::dijkstra_visitor<>(), color);
+
+};
 
 };
