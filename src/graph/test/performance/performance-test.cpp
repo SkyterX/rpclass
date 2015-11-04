@@ -95,7 +95,8 @@ TEST_P(DdsgGraphAlgorithm, BFSCorrectness) {
     using BFSVisitor = CorrectnessBFSVisitor<Graph, property_map<Graph, color_t>::type>;
     auto vRange = vertices(graph);
     for (auto vIt = vRange.first; vIt != vRange.second; ++vIt) {
-        graph::put(colorPM, *vIt, 0);
+        graph::put(colorPM, *vIt, 
+            property_traits<property_map<Graph,color_t>::type>::value_type(0));
         graph::put(distancePM, *vIt, m_numOfNodes);
     };
     for (auto vIt = vRange.first; vIt != vRange.second; ++vIt)
