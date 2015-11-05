@@ -155,14 +155,18 @@ namespace graph {
 							if (root->Key >= roots[d]->Key)
 								std::swap(root, roots[d]);
 							// fix min for cycle to end
-							if (roots[d] == Min)
+							if (roots[d] == Min) {
 								Min = roots[d]->Right;
+								if (roots[d] == nextRoot)
+									nextRoot = Min;
+							}
 							// add child
 							CutNode(roots[d]);
 							if (root->Child == nullptr)
 								root->Child = roots[d];
 							else
 								MergeNodes(root->Child, roots[d]);
+							roots[d]->Parent = root;
 							++root->Degree;
 							roots[d] = nullptr;
 						}

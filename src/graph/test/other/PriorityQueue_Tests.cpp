@@ -68,37 +68,56 @@ void Queue_RandomTest(TQueue& queue) {
 	KeyDistribution startKeyDistribution(MinStartKey, MaxKey);
 	vector<pair<KeyType, DataType>> items(TestItemsCount);
 	vector<bool> isEnqueued(TestItemsCount);
+	set<QueueItem<KeyType, DataType>> referenceQueue;
 
 	for (auto x : Range(0, TestItemsCount)) {
 		KeyType key = startKeyDistribution(generator);
-		items.push_back(make_pair(key, x));
-		isEnqueued.push_back(false);
+		items[x] = make_pair(key, x);
+		isEnqueued[x] = false;
 	}
 
 	for (auto iterationId : Range(0, RandomQueriesCount)) {
+		EXPECT_EQ(queue.IsEmpty(), referenceQueue.empty());
+		if(!referenceQueue.empty())
+			EXPECT_EQ(referenceQueue.begin()->Key(), queue.PeekMin().Key());
+
 		if (!queue.IsEmpty() && Probability(generator) < DeleteMinProbability) {
-			isEnqueued[queue.PeekMin().Data()] = false;
+			auto minItem = queue.PeekMin();
+			EXPECT_TRUE(referenceQueue.find(minItem) != referenceQueue.end());
+			isEnqueued[minItem.Data()] = false;
+			referenceQueue.erase(minItem);
 			queue.DeleteMin();
 			continue;
 		}
 		auto itemId = ItemIdDistribution(generator);
 		auto& item = items[itemId];
-		if (!isEnqueued[item.second]) {
+		if (!isEnqueued[itemId]) {
 			item.first = startKeyDistribution(generator);
+
+			auto queueItem = MakeQueueItem(item.first, item.second);
+			EXPECT_FALSE(referenceQueue.find(queueItem) != referenceQueue.end());
+			referenceQueue.insert(queueItem);
+
 			queue.Insert(item.first, item.second);
-			isEnqueued[item.second] = true;
+			isEnqueued[itemId] = true;
 		}
 		else {
 			if (item.first == 0)
 				continue;
 			KeyDistribution newKeyDistribution(MinDecreasedKey, item.first - 1);
 			KeyType newKey = newKeyDistribution(generator);
+
+			auto queueItem = MakeQueueItem(item.first, item.second);
+			auto findIt = referenceQueue.find(queueItem);
+			EXPECT_TRUE(findIt != referenceQueue.end());
+			referenceQueue.erase(findIt);
+			queueItem = MakeQueueItem(newKey, item.second);
+			referenceQueue.insert(queueItem);
+
 			queue.DecreaseKey(item.first, item.second, newKey);
 			item.first = newKey;
 		}
 	}
-
-	sort(items.begin(), items.end());
 }
 
 TEST(PriorityQueue, Set_Sequential) {
