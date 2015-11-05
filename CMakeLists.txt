@@ -6,7 +6,10 @@ project (rpclass)
 set(CMAKE_CXX_STANDARD_REQUIRED  ON)
 
 add_definitions(-std=c++14)
-add_definitions(-O2)
+
+SET(CMAKE_BUILD_TYPE RELEASE)
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=1")
 
 #
 # Project Search Paths
