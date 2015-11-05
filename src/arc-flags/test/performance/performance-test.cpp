@@ -106,7 +106,7 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
 
 
 INSTANTIATE_TEST_CASE_P(CommandLine, DdsgGraphAlgorithm,
-    ::testing::Combine(::testing::Values("bel.ddsg"), ::testing::Values(0.0)));
+    ::testing::Combine(::testing::Values("deu.ddsg"), ::testing::Values(0.0)));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
