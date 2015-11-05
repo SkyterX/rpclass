@@ -135,7 +135,6 @@ TEST_P(DdsgGraphAlgorithm, DijkstraOne2All) {
     using Graph = GenerateDijkstraGraph<predecessor_t, distance_t, weight_t,
         vertex_index_t, color_t, Properties<>, Properties< >> ::type;
     Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);
-    //    Graph graph;
     auto predecessor = graph::get(predecessor_t(), graph);
     auto distance = graph::get(distance_t(), graph);
     auto weight = graph::get(weight_t(), graph);
@@ -149,7 +148,7 @@ TEST_P(DdsgGraphAlgorithm, DijkstraOne2All) {
         ss << m_path << "/" << m_baseName << "/" << m_baseName << "_" << src << ".sssp";
         verificationFile.open(ss.str());
         if (!verificationFile.is_open()) {
-            cerr << "Verification file " << ss.str() << " for the source " << src << " not found." << endl;
+            cerr << "Verification file " << ss.str() << " for the source " << src << " is not found." << endl;
             FAIL();
         };
         size_t file_src, file_dist;
@@ -172,7 +171,7 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
     using Graph = GenerateBiDijkstraGraph<predecessor_t, predecessorB_t,
         distance_t, distanceB_t, weight_t, vertex_index_t, color_t, colorB_t,
         Properties<>, Properties<>> ::type;
-    Graph graph;
+    Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);
     auto predecessorF = graph::get(predecessor_t(), graph);
     auto predecessorB = graph::get(predecessorB_t(), graph);
     auto distanceF = graph::get(distance_t(), graph);
@@ -181,9 +180,23 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
     auto vertex_index = graph::get(vertex_index_t(), graph);
     auto colorF = graph::get(color_t(), graph);
     auto colorB = graph::get(color_t(), graph);
-    bidirectional_dijkstra(graph, graph_traits<Graph>::vertex_descriptor(),
-        graph_traits<Graph>::vertex_descriptor(),predecessorF, predecessorB,
+    ifstream verificationFile;
+    stringstream ss;
+    ss << m_path << "/" << m_baseName << "/" << m_baseName << ".ppsp";
+    verificationFile.open(ss.str());
+    size_t src, tgt, distance;
+    if (!verificationFile.is_open()) {
+        cerr << "Verification file " << ss.str() <<" is not found." << endl;
+        FAIL();
+    };
+    while (verificationFile>>src>>tgt>>distance) {
+        cout << "Running BiDijkstra from " << src << " to " << tgt << endl;
+        bidirectional_dijkstra(graph, graph_traits<Graph>::vertex_descriptor(src),
+        graph_traits<Graph>::vertex_descriptor(tgt),predecessorF, predecessorB,
         distanceF, distanceB, weight, vertex_index, colorF,colorB);
+    EXPECT_EQ(distance, get(distanceF, tgt));
+    }
+    verificationFile.close();
 };
 
 
