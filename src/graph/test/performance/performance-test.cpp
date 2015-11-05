@@ -38,9 +38,12 @@ char* globalPathToFiles = nullptr;
 
 class DdsgGraphAlgorithm : public ::testing::TestWithParam<const char*> {
 protected:
-    DdsgGraphAlgorithm() :m_ddsgVecBackInserter(m_ddsgVec), m_path(globalPathToFiles), m_baseName(baseFileName(GetParam())) {};
+    DdsgGraphAlgorithm() 
+        :m_ddsgVecBackInserter(m_ddsgVec), m_path(globalPathToFiles),
+        m_baseName(baseFileName(GetParam())) {};
     virtual void SetUp() {
-        if (read_ddsg<Property<weight_t, uint32_t>>(m_ddsgVecBackInserter, m_numOfNodes, m_numOfEdges, (m_path+GetParam()).c_str()))
+        if (read_ddsg<Property<weight_t, uint32_t>>(m_ddsgVecBackInserter,
+            m_numOfNodes, m_numOfEdges, (m_path + "/" + GetParam()).c_str()))
             FAIL();        
         std::sort(m_ddsgVec.begin(), m_ddsgVec.end(),
             [&](DdsgVecType::value_type left, DdsgVecType::value_type right) {

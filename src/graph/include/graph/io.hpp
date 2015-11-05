@@ -10,7 +10,7 @@ int read_ddsg(BackInsertIterator backInserter, size_t& numOfNodes, size_t& numOf
     using namespace std;
     ifstream input(fileName);
     if (!input.is_open()) {
-        cerr << "File not found!" << endl;
+        cerr << "File "<<fileName<<" not found!" << endl;
         return 1;
     }
     char ch;
