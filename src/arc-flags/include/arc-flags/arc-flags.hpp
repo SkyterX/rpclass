@@ -1,6 +1,7 @@
 #pragma once
 
 #include <graph/static_graph.hpp>
+#include <graph/dijkstra.hpp>
 
 namespace arcflags {
 template <typename PredecessorMapTag, class DisanceMapTag, typename WeightMapTag,
@@ -29,13 +30,27 @@ struct GenerateArcFlagsGraph<PredecessorMapTag, DisanceMapTag, WeightMapTag,
             P2s...>>;
 };
 // read partitionining from a file
-template <size_t NumOfParts, typename PartitionMapTag, typename Graph>
-void read_partitioning(Graph& graph, const char* PathToFile) {};
+template <size_t N, typename PartitionMapTag, typename Graph>
+int read_partitioning(Graph& graph, const char* PathToFile) { return 0; };
 
 // uses dijkstra, therefore should have at least all property maps used by dijkstra
-template <size_t NumOfParts, typename Graph, typename PredecessorMap, typename DistanceMap, typename WeightMap,
-    typename IndexMap, typename ColorMap, typename ArcFlagsMap, typename PartitionMap>
+template <size_t N, typename Graph, typename PredecessorMap, typename DistanceMap,
+    typename WeightMap, typename IndexMap, typename ColorMap, typename PartitionMap, 
+    typename ArcFlagsMap>
     void arcflags_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& distance,
         WeightMap& weight, IndexMap& index, ColorMap& color, PartitionMap& partition,
         ArcFlagsMap& arcflags, double filter = 0 ) {};
+
+
+template <size_t N, typename Graph, typename PredecessorMap, typename DistanceMap,
+    typename WeightMap, typename IndexMap, typename ColorMap, typename PartitionMap, 
+    typename ArcFlagsMap>
+    void arcflags_query(Graph& graph, 
+        const typename graph::graph_traits<Graph>::vertex_descriptor& s,
+        const typename graph::graph_traits<Graph>::vertex_descriptor& t,
+        PredecessorMap& predecessor, DistanceMap& distance,
+        WeightMap& weight, IndexMap& index, ColorMap& color, PartitionMap& partition,
+        ArcFlagsMap& arcflags) {
+    graph::dijkstra(graph, s, predecessor, distance, weight, index, color);
+};
 };
