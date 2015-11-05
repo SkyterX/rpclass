@@ -21,7 +21,7 @@ struct GenerateArcFlagsGraph<PredecessorMapTag, DisanceMapTag, WeightMapTag,
             graph::Property<PredecessorMapTag, 
                 typename graph::graph_traits<graph::StaticGraph<graph::Properties<>,graph::Properties<>>>::vertex_descriptor>,
             graph::Property<DisanceMapTag, uint32_t>,
-            graph::Property<ColorMapTag, char>,
+            graph::Property<ColorMapTag, boost::two_bit_color_type>,
             graph::Property<PartitionMapTag, char>,
             P1s...>,
         graph::Properties<
