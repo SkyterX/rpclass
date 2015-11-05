@@ -10,50 +10,64 @@ namespace graph {
 		private:
 			using QueueItemType = QueueItem<TKey, TData>;
 			std::vector<QueueItemType> q;
+			std::vector<int> vertexIndeces;
+
 
 			int childrenNumber, realLength;
 
 			void Heapify(int idx) {
-				if (idx == 0)
+				if (idx < 1)
 					return;
-				int leftMostChild = (idx - 1) * childrenNumber + 1;
-				int largestIdx = idx;
+				int leftMostChild = idx * childrenNumber;
+				int leastIdx = idx;
 				for (int i = leftMostChild; i < leftMostChild + childrenNumber; ++i) {
-					if (i >= realLength)
+					if (i > realLength)
 						break;
-					if (q[i].Key() > q[largestIdx].Key())
-						largestIdx = i;
+					if (q[i].Data() == 0) {
+						int a = 146;
+					}
+					if (q[i].Key() < q[leastIdx].Key())
+						leastIdx = i;
 				}
-				if (largestIdx != idx) {
-					swap(q[idx], q[largestIdx]);
-					Heapify(largestIdx);
+				if (leastIdx != idx) {
+					Swap(idx, leastIdx);
+					Heapify(leastIdx);
 				}
 
 			}
 
+			void Swap(int i1, int i2) {
+				swap(vertexIndeces[q[i1].Data()], vertexIndeces[q[i2].Data()]);
+				swap(q[i1], q[i2]);
+			}
+
 			inline int GetParent(int idx) {
-				return (idx - 2) / childrenNumber + 1;
+				return idx / childrenNumber;
 			}
 
 			void Add(QueueItemType element) {
 
-				if (realLength > q.size() - 10)
-					q.resize(3 * realLength / 2, QueueItemType(0, 0));
+				if (realLength >= q.size()) {
+					q.resize(2 * realLength, QueueItemType(0, 0));
+					vertexIndeces.resize(2 * vertexIndeces.size(), 0);
+				}
 
-				q[realLength] = element;
 				++realLength;
+				vertexIndeces[element.Data()] = realLength;
+				q[realLength] = element;
 
-				int idx = realLength - 1;
+				int idx = realLength;
 				int parent = GetParent(idx);
-				while (idx && q[parent].Key() > q[idx].Key()) {
-					swap(q[parent], q[idx]);
+				while (idx > 1 && q[parent].Key() > q[idx].Key()) {
+					Swap(parent, idx);
 					idx = parent;
 					parent = GetParent(idx);
 				}
 			}
 
 			void DeleteFromIdx(int idx) {
-				q[idx] = q[realLength - 1];
+				vertexIndeces[q[idx].Data()] = -1;
+				q[idx] = q[realLength];
 				//q.pop_back();
 				--realLength;
 				Heapify(idx);
@@ -61,7 +75,8 @@ namespace graph {
 
 		public:
 			DHeapQueue(int dataIdSize, int d) {
-				q.resize(2 * dataIdSize, QueueItemType(0, 0));
+				q.resize(d * dataIdSize, QueueItemType(0, 0));
+				vertexIndeces.resize(dataIdSize + 10, -1);
 				childrenNumber = d;
 				realLength = 0;
 			}
@@ -72,12 +87,12 @@ namespace graph {
 
 			const QueueItem<TKey, TData>& PeekMin() const {
 				assert(realLength != 0);
-				return *q.begin();
+				return q[1];
 			}
 
 			void DeleteMin() {
 				assert(!this->IsEmpty());
-				DeleteFromIdx(0);
+				DeleteFromIdx(1);
 			}
 
 			void Insert(const TKey& key, const TData& data) {
@@ -85,13 +100,16 @@ namespace graph {
 			}
 
 			void DecreaseKey(const TKey& key, const TData& data, const TKey& newKey) {
-				bool success = false;
-				for (int i = 0; i < realLength; i++)
-					if (q[i].Key() == key && q[i].Data() == data) {
-						DeleteFromIdx(i);
-						success = true;
+				for (int idx = 1; idx <= realLength; idx++)
+					if (q[idx].Data() == data) {
+						DeleteFromIdx(idx);
 						break;
 					}
+				
+				//int idx = vertexIndeces[data];
+				//if (idx != -1){
+				//	DeleteFromIdx(idx);
+				//}
 				Insert(newKey, data);
 			}
 
