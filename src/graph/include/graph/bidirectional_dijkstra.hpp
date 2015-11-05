@@ -25,8 +25,8 @@ struct GenerateBiDijkstraGraph<PredecessorMapFTag, PredecessorMapBTag,
                 typename graph_traits<StaticGraph<Properties<>, Properties<>>>::vertex_descriptor>,
             Property<DisanceMapFTag, uint32_t>,
             Property<DisanceMapBTag, uint32_t>,
-            Property<ColorMapFTag, char>,
-            Property<ColorMapBTag, char>,
+            Property<ColorMapFTag, boost::two_bit_color_type>,
+            Property<ColorMapBTag, boost::two_bit_color_type>,
             P1s...>,
         Properties<
             Property<WeightMapTag, uint32_t>,
@@ -45,5 +45,8 @@ class  DijkstraVisitorB = DefaultDijkstraVisitor<Graph>>
         DistanceMapF& distanceF, DistanceMapB& distanceB, WeightMap& weight,
         IndexMap& index, ColorMapF& colorF, ColorMapB& colorB,
         DijkstraVisitorF visitorF = DijkstraVisitorF(),
-        DijkstraVisitorF visitorB = DijkstraVisitorB()) {};
+        DijkstraVisitorF visitorB = DijkstraVisitorB()) {
+    dijkstra(graph, s, predecessorF, distanceF, weight, index, colorF);
+
+};
 }
