@@ -2,6 +2,7 @@
 #include <graph/queue/SetQueue.hpp>
 #include <graph/queue/HeapQueue.hpp>
 #include <graph/queue/FibonacciHeapQueue.hpp>
+#include <graph/queue/D-aryHeapQueue.hpp>
 #include <graph/detail/util/Collection.hpp>
 #include <random>
 #include <type_traits>
@@ -127,5 +128,20 @@ TEST(PriorityQueue, Fibonacci_Sequential) {
 
 TEST(PriorityQueue, Fibonacci_Random) {
 	auto queue = FibonacciHeapQueue<KeyType, DataType>(TestItemsCount);
+	Queue_RandomTest(queue);
+}
+
+TEST(PriorityQueue, DHeap_2_Random) {
+	auto queue = DHeapQueue<KeyType, DataType>(TestItemsCount, 2);
+	Queue_RandomTest(queue);
+}
+
+TEST(PriorityQueue, DHeap_3_Random) {
+	auto queue = DHeapQueue<KeyType, DataType>(TestItemsCount, 3);
+	Queue_RandomTest(queue);
+}
+
+TEST(PriorityQueue, DHeap_4_Random) {
+	auto queue = DHeapQueue<KeyType, DataType>(TestItemsCount, 4);
 	Queue_RandomTest(queue);
 }
