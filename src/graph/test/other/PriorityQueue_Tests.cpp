@@ -13,6 +13,8 @@ using namespace std;
 using namespace graph::queue;
 using namespace graphUtil;
 
+const bool Verify = true;
+
 const int TestItemsCount = 10000;
 const int DecreaseQueriesCount = 10 * TestItemsCount;
 const int RandomQueriesCount = 100 * TestItemsCount;
@@ -77,15 +79,18 @@ void Queue_RandomTest(TQueue& queue) {
 	}
 
 	for (auto iterationId : Range(0, RandomQueriesCount)) {
-		EXPECT_EQ(queue.IsEmpty(), referenceQueue.empty());
-		if(!referenceQueue.empty())
-			EXPECT_EQ(referenceQueue.begin()->Key(), queue.PeekMin().Key());
-
+		if (Verify) {
+			EXPECT_EQ(queue.IsEmpty(), referenceQueue.empty());
+			if (!referenceQueue.empty())
+				EXPECT_EQ(referenceQueue.begin()->Key(), queue.PeekMin().Key());
+		}
 		if (!queue.IsEmpty() && Probability(generator) < DeleteMinProbability) {
 			auto minItem = queue.PeekMin();
-			EXPECT_TRUE(referenceQueue.find(minItem) != referenceQueue.end());
+			if (Verify) {
+				EXPECT_TRUE(referenceQueue.find(minItem) != referenceQueue.end());
+				referenceQueue.erase(minItem);
+			}
 			isEnqueued[minItem.Data()] = false;
-			referenceQueue.erase(minItem);
 			queue.DeleteMin();
 			continue;
 		}
@@ -94,9 +99,11 @@ void Queue_RandomTest(TQueue& queue) {
 		if (!isEnqueued[itemId]) {
 			item.first = startKeyDistribution(generator);
 
-			auto queueItem = MakeQueueItem(item.first, item.second);
-			EXPECT_FALSE(referenceQueue.find(queueItem) != referenceQueue.end());
-			referenceQueue.insert(queueItem);
+			if (Verify) {
+				auto queueItem = MakeQueueItem(item.first, item.second);
+				EXPECT_FALSE(referenceQueue.find(queueItem) != referenceQueue.end());
+				referenceQueue.insert(queueItem);
+			}
 
 			queue.Insert(item.first, item.second);
 			isEnqueued[itemId] = true;
@@ -107,12 +114,14 @@ void Queue_RandomTest(TQueue& queue) {
 			KeyDistribution newKeyDistribution(MinDecreasedKey, item.first - 1);
 			KeyType newKey = newKeyDistribution(generator);
 
-			auto queueItem = MakeQueueItem(item.first, item.second);
-			auto findIt = referenceQueue.find(queueItem);
-			EXPECT_TRUE(findIt != referenceQueue.end());
-			referenceQueue.erase(findIt);
-			queueItem = MakeQueueItem(newKey, item.second);
-			referenceQueue.insert(queueItem);
+			if (Verify) {
+				auto queueItem = MakeQueueItem(item.first, item.second);
+				auto findIt = referenceQueue.find(queueItem);
+				EXPECT_TRUE(findIt != referenceQueue.end());
+				referenceQueue.erase(findIt);
+				queueItem = MakeQueueItem(newKey, item.second);
+				referenceQueue.insert(queueItem);
+			}
 
 			queue.DecreaseKey(item.first, item.second, newKey);
 			item.first = newKey;
