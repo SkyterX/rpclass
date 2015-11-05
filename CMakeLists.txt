@@ -6,6 +6,7 @@ project (rpclass)
 set(CMAKE_CXX_STANDARD_REQUIRED  ON)
 
 add_definitions(-std=c++14)
+add_definitions(-O2)
 
 #
 # Project Search Paths
