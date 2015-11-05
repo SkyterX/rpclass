@@ -31,7 +31,7 @@ namespace graph {
 			return Graph::null_vertex();
 		};
 
-		ComplementGraph(Graph& graph)
+		explicit ComplementGraph(Graph& graph)
 			: innerGraph(graph) {}
 
 		Graph& innerGraph;
@@ -42,12 +42,12 @@ namespace graph {
 
 	template <typename Graph>
 	struct property_map<ComplementGraphType, vertex_bundle_t> {
-		using type = typename property_map_t<typename ComplementGraphType::InnerGraphType, vertex_bundle_t>;
+		using type = typename property_map<typename ComplementGraphType::InnerGraphType, vertex_bundle_t>::type;
 	};
 
 	template <typename Graph>
 	struct property_map<ComplementGraphType, edge_bundle_t> {
-		using type = typename property_map_t<typename ComplementGraphType::InnerGraphType, edge_bundle_t>;
+		using type = typename property_map<typename ComplementGraphType::InnerGraphType, edge_bundle_t>::type;
 	};
 
 	template <typename Graph>
