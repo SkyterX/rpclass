@@ -49,6 +49,10 @@ namespace graph {
 					Min->Right = Min;
 				}
 
+				bool IsLess(Node* a, Node* b) const {
+					return a->Key < b->Key || (a->Key == b->Key && a->DataId < b->DataId);
+				}
+
 				void Insert(Node* node) {
 					InsertRoot(node);
 				}
@@ -56,11 +60,11 @@ namespace graph {
 				void DecreaseKey(Node* node, TKey newKey) {
 					node->Key = newKey;
 					if (node->Parent == nullptr) {
-						if (newKey < Min->Key)
+						if (IsLess(node, Min))
 							Min = node;
 						return;
 					}
-					if (newKey >= node->Parent->Key)
+					if (!IsLess(node, node->Parent))
 						return;
 					CascadeCut(node);
 				}
@@ -98,7 +102,7 @@ namespace graph {
 					}
 					else {
 						MergeNodes(Min, node);
-						if (node->Key < Min->Key)
+						if (IsLess(node, Min))
 							Min = node;
 					}
 				}
@@ -152,7 +156,7 @@ namespace graph {
 						}
 						else {
 							// choose root with smallest key
-							if (root->Key >= roots[d]->Key)
+							if (!IsLess(root, roots[d]))
 								std::swap(root, roots[d]);
 							// fix min for cycle to end
 							if (roots[d] == Min) {
@@ -177,7 +181,7 @@ namespace graph {
 					Node* startRoot = Min;
 					root = Min->Right;
 					while (root != startRoot) {
-						if (root->Key < Min->Key)
+						if (IsLess(root, Min))
 							Min = root;
 						root = root->Right;
 					}

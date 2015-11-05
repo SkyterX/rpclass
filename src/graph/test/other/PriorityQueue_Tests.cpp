@@ -149,18 +149,18 @@ TEST(PriorityQueue, Fibonacci_Random) {
 	auto queue = FibonacciHeapQueue<KeyType, DataType>(TestItemsCount);
 	Queue_RandomTest(queue);
 }
-
-TEST(PriorityQueue, DHeap_2_Random) {
-	auto queue = DHeapQueue<KeyType, DataType>(TestItemsCount, 2);
-	Queue_RandomTest(queue);
-}
-
-TEST(PriorityQueue, DHeap_3_Random) {
-	auto queue = DHeapQueue<KeyType, DataType>(TestItemsCount, 3);
-	Queue_RandomTest(queue);
-}
-
-TEST(PriorityQueue, DHeap_4_Random) {
-	auto queue = DHeapQueue<KeyType, DataType>(TestItemsCount, 4);
-	Queue_RandomTest(queue);
-}
+//
+//TEST(PriorityQueue, DHeap_2_Random) {
+//	auto queue = DHeapQueue<KeyType, DataType>(TestItemsCount, 2);
+//	Queue_RandomTest(queue);
+//}
+//
+//TEST(PriorityQueue, DHeap_3_Random) {
+//	auto queue = DHeapQueue<KeyType, DataType>(TestItemsCount, 3);
+//	Queue_RandomTest(queue);
+//}
+//
+//TEST(PriorityQueue, DHeap_4_Random) {
+//	auto queue = DHeapQueue<KeyType, DataType>(TestItemsCount, 4);
+//	Queue_RandomTest(queue);
+//}
