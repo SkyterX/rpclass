@@ -46,8 +46,8 @@ namespace graph {
 			}
 
 			void Swap(int i1, int i2) {
-				swap(vertexIndeces[q[i1].Data()], vertexIndeces[q[i2].Data()]);
-				swap(q[i1], q[i2]);
+				std::swap(vertexIndeces[q[i1].Data()], vertexIndeces[q[i2].Data()]);
+				std::swap(q[i1], q[i2]);
 			}
 
 			inline int GetParent(int idx) {
@@ -86,22 +86,22 @@ namespace graph {
 
 			void UnitTests() {
 				int realParent = 1;
-				vector<int> parents;
+				std::vector<int> parents;
 				parents.push_back(0);
 				parents.push_back(1);
 				int i = 2;
 				while (parents.size() <= 1000) {
-					for (int i = 0; i < childrenNumber; i++)
+					for (int j = 0; j < childrenNumber; j++)
 						parents.push_back(realParent);
 					realParent++;
 				}
 
-				for (int i = 1; i <= 100; i++) {
-					int parent = GetParent(i);
-					int leftmostChild = GetLeftmostChild(i);
-					assert(parent == parents[i]);
-					assert(i == parents[leftmostChild]);
-					assert(i == parents[leftmostChild + childrenNumber - 1]);
+				for (int j = 1; j <= 100; j++) {
+					int parent = GetParent(j);
+					int leftmostChild = GetLeftmostChild(j);
+					assert(parent == parents[j]);
+					assert(j == parents[leftmostChild]);
+					assert(j == parents[leftmostChild + childrenNumber - 1]);
 				}
 			}
 

@@ -11,6 +11,7 @@
 #include <graph/properties.hpp>
 #include <graph/io.hpp>
 #include <arc-flags/arc-flags.hpp>
+#include <fstream>
 
 using namespace std;
 using namespace graph;

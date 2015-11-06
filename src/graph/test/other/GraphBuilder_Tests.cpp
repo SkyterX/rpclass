@@ -11,7 +11,7 @@ TEST(GraphBuilder, Correctness) {
 
 	int n = 100;
 	int m = 1000;
-	vector<pair<EmptyStaticGraph::vertices_size_type, EmptyStaticGraph::vertices_size_type>> possibleEdges;
+	vector<pair<size_t, size_t>> possibleEdges;
 	for (auto& v : Range(0, n)) {
 		for (auto& to : Range(0, n)) {
 			if (v == to) continue;
