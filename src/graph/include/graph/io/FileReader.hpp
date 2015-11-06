@@ -52,14 +52,14 @@ namespace graphIO
 		char NextChar() override {
 			EnsureCapacity();
 			SkipWhitespaces();
-			if (!HasNext()) return 0;
+			if (IsEof()) return 0;
 			return *(currentPosition++);
 		}
 
 		unsigned int NextUnsignedInt() override {
 			EnsureCapacity();
 			SkipWhitespaces();
-			if (!HasNext()) return 0;
+			if (IsEof()) return 0;
 
 			int result = 0;
 			while (*currentPosition > ' ')
@@ -71,12 +71,12 @@ namespace graphIO
 			std::string result = "";
 
 			EnsureCapacity();
-			while (*currentPosition != '\r' && *currentPosition != '\n' && HasNext()) {
+			while (*currentPosition != '\r' && *currentPosition != '\n' && !IsEof()) {
 				result += *currentPosition;
 				++currentPosition;
 			}
 
-			if (HasNext()) {
+			if (!IsEof()) {
 				if (*currentPosition == '\r')
 					++currentPosition;
 				if (*currentPosition == '\n')
@@ -84,17 +84,21 @@ namespace graphIO
 			}
 			return result;
 		}
-
+		
 		bool HasNext() override {
 			EnsureCapacity();
 			char* pos = currentPosition;
 			SkipWhitespaces();
-			bool hasNext = *currentPosition != (char)0 || feof(input) == 0;
+			bool hasNext = !IsEof();
 			currentPosition = pos;
 			return hasNext;
 		}
 
 	private:
+		bool IsEof() const {
+			return  *currentPosition == (char)0 && feof(input) != 0;;
+		}
+
 		void EnsureCapacity() {
 			int residualSize = buffer + BUFFER_SIZE - currentPosition;
 			if (residualSize < CRITICAL_CAPACITY) {
@@ -107,7 +111,7 @@ namespace graphIO
 		}
 
 		void SkipWhitespaces() {
-			while (*currentPosition <= ' ' && HasNext()) {
+			while (*currentPosition <= ' ' && !IsEof()) {
 				++currentPosition;
 			}
 		}
