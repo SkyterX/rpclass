@@ -57,23 +57,21 @@ int read_partitioning(Graph& graph, const char* PathToFile)
 template <typename Graph, typename ArcFlagsMap, typename PartitionMap>
 struct ArcflagsBuildingDijkstraVisitor : public graph::DefaultDijkstraVisitor<Graph>
 {
-	ArcflagsBuildingDijkstraVisitor(size_t start_vertex_part_index, const ArcFlagsMap& arcflags, const PartitionMap& partition)
+	ArcflagsBuildingDijkstraVisitor(size_t start_vertex_part_index, const ArcFlagsMap& arcflags)
 		: startVertexPartIndex(start_vertex_part_index),
-		  arcflags(arcflags),
-		  partition(partition)
+		  arcflags(arcflags)
 	{
 	}
 
 	void examine_edge(const typename graph::graph_traits<Graph>::edge_descriptor& edge, Graph& graph)
 	{
-		auto& bitset = get(ArcFlagsMap(), edge);
+		auto& bitset = get(arcflags, edge);
 		bitset.SetBit(startVertexPartIndex);
 	};
 
 private:
 	size_t startVertexPartIndex;
 	ArcFlagsMap arcflags;
-	PartitionMap partition;
 };
 
 
@@ -120,7 +118,7 @@ template <size_t N, typename Graph, typename PredecessorMap, typename DistanceMa
 				weight,
 				index,
 				color,
-				ArcflagsBuildingDijkstraVisitor<graph::ComplementGraph<Graph>, ArcFlagsMap, PartitionMap>(get(partition, v), arcflags, partition));
+				ArcflagsBuildingDijkstraVisitor<graph::ComplementGraph<Graph>, ArcFlagsMap, PartitionMap>(get(partition, v), arcflags));
 		}
 	}
 	//printf("%d\n", borderCnt);
