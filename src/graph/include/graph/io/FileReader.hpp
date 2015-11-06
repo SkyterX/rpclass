@@ -15,15 +15,18 @@ namespace graphIO
 		FILE* input;
 		char* buffer;
 		char* currentPosition;
+		bool isClosed;
 
 	public:
 		FileReader() {
 			input = nullptr;
 			buffer = new char[BUFFER_SIZE + 1];
 			memset(buffer, 0, BUFFER_SIZE + 1);
+			isClosed = true;
 		}
 
 		FileReader(FILE* input) {
+			isClosed = false;
 			this->input = input;
 			memset(buffer, 0, BUFFER_SIZE + 1);
 		}
@@ -39,14 +42,18 @@ namespace graphIO
 
 			if (input == nullptr)
 				return false;
-
+			
+			isClosed = false;
 			fread(buffer, sizeof(char), BUFFER_SIZE, input);
 			currentPosition = buffer;
 			return true;
 		}
 
 		void Close() {
-			fclose(input);
+			if(!isClosed) {
+				isClosed = true;
+				fclose(input);
+			}
 		}
 
 		char NextChar() override {
