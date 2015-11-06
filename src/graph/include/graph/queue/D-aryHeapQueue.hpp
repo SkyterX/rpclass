@@ -18,6 +18,19 @@ namespace graph {
 			void Heapify(int idx) {
 				if (idx == 0)
 					return;
+				BubbleDown(idx);
+			}
+
+			void BubbleUp(int idx) {
+				int parent = GetParent(idx);
+				while (idx > 1 && q[parent].Key() > q[idx].Key()) {
+					Swap(parent, idx);
+					idx = parent;
+					parent = GetParent(idx);
+				}
+			}
+
+			void BubbleDown(int idx) {
 				int leftMostChild = GetLeftmostChild(idx);
 				int leastIdx = idx;
 				for (int i = leftMostChild; i < leftMostChild + childrenNumber; ++i) {
@@ -30,7 +43,6 @@ namespace graph {
 					Swap(idx, leastIdx);
 					Heapify(leastIdx);
 				}
-
 			}
 
 			void Swap(int i1, int i2) {
@@ -59,12 +71,7 @@ namespace graph {
 				q[realLength] = element;
 
 				int idx = realLength;
-				int parent = GetParent(idx);
-				while (idx > 1 && q[parent].Key() > q[idx].Key()) {
-					Swap(parent, idx);
-					idx = parent;
-					parent = GetParent(idx);
-				}
+				BubbleUp(idx);
 			}
 
 			void DeleteFromIdx(int idx) {
@@ -73,8 +80,8 @@ namespace graph {
 				q[idx] = q[realLength];
 				q[realLength] = QueueItemType(-1, -1);
 				--realLength;
-				for (int i = min(idx, realLength / childrenNumber + 1); i > 0; i--)
-					Heapify(i);
+
+				BubbleDown(idx);
 			}
 
 			void UnitTests() {
@@ -96,9 +103,6 @@ namespace graph {
 					assert(i == parents[leftmostChild]);
 					assert(i == parents[leftmostChild + childrenNumber - 1]);
 				}
-
-
-
 			}
 
 		public:
@@ -146,9 +150,12 @@ namespace graph {
 			void DecreaseKey(const TKey& key, const TData& data, const TKey& newKey) {
 				int idx = vertexIndeces[data];
 				if (idx != -1){
-					DeleteFromIdx(idx);
+					q[idx] = QueueItemType(newKey, data);
+					BubbleUp(idx);
 				}
-				Insert(newKey, data);
+				else {
+					Insert(newKey, data);
+				}
 			}
 
 		};
