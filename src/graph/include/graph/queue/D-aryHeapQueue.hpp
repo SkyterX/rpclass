@@ -16,16 +16,13 @@ namespace graph {
 			int childrenNumber, realLength;
 
 			void Heapify(int idx) {
-				if (idx < 1)
+				if (idx == 0)
 					return;
 				int leftMostChild = idx * childrenNumber;
 				int leastIdx = idx;
 				for (int i = leftMostChild; i < leftMostChild + childrenNumber; ++i) {
 					if (i > realLength)
 						break;
-					if (q[i].Data() == 0) {
-						int a = 146;
-					}
 					if (q[i].Key() < q[leastIdx].Key())
 						leastIdx = i;
 				}
@@ -46,7 +43,6 @@ namespace graph {
 			}
 
 			void Add(QueueItemType element) {
-
 				if (realLength >= q.size()) {
 					q.resize(2 * realLength, QueueItemType(0, 0));
 					vertexIndeces.resize(2 * vertexIndeces.size(), 0);
@@ -67,16 +63,18 @@ namespace graph {
 
 			void DeleteFromIdx(int idx) {
 				vertexIndeces[q[idx].Data()] = -1;
+				vertexIndeces[q[realLength].Data()] = idx;
 				q[idx] = q[realLength];
 				//q.pop_back();
 				--realLength;
-				Heapify(idx);
+				for (int i = realLength / childrenNumber; i > 0; i--)
+					Heapify(i);
 			}
 
 		public:
 			DHeapQueue(int dataIdSize, int d) {
 				q.resize(d * dataIdSize, QueueItemType(0, 0));
-				vertexIndeces.resize(dataIdSize + 10, -1);
+				vertexIndeces.resize(dataIdSize * d, -1);
 				childrenNumber = d;
 				realLength = 0;
 			}
@@ -100,16 +98,16 @@ namespace graph {
 			}
 
 			void DecreaseKey(const TKey& key, const TData& data, const TKey& newKey) {
-				for (int idx = 1; idx <= realLength; idx++)
+				/*for (int idx = 1; idx <= realLength; idx++)
 					if (q[idx].Data() == data) {
 						DeleteFromIdx(idx);
 						break;
 					}
-				
-				//int idx = vertexIndeces[data];
-				//if (idx != -1){
-				//	DeleteFromIdx(idx);
-				//}
+				*/
+				int idx = vertexIndeces[data];
+				if (idx != -1){
+					DeleteFromIdx(idx);
+				}
 				Insert(newKey, data);
 			}
 
