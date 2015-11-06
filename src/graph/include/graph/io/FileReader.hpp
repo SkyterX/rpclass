@@ -6,7 +6,8 @@
 #include <iostream>
 #include <cstring>
 
-namespace graphIO {
+namespace graphIO
+{
 	class FileReader : public IReader {
 	private:
 		static const int BUFFER_SIZE = 10000000;
@@ -33,16 +34,15 @@ namespace graphIO {
 			currentPosition = nullptr;
 		}
 
-		void Open(const char* fileName) {
+		bool Open(const char* fileName) {
 			input = fopen(fileName, "rt");
 
-			if (input == nullptr) {
-				std::cerr << "Error: can't open input file." << std::endl;
-				exit(0);
-			}
+			if (input == nullptr)
+				return false;
 
 			fread(buffer, sizeof(char), BUFFER_SIZE, input);
 			currentPosition = buffer;
+			return true;
 		}
 
 		void Close() {
@@ -86,7 +86,12 @@ namespace graphIO {
 		}
 
 		bool HasNext() override {
-			return *currentPosition != (char)0 || feof(input) == 0;
+			EnsureCapacity();
+			char* pos = currentPosition;
+			SkipWhitespaces();
+			bool hasNext = *currentPosition != (char)0 || feof(input) == 0;
+			currentPosition = pos;
+			return hasNext;
 		}
 
 	private:
@@ -102,8 +107,9 @@ namespace graphIO {
 		}
 
 		void SkipWhitespaces() {
-			while (*currentPosition <= ' ' && HasNext())
+			while (*currentPosition <= ' ' && HasNext()) {
 				++currentPosition;
+			}
 		}
 	};
 }
