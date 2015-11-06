@@ -2,32 +2,32 @@
 #include <graph/graph.hpp>
 #include <graph/properties.hpp>
 #include <graph/static_graph.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <graph/queue/SetQueue.hpp>
 #include <graph/queue/HeapQueue.hpp>
 #include <limits>
 
-namespace graph {
-
+namespace graph
+{
 	template <typename PredecessorMapTag, class DisanceMapTag, typename WeightMapTag,
-			  typename IndexMapTag, typename ColorMapTag, typename BundledVertexProperties,
-			  typename BundledEdgeProperties>
+	          typename IndexMapTag, typename ColorMapTag, typename BundledVertexProperties,
+	          typename BundledEdgeProperties>
 	struct GenerateDijkstraGraph {};
 
+
 	template <typename PredecessorMapTag, class DisanceMapTag, typename WeightMapTag,
-			  typename IndexMapTag, typename ColorMapTag, typename... P1s, typename... P2s>
+	          typename IndexMapTag, typename ColorMapTag, typename... P1s, typename... P2s>
 	struct GenerateDijkstraGraph<PredecessorMapTag, DisanceMapTag, WeightMapTag,
-								 IndexMapTag, ColorMapTag, Properties<P1s...>, Properties<P2s...>> {
+	                             IndexMapTag, ColorMapTag, Properties<P1s...>, Properties<P2s...>> {
 		using type = StaticGraph<
 			Properties<
 				Property<PredecessorMapTag,
-						 typename graph_traits<StaticGraph<>>::vertex_descriptor>,
-				Property<DisanceMapTag, double>,
-				Property<IndexMapTag,
-						 typename graph_traits<StaticGraph<>>::vertices_size_type>,
-				Property<ColorMapTag, char>,
+				         typename graph_traits<StaticGraph<Properties<>, Properties<>>>::vertex_descriptor>,
+				Property<DisanceMapTag, uint32_t>,
+				Property<ColorMapTag, boost::two_bit_color_type>,
 				P1s...>,
 			Properties<
-				Property<WeightMapTag, double>,
+				Property<WeightMapTag, uint32_t>,
 				P2s...>>;
 	};
 
@@ -67,12 +67,28 @@ namespace graph {
 		};
 	};
 
+
+//	template <class Graph, class PredecessorMap, class DistanceMap, class WeightMap,
+//	          class IndexMap, class ColorMap, class DijkstraVisitor = DefaultDijkstraVisitor<Graph>>
+//	void dijkstra(Graph& graph,
+//	              const typename graph_traits<Graph>::vertex_descriptor& s,
+//	              PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
+//	              IndexMap& index, ColorMap& color, DijkstraVisitor visitor = DefaultDijkstraVisitor<Graph>()) {
+//		boost::dijkstra_shortest_paths(graph, s, predecessor, distance, weight, index,
+//		                               std::less<typename property_traits<DistanceMap>::value_type>(),
+//		                               boost::closed_plus<typename property_traits<DistanceMap>::value_type>(),
+//		                               std::numeric_limits<typename property_traits<DistanceMap>::value_type>::max(),
+//		                               static_cast<typename property_traits<DistanceMap>::value_type>(0),
+//		                               boost::dijkstra_visitor<>(), color);
+//	}
+
+
 	template <class Graph, class PredecessorMap, class DistanceMap, class WeightMap,
-			  class IndexMap, class ColorMap, class DijkstraVisitor = DefaultDijkstraVisitor<Graph>>
+	          class IndexMap, class ColorMap, class DijkstraVisitor = DefaultDijkstraVisitor<Graph>>
 	void dijkstra(Graph& graph,
-				  const typename graph_traits<Graph>::vertex_descriptor& s,
-				  PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
-				  IndexMap& index, ColorMap& color, DijkstraVisitor visitor = DijkstraVisitor()) {
+	              const typename graph_traits<Graph>::vertex_descriptor& s,
+	              PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
+	              IndexMap& index, ColorMap& color, DijkstraVisitor visitor = DijkstraVisitor()) {
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 		// TODO 
 		// - Use IndexMap instead of Vertex
@@ -82,13 +98,13 @@ namespace graph {
 			visitor.initialize_vertex(v, graph);
 			put(distance, v, std::numeric_limits<Vertex>::max());
 			put(predecessor, v, v);
-			put(color, v, 'W');
+			put(color, v, boost::two_bit_color_type::two_bit_white);
 		}
 
 		// Process start vertex
 		visitor.discover_vertex(s, graph);
 		put(distance, s, 0);
-		put(color, s, 'G');
+		put(color, s, boost::two_bit_color_type::two_bit_green);
 		queue.Insert(0, s);
 
 		while (!queue.IsEmpty()) {
@@ -114,10 +130,10 @@ namespace graph {
 					visitor.edge_relaxed(edge, graph);
 					put(distance, to, newDistance);
 					put(predecessor, to, v);
-					if (get(color, to) == 'W') {
+					if (get(color, to) == boost::two_bit_color_type::two_bit_white) {
 						// Vertex is new
 						visitor.discover_vertex(to, graph);
-						put(color, to, 'G');
+						put(color, to, boost::two_bit_color_type::two_bit_green);
 						queue.Insert(newDistance, to);
 					}
 					else {
@@ -132,11 +148,10 @@ namespace graph {
 			}
 
 			// Teardown vertex
-			put(color, v, 'B');
+			put(color, v, boost::two_bit_color_type::two_bit_black);
 			visitor.finish_vertex(v, graph);
 			if (!visitor.should_continue())
 				break;
 		}
 	};
-
 }
