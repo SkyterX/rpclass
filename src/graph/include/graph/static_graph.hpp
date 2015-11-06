@@ -90,7 +90,7 @@ namespace graph {
 
 		StaticGraph()
 			: edgePropertyMap(new EdgePropertyMapType()),
-			  vertexPropertyMap(new VertexPropertyMapType(*this)),
+			  vertexPropertyMap(new VertexPropertyMapType(this)),
 			  vertexCollection(nullptr) {}
 
 		template <class PairIterator>

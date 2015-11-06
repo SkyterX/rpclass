@@ -8,10 +8,13 @@ namespace graph {
 	template <typename VertexProperties, typename Graph>
 	class VertexPropertyMap {
 	private:
-		Graph& graph;
+		Graph* graph;
 	public:
-		explicit VertexPropertyMap(Graph& graph)
+		explicit VertexPropertyMap(Graph* graph)
 			: graph(graph) {}
+
+		VertexPropertyMap()
+			: graph(nullptr) {}
 
 		using key_type = typename graph_traits<Graph>::vertex_descriptor;
 		using value_type = VertexProperties;
@@ -19,11 +22,11 @@ namespace graph {
 		using category = boost::read_write_property_map_tag;
 
 		reference get(const key_type& key) const {
-			return graph.vertices[key].properties;
+			return graph->vertices[key].properties;
 		}
 
 		void put(const key_type& key, const value_type& value) const {
-			graph.vertices[key].properties = value;
+			graph->vertices[key].properties = value;
 		}
 	};
 
