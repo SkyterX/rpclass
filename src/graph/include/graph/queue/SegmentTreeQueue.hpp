@@ -60,5 +60,69 @@ namespace graph
 				return tree[1].Key() == InfinityKey();
 			}
 		};
+
+
+		template <typename TKey, typename TDataId, int N = 2>
+		class NarySegmentTreeQueue {
+		private:
+			using QueueItemType = QueueItem<TKey, TDataId>;
+
+			std::vector<QueueItemType> tree;
+			TDataId baseSize;
+
+			void InsertInternal(TDataId index, QueueItemType item) {
+				index += baseSize;
+				tree[index] = item;
+				do {
+					index = (index - 1) / N;
+					TDataId firstChildIndex = N * index + 1;
+					auto aggregate = tree[firstChildIndex];
+					for (int i = 1; i < N; ++i) {
+						auto& node = tree[firstChildIndex + i];
+						aggregate = aggregate < node ? aggregate : node;
+					}
+					if (tree[index] == aggregate)
+						break;
+					tree[index] = aggregate;
+				}
+				while (index > 0);
+			}
+
+			static TKey InfinityKey() {
+				return std::numeric_limits<TKey>::max();
+			}
+
+		public:
+
+			NarySegmentTreeQueue(TDataId dataIdSize) {
+				int treeSize = 1;
+				baseSize = 0;
+				while (treeSize < dataIdSize) {
+					baseSize += treeSize;
+					treeSize *= N;
+				}
+				tree.resize(treeSize + baseSize, QueueItemType(InfinityKey(), 0));
+			}
+
+			void Insert(TKey key, TDataId dataId) {
+				InsertInternal(dataId, MakeQueueItem(key, dataId));
+			}
+
+			const QueueItem<TKey, TDataId>& PeekMin() const {
+				return tree[0];
+			}
+
+			void DeleteMin() {
+				Insert(InfinityKey(), tree[0].Data());
+			}
+
+			void DecreaseKey(const TKey& key, const TDataId& dataId, const TKey& newKey) {
+				Insert(newKey, dataId);
+			}
+
+			bool IsEmpty() const {
+				return tree[0].Key() == InfinityKey();
+			}
+		};
 	}
 }

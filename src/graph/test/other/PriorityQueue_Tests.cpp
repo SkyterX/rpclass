@@ -170,6 +170,26 @@ TEST(PriorityQueue, SegmentTree_Random) {
 	Queue_RandomTest(queue);
 }
 
+TEST(PriorityQueue, NarySegmentTree_3_Sequential) {
+	auto queue = NarySegmentTreeQueue<KeyType, DataType, 3>(TestItemsCount);
+	Queue_SequentialTest(queue);
+}
+
+TEST(PriorityQueue, NarySegmentTree_3_Random) {
+	auto queue = NarySegmentTreeQueue<KeyType, DataType, 3>(TestItemsCount);
+	Queue_RandomTest(queue);
+}
+
+TEST(PriorityQueue, NarySegmentTree_4_Sequential) {
+	auto queue = NarySegmentTreeQueue<KeyType, DataType, 4>(TestItemsCount);
+	Queue_SequentialTest(queue);
+}
+
+TEST(PriorityQueue, NarySegmentTree_4_Random) {
+	auto queue = NarySegmentTreeQueue<KeyType, DataType, 4>(TestItemsCount);
+	Queue_RandomTest(queue);
+}
+
 TEST(PriorityQueue, DHeap_2_Sequential) {
 	auto queue = DHeapQueue<KeyType, DataType>(TestItemsCount, 2);
 	Queue_SequentialTest(queue);
