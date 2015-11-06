@@ -78,8 +78,8 @@ namespace graph
 					TDataId firstChildIndex = N * index + 1;
 					auto aggregate = tree[firstChildIndex];
 					for (int i = 1; i < N; ++i) {
-						auto& node = tree[firstChildIndex + i];
-						aggregate = aggregate < node ? aggregate : node;
+						if (tree[firstChildIndex + i] < aggregate)
+							aggregate = tree[firstChildIndex + i];
 					}
 					if (tree[index] == aggregate)
 						break;
