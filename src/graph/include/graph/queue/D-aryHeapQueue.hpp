@@ -18,7 +18,7 @@ namespace graph {
 			void Heapify(int idx) {
 				if (idx == 0)
 					return;
-				int leftMostChild = idx * childrenNumber;
+				int leftMostChild = GetLeftmostChild(idx);
 				int leastIdx = idx;
 				for (int i = leftMostChild; i < leftMostChild + childrenNumber; ++i) {
 					if (i > realLength)
@@ -39,7 +39,13 @@ namespace graph {
 			}
 
 			inline int GetParent(int idx) {
-				return idx / childrenNumber;
+				int parent = (idx - 2) / childrenNumber + 1;
+				return parent;
+			}
+
+			inline int GetLeftmostChild(int idx) {
+				int child = (idx - 1) * childrenNumber + 2;
+				return child;
 			}
 
 			void Add(QueueItemType element) {
@@ -65,10 +71,34 @@ namespace graph {
 				vertexIndeces[q[idx].Data()] = -1;
 				vertexIndeces[q[realLength].Data()] = idx;
 				q[idx] = q[realLength];
-				//q.pop_back();
+				q[realLength] = QueueItemType(-1, -1);
 				--realLength;
-				for (int i = realLength / childrenNumber; i > 0; i--)
+				for (int i = min(idx, realLength / childrenNumber + 1); i > 0; i--)
 					Heapify(i);
+			}
+
+			void UnitTests() {
+				int realParent = 1;
+				vector<int> parents;
+				parents.push_back(0);
+				parents.push_back(1);
+				int i = 2;
+				while (parents.size() <= 1000) {
+					for (int i = 0; i < childrenNumber; i++)
+						parents.push_back(realParent);
+					realParent++;
+				}
+
+				for (int i = 1; i <= 100; i++) {
+					int parent = GetParent(i);
+					int leftmostChild = GetLeftmostChild(i);
+					assert(parent == parents[i]);
+					assert(i == parents[leftmostChild]);
+					assert(i == parents[leftmostChild + childrenNumber - 1]);
+				}
+
+
+
 			}
 
 		public:
@@ -77,6 +107,22 @@ namespace graph {
 				vertexIndeces.resize(dataIdSize * d, -1);
 				childrenNumber = d;
 				realLength = 0;
+
+				//UnitTests();
+
+			}
+
+			bool Check() {
+				for (int i = 1; i <= realLength; i++) {
+					int leftMostChild = GetLeftmostChild(i);
+					for (int j = leftMostChild; j < leftMostChild + childrenNumber; j++) {
+						if (j > realLength)
+							break;
+						if (q[i].Key() > q[j].Key())
+							return false;
+					}
+				}
+				return true;
 			}
 
 			bool IsEmpty() {
@@ -98,12 +144,6 @@ namespace graph {
 			}
 
 			void DecreaseKey(const TKey& key, const TData& data, const TKey& newKey) {
-				/*for (int idx = 1; idx <= realLength; idx++)
-					if (q[idx].Data() == data) {
-						DeleteFromIdx(idx);
-						break;
-					}
-				*/
 				int idx = vertexIndeces[data];
 				if (idx != -1){
 					DeleteFromIdx(idx);
