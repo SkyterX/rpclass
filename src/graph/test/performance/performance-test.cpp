@@ -11,6 +11,7 @@
 #include <graph/dijkstra.hpp>
 #include <graph/bidirectional_dijkstra.hpp>
 #include <graph/io.hpp>
+#include <fstream>
 #include <generator.hpp>
 #include <vector>
 #include <string>
