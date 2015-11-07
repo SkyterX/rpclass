@@ -151,30 +151,30 @@ namespace graph {
         template <size_t I, size_t J, typename... P2s>
         void assign(const Properties<P2s...>& other,
             std::integral_constant<size_t, I>,
-            std::integral_constant<size_t, J>) {
-            using P = typename std::tuple_element<J, Base>::type;
+            std::integral_constant<size_t, J>*) {
+            using P = typename std::tuple_element<I, Base>::type;
             using Tag = typename P::tag_type;
             get<Tag>(*this) = get<Tag>(other);
             assign(other, std::integral_constant<size_t,I-1>(),
-                (detail::FindPropertyByTag_t<
-                    typename std::tuple_element<I-1,Base>::type::tag_type,
-                    Properties<P2s...> >*)(nullptr));
+                static_cast<detail::FindPropertyByTag_t<
+	                typename std::tuple_element<I-1,Base>::type::tag_type,
+	                Properties<P2s...> >*>(nullptr));
         };
 
         template <size_t I, typename... P2s>
         void assign(const Properties<P2s...>& other,
             std::integral_constant<size_t, I>, void*) {
             assign(other, std::integral_constant<size_t,I-1>(),
-                (detail::FindPropertyByTag_t<
-                    typename std::tuple_element<I-1,Base>::type::tag_type,
-                    Properties<P2s...> >*)(nullptr));
+                static_cast<detail::FindPropertyByTag_t<
+	                typename std::tuple_element<I-1,Base>::type::tag_type,
+	                Properties<P2s...> >*>(nullptr));
         };
 
         template <size_t J, typename... P2s>
         void assign(const Properties<P2s...>& other,
             std::integral_constant<size_t, 0>,
             std::integral_constant<size_t,J>*) {
-            using P = typename std::tuple_element<J, Base>::type;
+            using P = typename std::tuple_element<0, Base>::type;
             using Tag = typename P::tag_type;
             get<Tag>(*this) = get<Tag>(other);
         }
@@ -187,9 +187,9 @@ namespace graph {
         Properties<Ps...>& operator=(const Properties<P2s...>& other) {
             using Size = typename std::tuple_size<Base>::type;
             assign(other, std::integral_constant<size_t, Size::value - 1>(),
-                (detail::FindPropertyByTag_t<
-                    typename std::tuple_element<Size::value -1,Base>::type::tag_type,
-                    Properties<P2s...> >*)(nullptr));
+                static_cast<detail::FindPropertyByTag_t<
+	                typename std::tuple_element<Size::value -1,Base>::type::tag_type,
+	                Properties<P2s...> >*>(nullptr));
             return *this;
         };
     };    
