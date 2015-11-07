@@ -208,7 +208,7 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
 
 
 INSTANTIATE_TEST_CASE_P(CommandLine, DdsgGraphAlgorithm,
-    ::testing::Values("bel.ddsg"));
+    ::testing::Values("arc.ddsg","bel.ddsg"));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
