@@ -144,9 +144,11 @@ TEST_P(DdsgGraphAlgorithm, DijkstraOne2All) {
     auto vertex_index = graph::get(vertex_index_t(), graph);
     auto color = graph::get(color_t(), graph);
     ifstream verificationFile;
+    graph::DefaultDijkstraVisitor<Graph> visitor;
     for (size_t src:m_sources) {
         cout << "Testing source " << src << endl;
-        dijkstra(graph, graph_traits<Graph>::vertex_descriptor(src), predecessor, distance, weight, vertex_index, color);
+        dijkstra(graph, graph_traits<Graph>::vertex_descriptor(src), predecessor,
+            distance, weight, vertex_index, color, visitor);
         stringstream ss;
         ss << m_path << "/" << m_baseName << "/" << m_baseName << "_" << src << ".sssp";
         verificationFile.open(ss.str());
@@ -192,11 +194,13 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
         cerr << "Verification file " << ss.str() <<" is not found." << endl;
         FAIL();
     };
+    DefaultDijkstraVisitor<Graph> visitorF;
+    DefaultDijkstraVisitor<Graph> visitorB;
     while (verificationFile>>src>>tgt>>distance) {
         cout << "Running BiDijkstra from " << src << " to " << tgt << endl;
         bidirectional_dijkstra(graph, graph_traits<Graph>::vertex_descriptor(src),
         graph_traits<Graph>::vertex_descriptor(tgt),predecessorF, predecessorB,
-        distanceF, distanceB, weight, vertex_index, colorF,colorB);
+        distanceF, distanceB, weight, vertex_index, colorF,colorB, visitorF, visitorB);
     EXPECT_EQ(distance, get(distanceF, tgt));
     }
     verificationFile.close();
