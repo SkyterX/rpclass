@@ -43,4 +43,4 @@ target_link_libraries(${PROJECT_NAME}-performance-test gtest gtest_main)
 install (TARGETS ${PROJECT_NAME}-test RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 install (TARGETS ${PROJECT_NAME}-performance-test RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 
-include_directories(other)
+add_subdirectory(other)
