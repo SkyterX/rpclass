@@ -3,6 +3,7 @@
 #include <graph/properties.hpp>
 #include <graph/static_graph.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/graph/two_bit_color_map.hpp>
 
 namespace graph {
 

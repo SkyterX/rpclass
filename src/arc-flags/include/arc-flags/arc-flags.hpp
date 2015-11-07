@@ -2,6 +2,7 @@
 
 #include <graph/static_graph.hpp>
 #include <graph/dijkstra.hpp>
+#include <boost/graph/two_bit_color_map.hpp>
 
 namespace arcflags {
 template <typename PredecessorMapTag, class DisanceMapTag, typename WeightMapTag,
