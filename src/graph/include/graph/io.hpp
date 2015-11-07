@@ -33,6 +33,7 @@ int read_ddsg(BackInsertIterator backInserter, size_t& numOfNodes, size_t& numOf
              break;
         case 1:
             *backInserter++ = make_pair(make_pair(u, v), EdgeWeightProperty(w));
+            break;
         case 2:
             *backInserter++ = make_pair(make_pair(v, u), EdgeWeightProperty(w));
              break;
