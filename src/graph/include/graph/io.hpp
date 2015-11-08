@@ -6,7 +6,7 @@
 
 template <typename EdgeWeightProperty, typename BackInsertIterator>
 int read_ddsg(BackInsertIterator backInserter, size_t& numOfNodes, size_t& numOfEdges,
-              const char* fileName) {
+	const char* fileName) {
 	using namespace std;
 	using namespace graphIO;
 	FileReader input;
@@ -30,20 +30,22 @@ int read_ddsg(BackInsertIterator backInserter, size_t& numOfNodes, size_t& numOf
 		w = input.NextUnsignedInt();
 		d = input.NextUnsignedInt();
 		switch (d) {
-			case 0:
-			case 3:
-				*backInserter++ = make_pair(make_pair(u, v), EdgeWeightProperty(w));
-				*backInserter++ = make_pair(make_pair(v, u), EdgeWeightProperty(w));
-				++numOfEdges;
-				break;
-			case 1:
-			case 2:
-				*backInserter++ = make_pair(make_pair(v, u), EdgeWeightProperty(w));
-				break;
-			default:
-				std::cerr << "Wrong file format" << endl;
-				input.Close();
-				return 1;
+		case 0:
+		case 3:
+			*backInserter++ = make_pair(make_pair(u, v), EdgeWeightProperty(w));
+			*backInserter++ = make_pair(make_pair(v, u), EdgeWeightProperty(w));
+			++numOfEdges;
+			break;
+		case 1:
+			*backInserter++ = make_pair(make_pair(u, v), EdgeWeightProperty(w));
+			break;
+		case 2:
+			*backInserter++ = make_pair(make_pair(v, u), EdgeWeightProperty(w));
+			break;
+		default:
+			std::cerr << "Wrong file format" << endl;
+			input.Close();
+			return 1;
 		}
 	};
 
