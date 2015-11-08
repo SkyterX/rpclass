@@ -58,6 +58,8 @@ namespace graph {
 		explicit ComplementGraph(Graph& graph)
 			: detail::internal::ComplementGraphObfuscated
 			<Graph, typename Graph::vertex_bundled, typename Graph::edge_bundled>(graph) {}
+		operator Graph&() { return detail::internal::ComplementGraphObfuscated
+			<Graph, typename Graph::vertex_bundled, typename Graph::edge_bundled>::innerGraph; }
 	};
 
 	// PropertyMaps

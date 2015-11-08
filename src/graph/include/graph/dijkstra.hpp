@@ -127,7 +127,6 @@ namespace graph
 				auto toDistance = get(distance, to);
 				if (newDistance < toDistance) {
 					// Found better distance -> update
-					visitor.edge_relaxed(edge, graph);
 					put(distance, to, newDistance);
 					put(predecessor, to, v);
 					if (get(color, to) == boost::two_bit_color_type::two_bit_white) {
@@ -139,7 +138,7 @@ namespace graph
 					else {
 						queue.DecreaseKey(toDistance, to, newDistance);
 					}
-
+					visitor.edge_relaxed(edge, graph);
 				}
 				else {
 					// Found same or worse distance
