@@ -67,6 +67,7 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
     using Graph = GenerateArcFlagsGraph<predecessor_t, distance_t, weight_t,
         vertex_index_t, color_t, arc_flags_t, partition_t, N::value,
         Properties<>, Properties< >> ::type;
+	const bool ArcFlagsSavingEnabled = false;
     Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);    
     auto predecessor = graph::get(predecessor_t(), graph);
     auto distance = graph::get(distance_t(), graph);
@@ -76,13 +77,34 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
     auto partition = graph::get(partition_t(), graph);
     auto arc_flags = graph::get(arc_flags_t(), graph);
     stringstream ss;    
+
+	cout << "Reading partition..." << endl;
     ss << m_path << "/" << m_baseName << "/tmppartition" << N::value;    
     if (read_partitioning<N::value, partition_t>(graph, ss.str().c_str())) {
         FAIL();
-    };
-    arcflags_preprocess<N::value>(graph, predecessor, distance, weight, vertex_index, 
-        color, partition, arc_flags, m_filter);    
+    };    
 
+	cout << "Trying to laod arc-flags from file..." << endl;
+	ss.str(string());
+	ss << m_path << "/" << m_baseName << "/arcflags" << N::value;
+	if (!ArcFlagsSavingEnabled || read_arcflags<N::value>(graph, arc_flags, ss.str().c_str())) {
+		if (ArcFlagsSavingEnabled)
+			cout << "No saved arc-flags found." << endl;
+		else
+			cout << "Arc-flags saving is disabled." << endl;
+		cout << "Building arc-flags..." << endl;
+		arcflags_preprocess<N::value>(graph, predecessor, distance, weight, vertex_index,
+			color, partition, arc_flags, m_filter);
+		
+		if (ArcFlagsSavingEnabled) {
+			cout << "Saving arc-flags..." << endl;
+			if (save_arcflags<N::value>(graph, arc_flags, ss.str().c_str())) {
+				FAIL();
+			}
+		}
+	}
+
+	cout << "Running queries..." << endl;
     ifstream verificationFile;    
     ss.str(string());
     ss << m_path << "/" << m_baseName << "/" << m_baseName << ".ppsp";

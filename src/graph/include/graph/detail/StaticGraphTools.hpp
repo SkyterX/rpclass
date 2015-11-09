@@ -2,15 +2,6 @@
 
 namespace graph {
 #define Properties VertexProperties, EdgeProperties
-	
-	template <typename VertexProperties, typename EdgeProperties>
-	inline std::pair<typename StaticGraph<Properties>::edge_descriptor, bool> edge(
-		typename StaticGraph<Properties>::vertex_descriptor,
-		typename StaticGraph<Properties>::vertex_descriptor,
-		const StaticGraph<Properties>&) {
-		throw std::runtime_error("Not Supported");
-	}
-
 	template <typename VertexProperties, typename EdgeProperties>
 	inline std::pair<typename StaticGraph<Properties>::vertex_iterator, typename StaticGraph<Properties>::vertex_iterator>
 	vertices(const StaticGraph<Properties>& g) {
@@ -83,6 +74,18 @@ namespace graph {
 	inline typename StaticGraph<Properties>::degree_size_type degree(
 		typename StaticGraph<Properties>::vertex_descriptor v, const StaticGraph<Properties>& g) {
 		return in_degree(v, g) + out_degree(v, g);
+	}
+
+	template <typename VertexProperties, typename EdgeProperties>
+	inline std::pair<typename StaticGraph<Properties>::edge_descriptor, bool> edge(
+		typename StaticGraph<Properties>::vertex_descriptor u,
+		typename StaticGraph<Properties>::vertex_descriptor v,
+		const StaticGraph<Properties>& graph) {
+		using EdgeDescriptor = typename StaticGraph<Properties>::edge_descriptor;
+		for (const auto& edge : graphUtil::Range(out_edges(u, graph))) {
+			if (target(edge, graph) == v) return make_pair(edge, true);
+		}
+		return make_pair(EdgeDescriptor(), false);
 	}
 #undef Properties
 }

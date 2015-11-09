@@ -159,6 +159,14 @@ namespace graph {
 	inline typename ComplementGraphType::edges_size_type num_edges(const ComplementGraphType& g) {
 		return num_edges(g.innerGraph);
 	}
+
+	ComplementGraphTemplate
+	inline std::pair<typename ComplementGraphType::edge_descriptor, bool> edge(
+		typename ComplementGraphType::vertex_descriptor u,
+		typename ComplementGraphType::vertex_descriptor v,
+		const ComplementGraphType& graph) {
+		return edge(v, u, graph.innerGraph);
+	}
 #undef ComplementGraphType
 #undef ComplementGraphTemplate
 }
