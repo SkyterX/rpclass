@@ -82,19 +82,22 @@ namespace arcflags {
 		if (!fileReader.Open(PathToFile))
 			return 1;
 
-		while(fileReader.HasNext()) {
-			auto start = fileReader.NextUnsignedInt();
-			auto end = fileReader.NextUnsignedInt();
-			auto pair = edge(start, end, graph);
-			if (!pair.second)
-				return 1;
-			auto& bitset = get(arcflags, pair.first);
-			for (int bitIndex = 0; bitIndex < N; ++bitIndex) {
-				char bit = fileReader.NextChar();
-				if(bit == '1')
-					bitset.SetBit(bitIndex);
+		for (const auto& v : Range(vertices(graph))) {
+			for (const auto& outEdge : Range(out_edges(v, graph))) {
+				assert(fileReader.HasNext());
+				auto start = fileReader.NextUnsignedInt();
+				auto end = fileReader.NextUnsignedInt();
+				assert(start == source(outEdge, graph));
+				assert(end == target(outEdge, graph));
+				auto& arcFlag = get(arcflags, outEdge);
+				for (const auto& bitIndex : Range(0, N)) {
+					char bit = fileReader.NextChar();
+					arcFlag.SetBit(bitIndex, bit == '1');
+				}
+
 			}
 		}
+		fileReader.Close();
 
 		return 0;
 	}
