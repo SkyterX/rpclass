@@ -3,6 +3,9 @@
 #include <cassert>
 #include <queue>
 #include <gtest/gtest.h>
+#include <chrono>
+#include <vector>
+#include <string>
 #include <boost/graph/graph_concepts.hpp>
 #include <graph/static_graph.hpp>
 #include <graph/graph.hpp>
@@ -11,12 +14,14 @@
 #include <graph/dijkstra.hpp>
 #include <graph/bidirectional_dijkstra.hpp>
 #include <graph/io.hpp>
+
+#include <util/statistics.h>
+#include <test.h>
 #include <generator.hpp>
-#include <vector>
-#include <string>
 
 using namespace std;
 using namespace graph;
+using namespace util::statistics;
 
 struct distance_t {};
 struct distanceB_t {};
@@ -127,16 +132,25 @@ TEST_P(DdsgGraphAlgorithm, BFSTraversalSpeed) {
     auto color = graph::get(color_t(), graph);
     using BFSVisitor = SpeedBFSVisitor<Graph, property_map<Graph, color_t>::type>;
     auto vRange = vertices(graph);
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
+    start = std::chrono::high_resolution_clock::now();
     for (auto vIt = vRange.first; vIt != vRange.second; ++vIt)
         graph::put(color, *vIt, 0);
+
     for (auto vIt = vRange.first; vIt != vRange.second; ++vIt)
         breadth_first_search(graph, *vIt, color, BFSVisitor(graph));
+    end = std::chrono::high_resolution_clock::now();
+
+    BFSStatistics bfsStatistics(m_baseName, Algorithm::bfs, Phase::query, Metric::time,
+        chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false);
+    cout << bfsStatistics << endl;
 };
 
 
 TEST_P(DdsgGraphAlgorithm, DijkstraOne2All) {
     using Graph = GenerateDijkstraGraph<predecessor_t, distance_t, weight_t,
         vertex_index_t, color_t, Properties<>, Properties< >> ::type;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
     Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);
     auto predecessor = graph::get(predecessor_t(), graph);
     auto distance = graph::get(distance_t(), graph);
@@ -146,9 +160,16 @@ TEST_P(DdsgGraphAlgorithm, DijkstraOne2All) {
     ifstream verificationFile;
     graph::DefaultDijkstraVisitor<Graph> visitor;
     for (size_t src:m_sources) {
-        cout << "Testing source " << src << endl;
+//        cout << "Testing source " << src << endl;
+        start = std::chrono::high_resolution_clock::now();
         dijkstra(graph, graph_traits<Graph>::vertex_descriptor(src), predecessor,
             distance, weight, vertex_index, color, visitor);
+        end = std::chrono::high_resolution_clock::now();
+        DijkstraOneToAllSPStatistics statistics(
+            GeneralStatistics(m_baseName, Algorithm::dijkstra, Phase::query, Metric::time,
+            chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false),
+            src);
+        cout << statistics << endl;
         stringstream ss;
         ss << m_path << "/" << m_baseName << "/" << m_baseName << "_" << src << ".sssp";
         verificationFile.open(ss.str());
@@ -176,6 +197,7 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
     using Graph = GenerateBiDijkstraGraph<predecessor_t, predecessorB_t,
         distance_t, distanceB_t, weight_t, vertex_index_t, color_t, colorB_t,
         Properties<>, Properties<>> ::type;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
     Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);
     auto predecessorF = graph::get(predecessor_t(), graph);
     auto predecessorB = graph::get(predecessorB_t(), graph);
@@ -195,13 +217,20 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
         FAIL();
     };
     DefaultDijkstraVisitor<Graph> visitorF;
-    DefaultDijkstraVisitor<Graph> visitorB;
+    DefaultDijkstraVisitor<Graph> visitorB;    
     while (verificationFile>>src>>tgt>>distance) {
-        cout << "Running BiDijkstra from " << src << " to " << tgt << endl;
+//        cout << "Running BiDijkstra from " << src << " to " << tgt << endl;
+        start = std::chrono::high_resolution_clock::now();
         bidirectional_dijkstra(graph, graph_traits<Graph>::vertex_descriptor(src),
         graph_traits<Graph>::vertex_descriptor(tgt),predecessorF, predecessorB,
         distanceF, distanceB, weight, vertex_index, colorF,colorB, visitorF, visitorB);
-    EXPECT_EQ(distance, get(distanceF, tgt));
+        end = std::chrono::high_resolution_clock::now();
+        DijkstraSSSPStatistics statistics(
+            GeneralStatistics(m_baseName, Algorithm::biDijkstra, Phase::query, Metric::time,
+                chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false),
+            src,tgt,distance);
+        cout << statistics << endl;
+        EXPECT_EQ(distance, get(distanceF, tgt));
     }
     verificationFile.close();
 };
