@@ -34,8 +34,7 @@ namespace graph
 				P2s...>>;
 	};
 
-	template <typename Graph,
-	          class DistanceMapF, class DistanceMapB>
+	template <typename Graph, class DistanceMapF, class DistanceMapB, typename Queue>
 	class OptimalCriteriaTraker {
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 	public :
@@ -62,7 +61,7 @@ namespace graph
 			return direction_flag_forward;
 		}
 
-		OptimalCriteriaTraker(const queue::HeapQueue<int, Vertex>& queue_f, const queue::HeapQueue<int, Vertex>& queue_b,
+		OptimalCriteriaTraker(const Queue& queue_f, const Queue& queue_b,
 		                      DistanceMapF& distance_f, DistanceMapB& distance_b)
 			: queueF(queue_f),
 			  queueB(queue_b),
@@ -75,8 +74,8 @@ namespace graph
 		uint32_t mu;
 		Vertex m_center;
 		bool direction_flag_forward;
-		queue::HeapQueue<int, Vertex> queueF;
-		queue::HeapQueue<int, Vertex> queueB;
+		Queue queueF;
+		Queue queueB;
 		DistanceMapF& distanceF;
 		DistanceMapB& distanceB;
 	};
@@ -112,11 +111,10 @@ namespace graph
 
 
 	template <class Graph, class PredecessorMap, class DistanceMap, class WeightMap,
-	          class IndexMap, class ColorMap, class DijkstraVisitor, typename BidijkstraVisitor>
+	          class IndexMap, class ColorMap, class DijkstraVisitor, typename BidijkstraVisitor, typename Queue>
 	bool dijkstra_iteration(Graph& graph,
 	                        PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
-	                        IndexMap& index, ColorMap& color, DijkstraVisitor visitor,
-	                        queue::HeapQueue<int, typename graph_traits<Graph>::vertex_descriptor>& queue,
+	                        IndexMap& index, ColorMap& color, DijkstraVisitor visitor, Queue& queue,
 	                        BidijkstraVisitor& bivisitor) {
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 
@@ -189,9 +187,10 @@ namespace graph
 			return;
 		}
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
+		using Queue = queue::FastHeapQueue<int, Vertex>;
 
-		queue::FastHeapQueue<int, Vertex> queueF(num_vertices(graph));
-		queue::FastHeapQueue<int, Vertex> queueB(num_vertices(graph));
+		Queue queueF(num_vertices(graph));
+		Queue queueB(num_vertices(graph));
 
 		for (auto& v : graphUtil::Range(vertices(graph))) {
 			init_one_vertex(graph, v, predecessorF, distanceF, index, colorF, visitorF);
@@ -203,7 +202,7 @@ namespace graph
 		init_first_vertex(graph, t, distanceB, index, colorB, visitorB, queueB); // should it be inverted graph?
 
 		auto invertedGraph = graph::ComplementGraph<Graph>(graph);
-		OptimalCriteriaTraker<Graph, DistanceMapF, DistanceMapB> optTracker(queueF, queueB, distanceF, distanceB);
+		OptimalCriteriaTraker<Graph, DistanceMapF, DistanceMapB, Queue> optTracker(queueF, queueB, distanceF, distanceB);
 
 		while (!queueF.IsEmpty() && !queueB.IsEmpty()) {
 			if (optTracker.forward_iteration_is_next()) {
