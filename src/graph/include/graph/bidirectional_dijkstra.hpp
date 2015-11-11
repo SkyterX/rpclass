@@ -190,8 +190,8 @@ namespace graph
 		}
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 
-		queue::HeapQueue<int, Vertex> queueF(num_vertices(graph));
-		queue::HeapQueue<int, Vertex> queueB(num_vertices(graph));
+		queue::FastHeapQueue<int, Vertex> queueF(num_vertices(graph));
+		queue::FastHeapQueue<int, Vertex> queueB(num_vertices(graph));
 
 		for (auto& v : graphUtil::Range(vertices(graph))) {
 			init_one_vertex(graph, v, predecessorF, distanceF, index, colorF, visitorF);

@@ -92,7 +92,7 @@ namespace graph
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 		// TODO 
 		// - Use IndexMap instead of Vertex
-		queue::HeapQueue<int, Vertex> queue(num_vertices(graph));
+		queue::FastHeapQueue<int, Vertex> queue(num_vertices(graph));
 
 		for (auto& v : graphUtil::Range(vertices(graph))) {
 			visitor.initialize_vertex(v, graph);

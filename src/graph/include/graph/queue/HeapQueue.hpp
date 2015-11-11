@@ -53,5 +53,57 @@ namespace graph {
 				return q.empty();
 			}
 		};
+
+
+		// Items cannot be reinserted.
+		template <typename TKey, typename TDataId>
+		class FastHeapQueue {
+		private:
+			using QueueItemType = QueueItem<TKey, TDataId>;
+			using IterationType = uint32_t;
+
+			std::priority_queue<QueueItemType, std::vector<QueueItemType>, std::greater<QueueItemType>> q;
+			std::vector<IterationType> isDeleted;
+			IterationType iterationId;
+
+			void SkipDeleted() {
+				while (!q.empty() && isDeleted[q.top().Data()] == iterationId)
+					q.pop();
+			}
+		public:
+
+			FastHeapQueue(int dataIdSize) {
+				iterationId = 1;
+				isDeleted.resize(dataIdSize, 0);
+			}
+
+			void Clear() {
+				++iterationId;
+			}
+
+			void Insert(TKey key, TDataId dataId) {
+				assert(isDeleted[dataId] < iterationId);
+				q.push(MakeQueueItem(key, dataId));
+			}
+
+			const QueueItem<TKey, TDataId>& PeekMin() const {
+				assert(!this->IsEmpty());
+				return q.top();
+			}
+
+			void DeleteMin() {
+				assert(!this->IsEmpty());
+				isDeleted[q.top().Data()] = iterationId;
+				SkipDeleted();
+			}
+
+			void DecreaseKey(const TKey& key, const TDataId& dataId, const TKey& newKey) {
+				Insert(newKey, dataId);
+			}
+
+			bool IsEmpty() const {
+				return q.empty();
+			}
+		};
 	}
 }
