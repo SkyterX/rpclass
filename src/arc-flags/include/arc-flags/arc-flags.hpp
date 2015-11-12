@@ -55,22 +55,6 @@ namespace arcflags {
 		return 0;
 	};
 
-	template <typename Graph, typename ArcFlagsMap, typename PartitionMap>
-	struct ArcflagsBuildingDijkstraVisitor : public graph::DefaultDijkstraVisitor<Graph> {
-		ArcflagsBuildingDijkstraVisitor(size_t start_vertex_part_index, const ArcFlagsMap& arcflags)
-			: startVertexPartIndex(start_vertex_part_index),
-			  arcflags(arcflags) { }
-
-		void examine_edge(const typename graph::graph_traits<Graph>::edge_descriptor& edge, Graph& graph) {
-			auto& bitset = get(arcflags, edge);
-			bitset.SetBit(startVertexPartIndex);
-		};
-
-	private:
-		size_t startVertexPartIndex;
-		ArcFlagsMap arcflags;
-	};
-
 	template <size_t N, typename Graph, typename ArcFlagsMap>
 	int read_arcflags(Graph& graph, ArcFlagsMap& arcflags, const char* PathToFile) {
 		using namespace graph;
@@ -109,16 +93,16 @@ namespace arcflags {
 		using namespace std;
 
 		FILE* outFile = fopen(PathToFile, "wt");
-		if(outFile == nullptr) {
+		if (outFile == nullptr) {
 			std::cerr << "Can't open file " << PathToFile << endl;
 			return 1;
 		}
 
 		for (const auto& v : Range(vertices(graph))) {
-			for(const auto& edge : Range(out_edges(v, graph))) {
+			for (const auto& edge : Range(out_edges(v, graph))) {
 				auto bitset = get(arcflags, edge);
 				fprintf(outFile, "%d %d ", source(edge, graph), target(edge, graph));
-				for(const auto& bitIndex : Range(0, N)) {
+				for (const auto& bitIndex : Range(0, N)) {
 					fprintf(outFile, "%c", bitset.GetBit(bitIndex) == true ? '1' : '0');
 				}
 				fprintf(outFile, "\n");
@@ -160,14 +144,22 @@ namespace arcflags {
 
 			if (borderVertex) {
 				//++borderCnt;
-				graph::dijkstra(invertedGraph,
-								v,
-								predecessor,
-								distance,
-								weight,
-								index,
-								color,
-								ArcflagsBuildingDijkstraVisitor<graph::ComplementGraph<Graph>, ArcFlagsMap, PartitionMap>(get(partition, v), arcflags));
+				graph::dijkstra(invertedGraph, v, predecessor, distance, weight, index, color);
+
+				for (const auto& fromVertex : graphUtil::Range(graph::vertices(invertedGraph))) {
+					auto predVertex = get(predecessor, fromVertex);
+					if (predVertex == fromVertex)
+						continue;
+					auto predecessorEdgeWeight = get(distance, fromVertex) - get(distance, predVertex);
+					for (const auto& edge : graphUtil::Range(graph::in_edges(fromVertex, invertedGraph))) {
+						auto toVertex = graph::source(edge, invertedGraph);
+						if (toVertex == predVertex && get(weight, edge) == predecessorEdgeWeight) {
+							//						if (get(distance, fromVertex) + get(weight, edge) == get(distance, toVertex)) {
+							auto& bitset = get(arcflags, edge);
+							bitset.SetBit(vPartIndex);
+						}
+					}
+				}
 			}
 		}
 		//printf("%d\n", borderCnt);
