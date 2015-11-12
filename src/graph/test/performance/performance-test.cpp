@@ -46,7 +46,7 @@ protected:
         if (read_ddsg<Property<weight_t, uint32_t>>(m_ddsgVecBackInserter,
             m_numOfNodes, m_numOfEdges, (m_path + "/" + GetParam()).c_str()))
             FAIL();        
-        std::sort(m_ddsgVec.begin(), m_ddsgVec.end(),
+        std::stable_sort(m_ddsgVec.begin(), m_ddsgVec.end(),
             [&](DdsgVecType::value_type left, DdsgVecType::value_type right) {
             return left.first.first < right.first.first;
         });

@@ -82,11 +82,11 @@ namespace graph {
 			for (int i = 0; i < this->vertexCount; ++i) {
 				auto start = linkPointers[i];
 				auto end = linkPointers[i + 1];
-				std::sort(start, start + graph.edgesSeparators[i],
+				std::stable_sort(start, start + graph.edgesSeparators[i],
 						  [](const StoredAdjacencyType& a, const StoredAdjacencyType& b) {
 							  return a.target < b.target;
 						  });
-				std::sort(start + graph.edgesSeparators[i], end,
+				std::stable_sort(start + graph.edgesSeparators[i], end,
 						  [](const StoredAdjacencyType& a, const StoredAdjacencyType& b) {
 							  return a.target < b.target;
 						  });
