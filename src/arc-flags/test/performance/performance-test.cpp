@@ -103,6 +103,8 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
 			}
 		}
 	}
+	cout << "Reducing arc-flags by " << m_filter * 100 << "%" << endl;
+	arcflags_reduce_greedy<N::value>(graph, arc_flags, m_filter);
 
 	cout << "Running queries..." << endl;
     ifstream verificationFile;    

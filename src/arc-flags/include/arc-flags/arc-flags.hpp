@@ -10,6 +10,7 @@
 #include <graph/graph.hpp>
 #include <graph/properties.hpp>
 #include <graph/detail/ComplementGraph.hpp>
+#include <arc-flags/arc-flagsReduction.hpp>
 
 namespace arcflags {
 	template <typename PredecessorMapTag, class DisanceMapTag, typename WeightMapTag,
