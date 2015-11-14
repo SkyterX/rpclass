@@ -85,6 +85,87 @@ namespace graph
 	};
 
 
+	template <class Graph, class PredecessorMap, class DistanceMap,
+	          class IndexMap, class ColorMap, class DijkstraVisitor>
+	void init_one_vertex(Graph& graph,
+	                     const typename graph_traits<Graph>::vertex_descriptor& v,
+	                     PredecessorMap& predecessor,
+	                     DistanceMap& distance,
+	                     IndexMap& index, ColorMap& color,
+	                     DijkstraVisitor& visitor,
+	                     typename graph_traits<Graph>::vertex_descriptor maxDistance = std::numeric_limits<typename graph_traits<Graph>::vertex_descriptor>::max() >> 2
+	) {
+		visitor.initialize_vertex(v, graph);
+		put(distance, v, maxDistance);
+		put(predecessor, v, v);
+		put(color, v, boost::two_bit_color_type::two_bit_white);
+	}
+
+	template <class Graph, class DistanceMap, class IndexMap,
+	          class ColorMap, class DijkstraVisitor, class Queue>
+	void init_first_vertex(Graph& graph,
+	                       const typename graph_traits<Graph>::vertex_descriptor& v,
+	                       DistanceMap& distance,
+	                       IndexMap& index, ColorMap& color,
+	                       DijkstraVisitor& visitor, Queue& queue) {
+		visitor.discover_vertex(v, graph);
+		put(distance, v, 0);
+		put(color, v, boost::two_bit_color_type::two_bit_green);
+		queue.Insert(0, v);
+	}
+
+	template <class Graph, class PredecessorMap, class DistanceMap, class WeightMap,
+	          class IndexMap, class ColorMap, class DijkstraVisitor>
+	bool dijkstra_iteration(Graph& graph,
+	                        PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
+	                        IndexMap& index, ColorMap& color, DijkstraVisitor& visitor) {
+		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
+		auto& queue = visitor.Queue;
+		// Get vertex from queue
+		Vertex v;
+		int vDistance;
+		std::tie(vDistance, v) = queue.PeekMin();
+		queue.DeleteMin();
+		visitor.examine_vertex(v, graph);
+
+		// Process edges	
+		for (const auto& edge : graphUtil::Range(out_edges(v, graph))) {
+			visitor.examine_edge(edge, graph);
+			if (!visitor.should_relax(edge, graph))
+				continue;
+			// Get edge Properties
+			Vertex to = target(edge, graph);
+			auto edgeWeight = get(weight, edge);
+			auto newDistance = vDistance + edgeWeight;
+			auto toDistance = get(distance, to);
+			if (newDistance < toDistance) {
+				// Found better distance -> update
+				put(distance, to, newDistance);
+				put(predecessor, to, v);
+				if (get(color, to) == boost::two_bit_color_type::two_bit_white) {
+					// Vertex is new
+					visitor.discover_vertex(to, graph);
+					put(color, to, boost::two_bit_color_type::two_bit_green);
+					queue.Insert(newDistance, to);
+				}
+				else {
+					queue.DecreaseKey(toDistance, to, newDistance);
+				}
+				visitor.edge_relaxed(edge, graph);
+			}
+			else {
+				// Found same or worse distance
+				visitor.edge_not_relaxed(edge, graph);
+			}
+		}
+
+		// Teardown vertex
+		put(color, v, boost::two_bit_color_type::two_bit_black);
+		visitor.finish_vertex(v, graph);
+		return visitor.should_continue();
+	};
+
+
 	template <class Graph, class PredecessorMap, class DistanceMap, class WeightMap,
 	          class IndexMap, class ColorMap, class DijkstraVisitor = DefaultDijkstraVisitor<Graph>>
 	void dijkstra(Graph& graph,
@@ -108,61 +189,15 @@ namespace graph
 		auto& queue = visitor.Queue;
 
 		for (auto& v : graphUtil::Range(vertices(graph))) {
-			visitor.initialize_vertex(v, graph);
-			put(distance, v, std::numeric_limits<Vertex>::max());
-			put(predecessor, v, v);
-			put(color, v, boost::two_bit_color_type::two_bit_white);
+			init_one_vertex(graph, v, predecessor, distance, index, color, visitor, std::numeric_limits<Vertex>::max());
 		}
 
 		// Process start vertex
-		visitor.discover_vertex(s, graph);
-		put(distance, s, 0);
-		put(color, s, boost::two_bit_color_type::two_bit_green);
-		queue.Insert(0, s);
+		init_first_vertex(graph, s, distance, index, color, visitor, queue);
 
 		while (!queue.IsEmpty()) {
-			// Get vertex from queue
-			Vertex v;
-			int vDistance;
-			std::tie(vDistance, v) = queue.PeekMin();
-			queue.DeleteMin();
-			visitor.examine_vertex(v, graph);
-
-			// Process edges	
-			for (const auto& edge : graphUtil::Range(out_edges(v, graph))) {
-				visitor.examine_edge(edge, graph);
-				if (!visitor.should_relax(edge, graph))
-					continue;
-				// Get edge Properties
-				Vertex to = target(edge, graph);
-				auto edgeWeight = get(weight, edge);
-				auto newDistance = vDistance + edgeWeight;
-				auto toDistance = get(distance, to);
-				if (newDistance < toDistance) {
-					// Found better distance -> update
-					put(distance, to, newDistance);
-					put(predecessor, to, v);
-					if (get(color, to) == boost::two_bit_color_type::two_bit_white) {
-						// Vertex is new
-						visitor.discover_vertex(to, graph);
-						put(color, to, boost::two_bit_color_type::two_bit_green);
-						queue.Insert(newDistance, to);
-					}
-					else {
-						queue.DecreaseKey(toDistance, to, newDistance);
-					}
-					visitor.edge_relaxed(edge, graph);
-				}
-				else {
-					// Found same or worse distance
-					visitor.edge_not_relaxed(edge, graph);
-				}
-			}
-
-			// Teardown vertex
-			put(color, v, boost::two_bit_color_type::two_bit_black);
-			visitor.finish_vertex(v, graph);
-			if (!visitor.should_continue())
+			auto allRight = dijkstra_iteration(graph, predecessor, distance, weight, index, color, visitor);
+			if (!allRight)
 				break;
 		}
 	};
