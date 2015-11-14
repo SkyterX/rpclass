@@ -141,8 +141,8 @@ TEST_P(DdsgGraphAlgorithm, BFSTraversalSpeed) {
         breadth_first_search(graph, *vIt, color, BFSVisitor(graph));
     end = std::chrono::high_resolution_clock::now();
 
-    BFSStatistics bfsStatistics(m_baseName, Algorithm::bfs, Phase::query, Metric::time,
-        chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false);
+    BFSStatistics bfsStatistics(m_baseName, Algorithm::bfs, Phase::query, Metric::time, 
+        m_numOfNodes, m_numOfEdges, chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false);
     cout << bfsStatistics << endl;
 };
 
@@ -167,7 +167,8 @@ TEST_P(DdsgGraphAlgorithm, DijkstraOne2All) {
         end = std::chrono::high_resolution_clock::now();
         DijkstraOneToAllSPStatistics statistics(
             GeneralStatistics(m_baseName, Algorithm::dijkstra, Phase::query, Metric::time,
-            chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false),
+                m_numOfNodes, m_numOfEdges,
+                chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false),
             src);
         cout << statistics << endl;
         stringstream ss;
@@ -206,7 +207,7 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
     auto weight = graph::get(weight_t(), graph);
     auto vertex_index = graph::get(vertex_index_t(), graph);
     auto colorF = graph::get(color_t(), graph);
-    auto colorB = graph::get(color_t(), graph);
+    auto colorB = graph::get(colorB_t(), graph);
     ifstream verificationFile;
     stringstream ss;
     ss << m_path << "/" << m_baseName << "/" << m_baseName << ".ppsp";
@@ -227,7 +228,7 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
         end = std::chrono::high_resolution_clock::now();
         DijkstraSSSPStatistics statistics(
             GeneralStatistics(m_baseName, Algorithm::biDijkstra, Phase::query, Metric::time,
-                chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false),
+                m_numOfNodes, m_numOfEdges, chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false),
             src,tgt,distance);
         cout << statistics << endl;
         EXPECT_EQ(distance, get(distanceF, tgt));

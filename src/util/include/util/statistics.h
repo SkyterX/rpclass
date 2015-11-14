@@ -79,16 +79,17 @@ struct GeneralStatistics {
     Algorithm algorithm;
     Phase phase;
     Metric metric;
-    uint64_t time,
-             space;
+    uint64_t n, m, time, space;
     bool turns = false;
     GeneralStatistics(const std::string& graphName,
         const Algorithm& algorithm, const Phase& phase, const Metric& metric,
-        const uint64_t& time, const uint64_t& space, bool turns)
+        const uint64_t& n, uint64_t m, const uint64_t& time,
+        const uint64_t& space, bool turns)
         :graphName(graphName),
         algorithm(algorithm),
         phase(phase),
         metric(metric),
+        n(n), m(m),
         time(time),
         space(space),
         turns(turns) {};
@@ -96,7 +97,7 @@ struct GeneralStatistics {
 
 std::ostream& operator<<(std::ostream& osm, const GeneralStatistics& arg) {
     osm << arg.graphName << ',' << arg.algorithm << ',' << arg.phase << ',' << arg.metric << ',' <<
-        arg.time << ',' << arg.space << ',' << arg.turns;
+        arg.n << ','<< arg.m << ','<< arg.time << ',' << arg.space << ',' << arg.turns;
 return osm;
 };
 
