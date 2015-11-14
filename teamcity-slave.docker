@@ -1,0 +1,31 @@
+FROM library/ubuntu:15.10
+
+RUN apt-get update &&\
+  apt-get install -yy --force-yes build-essential libboost-dev cmake \
+        openssh-server default-jdk \
+        apparmor wget apt-transport-https unzip curl &&\
+  mkdir /var/run/sshd
+RUN wget -qO- https://get.docker.com/ | sh
+
+ENV TC_USER teamcity
+
+RUN  adduser ${TC_USER} &&\
+  (echo  ${TC_USER}; echo ${TC_USER}) | passwd ${TC_USER}
+RUN usermod -aG docker -aG sudo teamcity
+
+WORKDIR /home/${TC_USER}
+
+ENV TC_URL http://212.193.66.70/tc
+ADD ${TC_URL}/update/buildAgent.zip buildAgent.zip
+
+RUN chown -R ${TC_USER}:${TC_USER} /home/${TC_USER}
+USER ${TC_USER}
+
+RUN unzip buildAgent.zip &&\
+  chmod +x /home/teamcity/bin/*.sh
+
+VOLUME /var/data/
+
+CMD cp conf/buildAgent.dist.properties conf/buildAgent.properties &&\
+  echo -e "\n\nserverUrl=${TC_URL}\n" >> conf/buildAgent.properties &&\
+  /home/teamcity/bin/agent.sh run
