@@ -145,7 +145,8 @@ namespace arcflags {
 
 			if (borderVertex) {
 				//++borderCnt;
-				graph::dijkstra(invertedGraph, v, predecessor, distance, weight, index, color);
+				graph::DefaultDijkstraVisitor<Graph> visitor;
+				graph::dijkstra(invertedGraph, v, predecessor, distance, weight, index, color, visitor);
 
 				for (const auto& fromVertex : graphUtil::Range(graph::vertices(invertedGraph))) {
 					auto predVertex = get(predecessor, fromVertex);
@@ -192,6 +193,7 @@ namespace arcflags {
 						PredecessorMap& predecessor, DistanceMap& distance,
 						WeightMap& weight, IndexMap& index, ColorMap& color, PartitionMap& partition,
 						ArcFlagsMap& arcflags) {
-		graph::dijkstra(graph, s, predecessor, distance, weight, index, color, ArcflagsQueryDijkstraVisitor<Graph, ArcFlagsMap, PartitionMap>(arcflags, get(partition, t)));
+		auto visitor = ArcflagsQueryDijkstraVisitor<Graph, ArcFlagsMap, PartitionMap>(arcflags, get(partition, t));
+		graph::dijkstra(graph, s, predecessor, distance, weight, index, color, visitor);
 	};
 };

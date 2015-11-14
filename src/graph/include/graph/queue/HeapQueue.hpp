@@ -23,6 +23,10 @@ namespace graph {
 		public:
 
 			HeapQueue(int dataIdSize) {
+				Resize(dataIdSize);
+			}
+
+			void Resize(int dataIdSize) {
 				isDeleted.resize(dataIdSize, false);
 				keys.resize(dataIdSize);
 			}
@@ -60,9 +64,10 @@ namespace graph {
 		class FastHeapQueue {
 		private:
 			using QueueItemType = QueueItem<TKey, TDataId>;
+			using QueueType = std::priority_queue<QueueItemType, std::vector<QueueItemType>, std::greater<QueueItemType>>;
 			using IterationType = uint32_t;
 
-			std::priority_queue<QueueItemType, std::vector<QueueItemType>, std::greater<QueueItemType>> q;
+			QueueType q;
 			std::vector<IterationType> isDeleted;
 			IterationType iterationId;
 
@@ -72,13 +77,18 @@ namespace graph {
 			}
 		public:
 
-			FastHeapQueue(int dataIdSize) {
+			FastHeapQueue(int dataIdSize = 0) {
 				iterationId = 1;
+				Resize(dataIdSize);
+			}
+			
+			void Resize(int dataIdSize) {
 				isDeleted.resize(dataIdSize, 0);
 			}
 
 			void Clear() {
 				++iterationId;
+				q = QueueType();
 			}
 
 			void Insert(TKey key, TDataId dataId) {

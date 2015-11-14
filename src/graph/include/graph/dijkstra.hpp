@@ -32,7 +32,7 @@ namespace graph
 	};
 
 	template <typename Graph>
-	struct DefaultDijkstraVisitor {
+	struct NoFieldsDijkstraVisitor {
 		// This is invoked one each vertex of the graph when it is initialized.
 		void initialize_vertex(const typename graph_traits<Graph>::vertex_descriptor&, Graph&) {};
 
@@ -65,22 +65,24 @@ namespace graph
 		bool should_continue() {
 			return true;
 		};
+
 	};
 
+	template <typename Graph>
+	struct DefaultDijkstraVisitor : public NoFieldsDijkstraVisitor<Graph> {
+		using QueueType = queue::FastHeapQueue<int, typename graph_traits<Graph>::vertex_descriptor>;
 
-//	template <class Graph, class PredecessorMap, class DistanceMap, class WeightMap,
-//	          class IndexMap, class ColorMap, class DijkstraVisitor = DefaultDijkstraVisitor<Graph>>
-//	void dijkstra(Graph& graph,
-//	              const typename graph_traits<Graph>::vertex_descriptor& s,
-//	              PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
-//	              IndexMap& index, ColorMap& color, DijkstraVisitor visitor = DefaultDijkstraVisitor<Graph>()) {
-//		boost::dijkstra_shortest_paths(graph, s, predecessor, distance, weight, index,
-//		                               std::less<typename property_traits<DistanceMap>::value_type>(),
-//		                               boost::closed_plus<typename property_traits<DistanceMap>::value_type>(),
-//		                               std::numeric_limits<typename property_traits<DistanceMap>::value_type>::max(),
-//		                               static_cast<typename property_traits<DistanceMap>::value_type>(0),
-//		                               boost::dijkstra_visitor<>(), color);
-//	}
+		DefaultDijkstraVisitor()
+			: Queue() {}
+
+		// structures
+		QueueType Queue;
+
+		void initializeQueue(Graph& graph) {
+			Queue.Resize(num_vertices(graph));
+			Queue.Clear();
+		}
+	};
 
 
 	template <class Graph, class PredecessorMap, class DistanceMap, class WeightMap,
@@ -88,11 +90,22 @@ namespace graph
 	void dijkstra(Graph& graph,
 	              const typename graph_traits<Graph>::vertex_descriptor& s,
 	              PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
-	              IndexMap& index, ColorMap& color, DijkstraVisitor visitor = DijkstraVisitor()) {
+	              IndexMap& index, ColorMap& color) {
+		DijkstraVisitor visitor;
+		dijkstra(graph, s, predecessor, distance, weight, index, color, visitor);
+	}
+
+	template <class Graph, class PredecessorMap, class DistanceMap, class WeightMap,
+	          class IndexMap, class ColorMap, class DijkstraVisitor = DefaultDijkstraVisitor<Graph>>
+	void dijkstra(Graph& graph,
+	              const typename graph_traits<Graph>::vertex_descriptor& s,
+	              PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
+	              IndexMap& index, ColorMap& color, DijkstraVisitor& visitor) {
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 		// TODO 
 		// - Use IndexMap instead of Vertex
-		queue::FastHeapQueue<int, Vertex> queue(num_vertices(graph));
+		visitor.initializeQueue(graph);
+		auto& queue = visitor.Queue;
 
 		for (auto& v : graphUtil::Range(vertices(graph))) {
 			visitor.initialize_vertex(v, graph);
