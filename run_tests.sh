@@ -2,8 +2,11 @@
 
 GRAPHS_FOLDER="/var/data/"
 
-for tst in build/bin/*-test
+for tst in build/bin/*-{unit,other}
 do
-    echo Running $tst
-    $tst --gtest_output=xml:${tst}_details.xml $GRAPHS_FOLDER
+    if [[ -e "$tst" ]];
+    then
+        echo Running $tst
+        "$tst" --gtest_output=xml:${tst}_details.xml $GRAPHS_FOLDER
+    fi
 done
