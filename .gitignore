@@ -265,3 +265,6 @@ Makefile.in
 /missing
 /stamp-h1
 
+
+# CMake stuff
+CTestTestfile.cmake
