@@ -32,12 +32,12 @@ struct GenerateCHGraph<PredecessorMapTag, DisanceMapTag, WeightMapTag,
             graph::Property<PredecessorMapTag, vertex_descriptor>,
             graph::Property<DisanceMapTag, uint32_t>,
             graph::Property<ColorMapTag, boost::two_bit_color_type>,
-            graph::Property<VertexOrderMapTag, vertices_size_type>,
-            graph::Property<DirectionMapTag, char>,
+            graph::Property<VertexOrderMapTag, vertices_size_type>,            
             P1s...>,
         graph::Properties<
             graph::Property<WeightMapTag, uint32_t>,
             graph::Property<UnPackMapTag, vertex_descriptor>,
+            graph::Property<DirectionMapTag, char>,
             P2s...>,
         graph::Properties<P3s...>
     >;
