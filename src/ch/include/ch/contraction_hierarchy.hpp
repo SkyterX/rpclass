@@ -6,17 +6,17 @@
 
 namespace ch {
 
-template <typename PredecessorMapTag, class DisanceMapTag, typename WeightMapTag,
-    typename IndexMapTag, typename ColorMapTag, typename UnPackMapTag,
+template <typename PredecessorMapTag, typename DisanceMapFTag, class DisanceMapBTag,
+    typename WeightMapTag, typename IndexMapTag, typename ColorMapTag, typename UnPackMapTag,
     typename VertexOrderMapTag, typename DirectionMapTag,
     typename VP, typename EP, typename GP>
 struct GenerateCHGraph {};
 
-template <typename PredecessorMapTag, class DisanceMapTag, typename WeightMapTag,
-    typename IndexMapTag, typename ColorMapTag, typename UnPackMapTag,
+template <typename PredecessorMapTag, typename DisanceMapFTag, typename DisanceMapBTag, 
+    typename WeightMapTag, typename IndexMapTag, typename ColorMapTag, typename UnPackMapTag,
     typename VertexOrderMapTag, typename DirectionMapTag,
     typename... P1s, typename... P2s, typename ... P3s>
-struct GenerateCHGraph<PredecessorMapTag, DisanceMapTag, WeightMapTag,
+struct GenerateCHGraph<PredecessorMapTag, DisanceMapFTag, DisanceMapBTag, WeightMapTag,
     IndexMapTag, ColorMapTag, UnPackMapTag, VertexOrderMapTag, DirectionMapTag,
     graph::Properties<P1s...>, graph::Properties<P2s...>, graph::Properties<P3s... >> {
     using EmptyGraph = graph::DynamicGraph <
@@ -30,7 +30,8 @@ struct GenerateCHGraph<PredecessorMapTag, DisanceMapTag, WeightMapTag,
     using type = graph::DynamicGraph <
         graph::Properties<
             graph::Property<PredecessorMapTag, vertex_descriptor>,
-            graph::Property<DisanceMapTag, uint32_t>,
+            graph::Property<DisanceMapFTag, uint32_t>,
+            graph::Property<DisanceMapBTag, uint32_t>,
             graph::Property<ColorMapTag, boost::two_bit_color_type>,
             graph::Property<VertexOrderMapTag, vertices_size_type>,            
             P1s...>,
@@ -46,9 +47,7 @@ struct GenerateCHGraph<PredecessorMapTag, DisanceMapTag, WeightMapTag,
 template <typename Graph>
 class DefaultOrderStrategy {
 public:
-    //DefaultOrderStrategy(DefaultOrderStrategy&& other){
-    //    *this(other); 
-    //};
+
     typename graph::graph_traits<Graph>::vertex_descriptor
         next(Graph& graph) {};
 
@@ -64,16 +63,28 @@ template <typename Graph, typename PredecessorMap, typename DistanceMap,
         VertexOrderMap& order, DirectionMap& direction,
         OrderStrategy&& strategy = OrderStrategy()) {};
 
+template <typename Graph, typename DirectionMap, typename WeightMap>
+struct IncreaseWeightOfIncommingEdgeVisitor:public graph::DefaultDijkstraVisitor<Graph> {
+    IncreaseWeightOfIncommingEdgeVisitor(DirectionMap& direction, WeightMap weight)
+        :direction(direction),weight(weight) {};
+    void examine_edge(const typename graph::graph_traits<Graph>::edge_descriptor& e, const Graph& graph) {
+        if (get(direction, e) == 1)
+            graph::put(weight, e, 10000000);
+    }
+    DirectionMap direction;
+    WeightMap weight;
+};
 
-template <typename Graph, typename PredecessorMap, typename DistanceMap,
-    typename WeightMap, typename IndexMap, typename ColorMap, typename UnPackMap,
-    typename VertexOrderMap, typename DirectionMap>
+template <typename Graph, typename PredecessorMap, typename DistanceFMap,
+    typename DistanceBMap, typename WeightMap, typename IndexMap, typename ColorMap, typename UnPackMap,
+    typename VertexOrderMap, typename DirectionMap, typename CHVisitor = graph::DefaultDijkstraVisitor<Graph>>
     void ch_query(Graph& graph, 
         const typename graph::graph_traits<Graph>::vertex_descriptor& s,
         const typename graph::graph_traits<Graph>::vertex_descriptor& t,
-        PredecessorMap& predecessor, DistanceMap& distance,
+        PredecessorMap& predecessor, DistanceFMap& distanceF, DistanceBMap& distanceB,
         WeightMap& weight, IndexMap& index, ColorMap& color, UnPackMap& unpack,
-        VertexOrderMap& order, DirectionMap& direction) {
-        graph::dijkstra(graph, s, predecessor, distance, weight, index, color);
+        VertexOrderMap& order, DirectionMap& direction, CHVisitor&& visitor = CHVisitor()) {
+        IncreaseWeightOfIncommingEdgeVisitor<Graph,DirectionMap,WeightMap> dijVisitor(direction, weight);
+        graph::dijkstra(graph, s, predecessor, distanceF, weight, index, color, dijVisitor);
     };
 };
