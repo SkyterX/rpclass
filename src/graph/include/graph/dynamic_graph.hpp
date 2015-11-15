@@ -13,7 +13,7 @@ namespace graph {
 
     template <typename VP = Properties<>,
         typename EP = Properties<>,
-        typename BundledGraphProperties = Properties<>>
+        typename GP = Properties<>>
     class DynamicGraph:public boost::adjacency_list<
         boost::vecS, boost::vecS, boost::bidirectionalS,
         VP, EP>{
@@ -40,7 +40,7 @@ namespace graph {
             for (Iterator it = begin; it != end; ++it) {
                 edges.push_back(it->first);
                 EP p;
-                p = make_properties(it->second);
+                p = it->second;
                 properties.push_back(p);
             };
             static_cast<BoostBase*>(this)->operator=(BoostBase(edges.begin(), edges.end(), properties.begin(), n, m));
