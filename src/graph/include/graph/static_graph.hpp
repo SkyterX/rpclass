@@ -100,7 +100,7 @@ namespace graph {
 
 			for (auto& it = begin; it != end; ++it) {
                 EdgeProperties edgeProperties;
-                edgeProperties = make_properties(it->second);
+                edgeProperties = it->second;
 				builder->AddEdge((it->first).first, (it->first).second, edgeProperties);
 			}
 
