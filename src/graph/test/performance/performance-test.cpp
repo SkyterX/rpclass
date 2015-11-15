@@ -64,7 +64,11 @@ protected:
         size_t src;
         while (input >> src) m_sources.push_back(src);
         input.close();
+        m_statistics.open("statistics", std::ofstream::out | std::ofstream::app);
     };
+    virtual void TearDown() {
+        m_statistics.close();
+    }
 
     using DdsgVecType = std::vector<std::pair<std::pair<size_t,size_t>,Properties<Property<weight_t, uint32_t>>>>;
     DdsgVecType m_ddsgVec;
@@ -74,7 +78,7 @@ protected:
     size_t m_numOfNodes;
     size_t m_numOfEdges;
     std::vector<size_t> m_sources;
-
+    ofstream m_statistics;
 };
 
 template <typename Graph, typename PropertyMap>
@@ -142,8 +146,8 @@ TEST_P(DdsgGraphAlgorithm, BFSTraversalSpeed) {
     end = std::chrono::high_resolution_clock::now();
 
     BFSStatistics bfsStatistics(m_baseName, Algorithm::bfs, Phase::query, Metric::time, 
-        m_numOfNodes, m_numOfEdges, chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false);
-    cout << bfsStatistics << endl;
+        m_numOfNodes, m_numOfEdges, chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0);
+    m_statistics << bfsStatistics << endl;
 };
 
 
@@ -168,9 +172,9 @@ TEST_P(DdsgGraphAlgorithm, DijkstraOne2All) {
         DijkstraOneToAllSPStatistics statistics(
             GeneralStatistics(m_baseName, Algorithm::dijkstra, Phase::query, Metric::time,
                 m_numOfNodes, m_numOfEdges,
-                chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false),
+                chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0),
             src);
-        cout << statistics << endl;
+        m_statistics << statistics << endl;
         stringstream ss;
         ss << m_path << "/" << m_baseName << "/" << m_baseName << "_" << src << ".sssp";
         verificationFile.open(ss.str());
@@ -228,9 +232,9 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
         end = std::chrono::high_resolution_clock::now();
         DijkstraSSSPStatistics statistics(
             GeneralStatistics(m_baseName, Algorithm::biDijkstra, Phase::query, Metric::time,
-                m_numOfNodes, m_numOfEdges, chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0, false),
+                m_numOfNodes, m_numOfEdges, chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0),
             src,tgt,distance);
-        cout << statistics << endl;
+        m_statistics << statistics << endl;
         EXPECT_EQ(distance, get(distanceF, tgt));
     }
     verificationFile.close();
