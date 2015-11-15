@@ -66,7 +66,7 @@ protected:
         input.close();
     };
 
-    using DdsgVecType = std::vector<std::pair<std::pair<size_t,size_t>,Property<weight_t, uint32_t>>>;
+    using DdsgVecType = std::vector<std::pair<std::pair<size_t,size_t>,Properties<Property<weight_t, uint32_t>>>>;
     DdsgVecType m_ddsgVec;
     back_insert_iterator<DdsgVecType> m_ddsgVecBackInserter;
     string m_path;
