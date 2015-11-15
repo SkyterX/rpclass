@@ -34,30 +34,30 @@ namespace graph
 	template <typename Graph>
 	struct NoFieldsDijkstraVisitor {
 		// This is invoked one each vertex of the graph when it is initialized.
-		void initialize_vertex(const typename graph_traits<Graph>::vertex_descriptor&, Graph&) {};
+		void initialize_vertex(const typename graph_traits<Graph>::vertex_descriptor&, const Graph&) {};
 
 		// This is invoked on a vertex as it is popped from the queue.
 		// This happens immediately before examine_edge() is invoked on each of the out - edges of vertex u.
-		void examine_vertex(const typename graph_traits<Graph>::vertex_descriptor&, Graph&) {};
+		void examine_vertex(const typename graph_traits<Graph>::vertex_descriptor&, const Graph&) {};
 
 		// This is invoked on every out - edge of each vertex after it is discovered.
-		void examine_edge(const typename graph_traits<Graph>::edge_descriptor&, Graph&) {};
+		void examine_edge(const typename graph_traits<Graph>::edge_descriptor&, const Graph&) {};
 
 		// This is invoked when a vertex is encountered for the first time.
-		void discover_vertex(const typename graph_traits<Graph>::vertex_descriptor&, Graph&) {};
+		void discover_vertex(const typename graph_traits<Graph>::vertex_descriptor&, const Graph&) {};
 
 		// Upon examination, if the following condition holds then the edge is relaxed(its distance is reduced), and this method is invoked.
-		void edge_relaxed(const typename graph_traits<Graph>::edge_descriptor&, Graph&) {};
+		void edge_relaxed(const typename graph_traits<Graph>::edge_descriptor&, const Graph&) {};
 
 		// Upon examination, if the edge is not relaxed(see above) then this method is invoked.
-		void edge_not_relaxed(const typename graph_traits<Graph>::edge_descriptor&, Graph&) {};
+		void edge_not_relaxed(const typename graph_traits<Graph>::edge_descriptor&, const Graph&) {};
 
 		// This invoked on a vertex after all of its out edges have been added to the search tree and
 		// all of the adjacent vertices have been discovered(but before their out - edges have been examined).
-		void finish_vertex(const typename graph_traits<Graph>::vertex_descriptor&, Graph&) {};
+		void finish_vertex(const typename graph_traits<Graph>::vertex_descriptor&, const Graph&) {};
 
 		// A predicate which is invoked on every out - edge of each vertex to check if the algorithm should relax it
-		bool should_relax(const typename graph_traits<Graph>::edge_descriptor&, Graph&) {
+		bool should_relax(const typename graph_traits<Graph>::edge_descriptor&, const Graph&) {
 			return true;
 		};
 
