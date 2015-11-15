@@ -16,7 +16,8 @@ using namespace std;
 using namespace graph;
 using namespace ch;
 
-struct distance_t {};
+struct distanceF_t {};
+struct distanceB_t {};
 struct color_t {};
 struct predecessor_t {};
 struct weight_t {};
@@ -41,7 +42,7 @@ protected:
         m_baseName(baseFileName(m_fileName)),
         m_filter(get<1>(GetParam())) {};
     virtual void SetUp() {
-        if (read_ddsg<Property<weight_t, uint32_t>>(m_ddsgVecBackInserter,
+        if (read_ddsg<Property<weight_t, uint32_t>, Property<direction_t,char>>(m_ddsgVecBackInserter,
             m_numOfNodes, m_numOfEdges, (m_path + "/" + m_fileName).c_str()))
             FAIL();
         std::sort(m_ddsgVec.begin(), m_ddsgVec.end(),
@@ -50,7 +51,8 @@ protected:
         });
     };
 
-    using DdsgVecType = std::vector<std::pair<std::pair<size_t, size_t>, Property<weight_t, uint32_t>>>;
+    using DdsgVecType = std::vector<std::pair<std::pair<size_t, size_t>, 
+        Properties<Property<weight_t, uint32_t>,Property<direction_t,char>>>>;
     using N = integral_constant<size_t, 8>;
     DdsgVecType m_ddsgVec;
     back_insert_iterator<DdsgVecType> m_ddsgVecBackInserter;
@@ -63,12 +65,13 @@ protected:
 };
 
 TEST_P(DdsgGraphAlgorithm, CH) {
-    using Graph = GenerateCHGraph<predecessor_t, distance_t, weight_t,
+    using Graph = GenerateCHGraph<predecessor_t, distanceF_t, distanceB_t, weight_t,
         vertex_index_t, color_t, unpack_t, vertex_order_t, direction_t,
         Properties<>, Properties<>, Properties<>> ::type;
     Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);
     auto predecessor = graph::get(predecessor_t(), graph);
-    auto distance = graph::get(distance_t(), graph);
+    auto distanceF = graph::get(distanceF_t(), graph);
+    auto distanceB = graph::get(distanceB_t(), graph);
     auto weight = graph::get(weight_t(), graph);
     auto vertex_index = graph::get(vertex_index_t(), graph);
     auto color = graph::get(color_t(), graph);
@@ -77,7 +80,7 @@ TEST_P(DdsgGraphAlgorithm, CH) {
     auto direction = graph::get(direction_t(), graph);
     stringstream ss;
     
-    ch_preprocess<Graph>(graph, predecessor, distance, weight, vertex_index,
+    ch_preprocess<Graph>(graph, predecessor, distanceF, weight, vertex_index,
         color, unpack, order, direction);
 
     ifstream verificationFile;
@@ -95,9 +98,8 @@ TEST_P(DdsgGraphAlgorithm, CH) {
         ch_query(graph,
             graph_traits<Graph>::vertex_descriptor(src),
             graph_traits<Graph>::vertex_descriptor(tgt),
-            predecessor, distance, weight, vertex_index,
-            color, unpack, order, direction);
-        EXPECT_EQ(dis, get(distance, tgt));
+            predecessor, distanceF, distanceB, weight, vertex_index, color, unpack, order, direction);
+        EXPECT_EQ(dis, get(distanceF, tgt));
     }
     verificationFile.close();
 };
