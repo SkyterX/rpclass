@@ -34,12 +34,17 @@ namespace graph
 				P2s...>>;
 	};
 
-	template <typename Graph, class DistanceMapF, class DistanceMapB, typename QueueType>
+	template <typename Graph, typename QueueType,
+	          typename DistanceMapF, typename DistanceMapB,
+	          typename ColorMapF, typename ColorMapB>
 	class OptimalCriteriaTraker : public NoFieldsDijkstraVisitor<Graph> {
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
+		using DistanceType = typename DistanceMapF::value_type;
 	public :
 		void edge_relaxed(const typename graph_traits<Graph>::edge_descriptor& edge, Graph& graph) {
 			Vertex to = target(edge, graph);
+			if (get(colorF, to) == boost::two_bit_white || get(colorB, to) == boost::two_bit_white)
+				return;
 			uint32_t right = get(distanceF, to) + get(distanceB, to);
 			if (right < mu) {
 				mu = right;
@@ -62,22 +67,27 @@ namespace graph
 		}
 
 		OptimalCriteriaTraker(const QueueType& queue_f, const QueueType& queue_b,
-		                      DistanceMapF& distance_f, DistanceMapB& distance_b)
+		                      DistanceMapF& distance_f, DistanceMapB& distance_b,
+		                      ColorMapF& colorF, ColorMapB& colorB)
 			: queueF(queue_f),
 			  queueB(queue_b),
 			  distanceF(distance_f),
-			  distanceB(distance_b) {
-			mu = std::numeric_limits<uint32_t>::max() >> 2;
+			  distanceB(distance_b),
+			  colorF(colorF),
+			  colorB(colorB) {
+			mu = InfinityDistance<DistanceMapF>();
 			direction_flag_forward = false;
 		}
 
-		uint32_t mu;
+		DistanceType mu;
 		Vertex m_center;
 		bool direction_flag_forward;
 		const QueueType& queueF;
 		const QueueType& queueB;
 		DistanceMapF& distanceF;
 		DistanceMapB& distanceB;
+		ColorMapF& colorF;
+		ColorMapB& colorB;
 	};
 
 	template <typename Graph, typename DVis, typename OptTraker, typename QueueType>
@@ -183,7 +193,7 @@ namespace graph
 		}
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 		using Queue = queue::FastHeapQueue<int, Vertex>;
-		using OptimalCriteriaTrakerType = OptimalCriteriaTraker<Graph, DistanceMapF, DistanceMapB, Queue>;
+		using OptimalCriteriaTrakerType = OptimalCriteriaTraker<Graph, Queue, DistanceMapF, DistanceMapB, ColorMapF, ColorMapB>;
 		auto invertedGraph = graph::ComplementGraph<Graph>(graph);
 
 		visitorF.initializeQueue(graph);
@@ -200,7 +210,7 @@ namespace graph
 		init_first_vertex(graph, s, distanceF, index, colorF, visitorF, queueF);
 		init_first_vertex(invertedGraph, t, distanceB, index, colorB, visitorB, queueB);
 
-		OptimalCriteriaTraker<Graph, DistanceMapF, DistanceMapB, Queue> optTracker(queueF, queueB, distanceF, distanceB);
+		OptimalCriteriaTrakerType optTracker(queueF, queueB, distanceF, distanceB, colorF, colorB);
 
 		DijkstraVisitorCombinator<Graph, DijkstraVisitorF, OptimalCriteriaTrakerType, Queue>
 				bivisitorF(visitorF, optTracker, queueF);

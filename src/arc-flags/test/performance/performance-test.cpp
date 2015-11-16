@@ -134,73 +134,73 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
     verificationFile.close();
 };
 
-TEST_P(DdsgGraphAlgorithm, BidirectionalArcFlags) {
-	using Graph = GenerateBiArcFlagsGraph<predecessor_t, predecessorB_t, distance_t, distanceB_t, weight_t,
-		vertex_index_t, color_t, colorB_t, arc_flags_t, arc_flagsB_t, partition_t, N::value,
-		Properties<>, Properties< >> ::type;
-	const bool ArcFlagsSavingEnabled = false;
-	Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);
-	auto predecessor = graph::get(predecessor_t(), graph);
-	auto predecessorB = graph::get(predecessorB_t(), graph);
-	auto distance = graph::get(distance_t(), graph);
-	auto distanceB = graph::get(distanceB_t(), graph);
-	auto weight = graph::get(weight_t(), graph);
-	auto vertex_index = graph::get(vertex_index_t(), graph);
-	auto color = graph::get(color_t(), graph);
-	auto colorB = graph::get(colorB_t(), graph);
-	auto partition = graph::get(partition_t(), graph);
-	auto arc_flags = graph::get(arc_flags_t(), graph);
-	auto arc_flagsB = graph::get(arc_flagsB_t(), graph);
-	stringstream ss;
-
-	cout << "Reading partition..." << endl;
-	ss << m_path << "/" << m_baseName << "/tmppartition" << N::value;
-	if (read_partitioning<N::value, partition_t>(graph, ss.str().c_str())) {
-		FAIL();
-	};
-
-	cout << "Trying to laod arc-flags from file..." << endl;
-	ss.str(string());
-	ss << m_path << "/" << m_baseName << "/bidirectionalArcflags" << N::value;
-	if (!ArcFlagsSavingEnabled || read_bidirectional_arcflags<N::value>(graph, arc_flags, arc_flagsB, ss.str().c_str())) {
-		if (ArcFlagsSavingEnabled)
-			cout << "No saved arc-flags found." << endl;
-		else
-			cout << "Arc-flags saving is disabled." << endl;
-		cout << "Building arc-flags..." << endl;
-		arcflags_preprocess<N::value>(graph, predecessor, predecessorB, distance, distanceB, weight, vertex_index,
-			color, colorB, partition, arc_flags, arc_flagsB, m_filter);
-
-		if (ArcFlagsSavingEnabled) {
-			cout << "Saving arc-flags..." << endl;
-			if (save_bidirectional_arcflags<N::value>(graph, arc_flags, arc_flagsB, ss.str().c_str())) {
-				FAIL();
-			}
-		}
-	}
-
-	cout << "Running queries..." << endl;
-	ifstream verificationFile;
-	ss.str(string());
-	ss << m_path << "/" << m_baseName << "/" << m_baseName << ".ppsp";
-	verificationFile.open(ss.str());
-
-	if (!verificationFile.is_open()) {
-		cerr << "Verification file " << ss.str() << " is not found." << endl;
-		FAIL();
-	};
-	size_t src, tgt, dis;
-	while (verificationFile >> src >> tgt >> dis) {
-		cout << "Running ArcFlags query from " << src << " to " << tgt << endl;
-		arcflags_query<N::value>(graph,
-			graph_traits<Graph>::vertex_descriptor(src),
-			graph_traits<Graph>::vertex_descriptor(tgt),
-			predecessor, distance, weight, vertex_index,
-			color, partition, arc_flags);
-		EXPECT_EQ(dis, get(distance, tgt));
-	}
-	verificationFile.close();
-};
+//TEST_P(DdsgGraphAlgorithm, BidirectionalArcFlags) {
+//	using Graph = GenerateBiArcFlagsGraph<predecessor_t, predecessorB_t, distance_t, distanceB_t, weight_t,
+//		vertex_index_t, color_t, colorB_t, arc_flags_t, arc_flagsB_t, partition_t, N::value,
+//		Properties<>, Properties< >> ::type;
+//	const bool ArcFlagsSavingEnabled = false;
+//	Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);
+//	auto predecessor = graph::get(predecessor_t(), graph);
+//	auto predecessorB = graph::get(predecessorB_t(), graph);
+//	auto distance = graph::get(distance_t(), graph);
+//	auto distanceB = graph::get(distanceB_t(), graph);
+//	auto weight = graph::get(weight_t(), graph);
+//	auto vertex_index = graph::get(vertex_index_t(), graph);
+//	auto color = graph::get(color_t(), graph);
+//	auto colorB = graph::get(colorB_t(), graph);
+//	auto partition = graph::get(partition_t(), graph);
+//	auto arc_flags = graph::get(arc_flags_t(), graph);
+//	auto arc_flagsB = graph::get(arc_flagsB_t(), graph);
+//	stringstream ss;
+//
+//	cout << "Reading partition..." << endl;
+//	ss << m_path << "/" << m_baseName << "/tmppartition" << N::value;
+//	if (read_partitioning<N::value, partition_t>(graph, ss.str().c_str())) {
+//		FAIL();
+//	};
+//
+//	cout << "Trying to laod arc-flags from file..." << endl;
+//	ss.str(string());
+//	ss << m_path << "/" << m_baseName << "/bidirectionalArcflags" << N::value;
+//	if (!ArcFlagsSavingEnabled || read_bidirectional_arcflags<N::value>(graph, arc_flags, arc_flagsB, ss.str().c_str())) {
+//		if (ArcFlagsSavingEnabled)
+//			cout << "No saved arc-flags found." << endl;
+//		else
+//			cout << "Arc-flags saving is disabled." << endl;
+//		cout << "Building arc-flags..." << endl;
+//		arcflags_preprocess<N::value>(graph, predecessor, predecessorB, distance, distanceB, weight, vertex_index,
+//			color, colorB, partition, arc_flags, arc_flagsB, m_filter);
+//
+//		if (ArcFlagsSavingEnabled) {
+//			cout << "Saving arc-flags..." << endl;
+//			if (save_bidirectional_arcflags<N::value>(graph, arc_flags, arc_flagsB, ss.str().c_str())) {
+//				FAIL();
+//			}
+//		}
+//	}
+//
+//	cout << "Running queries..." << endl;
+//	ifstream verificationFile;
+//	ss.str(string());
+//	ss << m_path << "/" << m_baseName << "/" << m_baseName << ".ppsp";
+//	verificationFile.open(ss.str());
+//
+//	if (!verificationFile.is_open()) {
+//		cerr << "Verification file " << ss.str() << " is not found." << endl;
+//		FAIL();
+//	};
+//	size_t src, tgt, dis;
+//	while (verificationFile >> src >> tgt >> dis) {
+//		cout << "Running ArcFlags query from " << src << " to " << tgt << endl;
+//		arcflags_query<N::value>(graph,
+//			graph_traits<Graph>::vertex_descriptor(src),
+//			graph_traits<Graph>::vertex_descriptor(tgt),
+//			predecessor, distance, weight, vertex_index,
+//			color, partition, arc_flags);
+//		EXPECT_EQ(dis, get(distance, tgt));
+//	}
+//	verificationFile.close();
+//};
 
 
 

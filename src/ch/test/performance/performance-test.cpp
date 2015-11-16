@@ -4,6 +4,7 @@
 #include <queue>
 #include <vector>
 #include <string>
+#include <fstream>
 
 #include <gtest/gtest.h>
 #include <graph/io.hpp>

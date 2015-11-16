@@ -84,6 +84,10 @@ namespace graph
 		}
 	};
 
+	template <typename DistanceMap>
+	constexpr typename DistanceMap::value_type InfinityDistance() {
+		return std::numeric_limits<typename DistanceMap::value_type>::max();
+	}
 
 	template <class Graph, class PredecessorMap, class DistanceMap,
 	          class IndexMap, class ColorMap, class DijkstraVisitor>
@@ -92,11 +96,11 @@ namespace graph
 	                     PredecessorMap& predecessor,
 	                     DistanceMap& distance,
 	                     IndexMap& index, ColorMap& color,
-	                     DijkstraVisitor& visitor,
-	                     typename graph_traits<Graph>::vertex_descriptor maxDistance = std::numeric_limits<typename graph_traits<Graph>::vertex_descriptor>::max() >> 2
+	                     DijkstraVisitor& visitor
 	) {
+		using DistanceType = typename DistanceMap::value_type;
 		visitor.initialize_vertex(v, graph);
-		put(distance, v, maxDistance);
+		put(distance, v, InfinityDistance<DistanceMap>());
 		put(predecessor, v, v);
 		put(color, v, boost::two_bit_color_type::two_bit_white);
 	}
@@ -108,10 +112,12 @@ namespace graph
 	                       DistanceMap& distance,
 	                       IndexMap& index, ColorMap& color,
 	                       DijkstraVisitor& visitor, Queue& queue) {
+		using DistanceType = typename DistanceMap::value_type;
+		const DistanceType startDistance = 0;
 		visitor.discover_vertex(v, graph);
-		put(distance, v, 0);
+		put(distance, v, startDistance);
 		put(color, v, boost::two_bit_color_type::two_bit_green);
-		queue.Insert(0, v);
+		queue.Insert(startDistance, v);
 	}
 
 	template <class Graph, class PredecessorMap, class DistanceMap, class WeightMap,
@@ -188,8 +194,8 @@ namespace graph
 		visitor.initializeQueue(graph);
 		auto& queue = visitor.Queue;
 
-		for (auto& v : graphUtil::Range(vertices(graph))) {
-			init_one_vertex(graph, v, predecessor, distance, index, color, visitor, std::numeric_limits<Vertex>::max());
+		for (const auto& v : graphUtil::Range(vertices(graph))) {
+			init_one_vertex(graph, v, predecessor, distance, index, color, visitor);
 		}
 
 		// Process start vertex
