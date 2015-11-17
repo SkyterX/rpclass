@@ -149,6 +149,7 @@ namespace arcflags {
 				graph::dijkstra(invertedGraph, v, predecessor, distance, weight, index, color, visitor);
 
 				for (const auto& fromVertex : graphUtil::Range(graph::vertices(invertedGraph))) {
+					EnsureVertexInitialization(invertedGraph, fromVertex, predecessor, distance, index, color, visitor);
 					auto predVertex = get(predecessor, fromVertex);
 					if (predVertex == fromVertex)
 						continue;
