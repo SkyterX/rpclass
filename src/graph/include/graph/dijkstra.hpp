@@ -31,8 +31,13 @@ namespace graph
 				P2s...>>;
 	};
 
+	template <typename DistanceMap>
+	constexpr typename DistanceMap::value_type InfinityDistance() {
+		return std::numeric_limits<typename DistanceMap::value_type>::max();
+	}
+
 	template <typename Graph>
-	struct NoFieldsDijkstraVisitor {
+	struct IDijkstraVisitor {
 		// This is invoked one each vertex of the graph when it is initialized.
 		void initialize_vertex(const typename graph_traits<Graph>::vertex_descriptor&, const Graph&) {};
 
@@ -65,55 +70,96 @@ namespace graph
 		bool should_continue() {
 			return true;
 		};
-
 	};
 
 	template <typename Graph>
-	struct DefaultDijkstraVisitor : public NoFieldsDijkstraVisitor<Graph> {
-		using QueueType = queue::FastHeapQueue<int, typename graph_traits<Graph>::vertex_descriptor>;
+	class LazyVertexInitializer {
+	private:
+		using VertexType = typename graph_traits<Graph>::vertex_descriptor;
+		using IterationIdType = uint32_t;
+		std::vector<IterationIdType> vertexIterationId;
+		IterationIdType currentIterationId;
+	public:
 
-		DefaultDijkstraVisitor()
-			: Queue() {}
+		void Initialize(Graph& graph) {
+			auto verticesCount = num_vertices(graph);
+			vertexIterationId.resize(verticesCount, 0);
+			if (currentIterationId == std::numeric_limits<IterationIdType>::max()) {
+				currentIterationId = 0;
+				vertexIterationId.assign(verticesCount, 0);
+			}
+			++currentIterationId;
+		}
 
-		// structures
-		QueueType Queue;
+		template <typename IndexMap>
+		bool IsInitialized(const VertexType& v, const IndexMap& index) const {
+			auto vertexIndex = get(index, v);
+			return vertexIterationId[vertexIndex] == currentIterationId;
+		}
 
-		void initializeQueue(Graph& graph) {
-			Queue.Resize(num_vertices(graph));
-			Queue.Clear();
+		template <typename IndexMap>
+		bool TryInitializeVertex(const VertexType& v, const IndexMap& index) {
+			auto vertexIndex = get(index, v);
+			if (vertexIterationId[vertexIndex] == currentIterationId)
+				return false;
+			vertexIterationId[vertexIndex] = currentIterationId;
+			return true;
 		}
 	};
 
-	template <typename DistanceMap>
-	constexpr typename DistanceMap::value_type InfinityDistance() {
-		return std::numeric_limits<typename DistanceMap::value_type>::max();
-	}
+	template <typename Graph>
+	struct DefaultDijkstraVisitor : public IDijkstraVisitor<Graph> {
+		struct SharedDataStorage {
+			using QueueType = queue::FastHeapQueue<int, typename graph_traits<Graph>::vertex_descriptor>;
+			QueueType Queue;
+			LazyVertexInitializer<Graph> VertexInitializer;
+		};
+
+		SharedDataStorage Stored;
+
+		DefaultDijkstraVisitor()
+			: Stored() {}
+
+		void Initialize(Graph& graph) {
+			auto verticesCount = num_vertices(graph);
+			Stored.Queue.Resize(verticesCount);
+			Stored.Queue.Clear();
+
+			Stored.VertexInitializer.Initialize(graph);
+		}
+	};
 
 	template <class Graph, class PredecessorMap, class DistanceMap,
 	          class IndexMap, class ColorMap, class DijkstraVisitor>
-	void init_one_vertex(Graph& graph,
-	                     const typename graph_traits<Graph>::vertex_descriptor& v,
-	                     PredecessorMap& predecessor,
-	                     DistanceMap& distance,
-	                     IndexMap& index, ColorMap& color,
-	                     DijkstraVisitor& visitor
-	) {
+	void EnsureVertexInitialization(Graph& graph,
+	                                const typename graph_traits<Graph>::vertex_descriptor& v,
+	                                PredecessorMap& predecessor,
+	                                DistanceMap& distance,
+	                                IndexMap& index, ColorMap& color,
+	                                DijkstraVisitor& visitor) {
 		using DistanceType = typename DistanceMap::value_type;
+
+		if (!visitor.Stored.VertexInitializer.TryInitializeVertex(v, index))
+			return;
+
 		visitor.initialize_vertex(v, graph);
 		put(distance, v, InfinityDistance<DistanceMap>());
 		put(predecessor, v, v);
 		put(color, v, boost::two_bit_color_type::two_bit_white);
 	}
 
-	template <class Graph, class DistanceMap, class IndexMap,
+	template <class Graph, class PredecessorMap, class DistanceMap, class IndexMap,
 	          class ColorMap, class DijkstraVisitor, class Queue>
 	void init_first_vertex(Graph& graph,
 	                       const typename graph_traits<Graph>::vertex_descriptor& v,
+	                       PredecessorMap& predecessor,
 	                       DistanceMap& distance,
 	                       IndexMap& index, ColorMap& color,
 	                       DijkstraVisitor& visitor, Queue& queue) {
 		using DistanceType = typename DistanceMap::value_type;
 		const DistanceType startDistance = 0;
+
+		EnsureVertexInitialization(graph, v, predecessor, distance, index, color, visitor);
 		visitor.discover_vertex(v, graph);
 		put(distance, v, startDistance);
 		put(color, v, boost::two_bit_color_type::two_bit_green);
@@ -126,7 +172,7 @@ namespace graph
 	                        PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
 	                        IndexMap& index, ColorMap& color, DijkstraVisitor& visitor) {
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
-		auto& queue = visitor.Queue;
+		auto& queue = visitor.Stored.Queue;
 		// Get vertex from queue
 		Vertex v;
 		int vDistance;
@@ -141,6 +187,7 @@ namespace graph
 				continue;
 			// Get edge Properties
 			Vertex to = target(edge, graph);
+			EnsureVertexInitialization(graph, to, predecessor, distance, index, color, visitor);
 			auto edgeWeight = get(weight, edge);
 			auto newDistance = vDistance + edgeWeight;
 			auto toDistance = get(distance, to);
@@ -191,15 +238,11 @@ namespace graph
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 		// TODO 
 		// - Use IndexMap instead of Vertex
-		visitor.initializeQueue(graph);
-		auto& queue = visitor.Queue;
+		visitor.Initialize(graph);
+		auto& queue = visitor.Stored.Queue;
 
-		for (const auto& v : graphUtil::Range(vertices(graph))) {
-			init_one_vertex(graph, v, predecessor, distance, index, color, visitor);
-		}
-
-		// Process start vertex
-		init_first_vertex(graph, s, distance, index, color, visitor, queue);
+		// Process start vertex		
+		init_first_vertex(graph, s, predecessor, distance, index, color, visitor, queue);
 
 		while (!queue.IsEmpty()) {
 			auto allRight = dijkstra_iteration(graph, predecessor, distance, weight, index, color, visitor);

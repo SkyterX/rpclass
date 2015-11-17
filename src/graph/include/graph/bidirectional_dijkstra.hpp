@@ -34,16 +34,20 @@ namespace graph
 				P2s...>>;
 	};
 
-	template <typename Graph, typename QueueType,
+	template <typename Graph, typename IndexMap,
+	          typename DijkstraVisitorF, typename DijkstraVisitorB,
 	          typename DistanceMapF, typename DistanceMapB,
 	          typename ColorMapF, typename ColorMapB>
-	class OptimalCriteriaTraker : public NoFieldsDijkstraVisitor<Graph> {
+	class OptimalCriteriaTraker : public IDijkstraVisitor<Graph> {
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 		using DistanceType = typename DistanceMapF::value_type;
 	public :
 		void edge_relaxed(const typename graph_traits<Graph>::edge_descriptor& edge, Graph& graph) {
 			Vertex to = target(edge, graph);
-			if (get(colorF, to) == boost::two_bit_white || get(colorB, to) == boost::two_bit_white)
+			if (!visitorF.Stored.VertexInitializer.IsInitialized(to, index) ||
+				!visitorB.Stored.VertexInitializer.IsInitialized(to, index) ||
+				get(colorF, to) == boost::two_bit_white ||
+				get(colorB, to) == boost::two_bit_white)
 				return;
 			uint32_t right = get(distanceF, to) + get(distanceB, to);
 			if (right < mu) {
@@ -55,8 +59,8 @@ namespace graph
 		bool should_continue() {
 			Vertex v1, v2;
 			int din, dout;
-			std::tie(din, v1) = queueF.PeekMin();
-			std::tie(dout, v2) = queueB.PeekMin();
+			std::tie(din, v1) = visitorF.Stored.Queue.PeekMin();
+			std::tie(dout, v2) = visitorB.Stored.Queue.PeekMin();
 			return !(mu <= din + dout);
 		};
 
@@ -66,13 +70,15 @@ namespace graph
 			return direction_flag_forward;
 		}
 
-		OptimalCriteriaTraker(const QueueType& queue_f, const QueueType& queue_b,
-		                      DistanceMapF& distance_f, DistanceMapB& distance_b,
-		                      ColorMapF& colorF, ColorMapB& colorB)
-			: queueF(queue_f),
-			  queueB(queue_b),
-			  distanceF(distance_f),
-			  distanceB(distance_b),
+		OptimalCriteriaTraker(const DijkstraVisitorF& visitorF, const DijkstraVisitorB& visitorB,
+		                      DistanceMapF& distanceF, DistanceMapB& distanceB,
+		                      ColorMapF& colorF, ColorMapB& colorB,
+		                      const IndexMap& index)
+			: visitorF(visitorF),
+			  visitorB(visitorB),
+			  index(index),
+			  distanceF(distanceF),
+			  distanceB(distanceB),
 			  colorF(colorF),
 			  colorB(colorB) {
 			mu = InfinityDistance<DistanceMapF>();
@@ -82,75 +88,71 @@ namespace graph
 		DistanceType mu;
 		Vertex m_center;
 		bool direction_flag_forward;
-		const QueueType& queueF;
-		const QueueType& queueB;
+		const DijkstraVisitorF& visitorF;
+		const DijkstraVisitorB& visitorB;
+		const IndexMap& index;
 		DistanceMapF& distanceF;
 		DistanceMapB& distanceB;
 		ColorMapF& colorF;
 		ColorMapB& colorB;
 	};
 
-	template <typename Graph, typename DVis, typename OptTraker, typename QueueType>
-	class DijkstraVisitorCombinator {
+	template <typename Graph, typename MainVisitor, typename AdditionalVisitor>
+	class DijkstraVisitorCombinator : public IDijkstraVisitor<Graph> {
 	public:
 		void initialize_vertex(const typename graph_traits<Graph>::vertex_descriptor& v, Graph& g) {
-			dv1.initialize_vertex(v, g);
-			dv2.initialize_vertex(v, g);
+			mainVisitor.initialize_vertex(v, g);
+			additionalVisitor.initialize_vertex(v, g);
 		};
 
 		void examine_vertex(const typename graph_traits<Graph>::vertex_descriptor& v, Graph& g) {
-			dv1.examine_vertex(v, g);
-			dv2.examine_vertex(v, g);
+			mainVisitor.examine_vertex(v, g);
+			additionalVisitor.examine_vertex(v, g);
 		};
 
 		void examine_edge(const typename graph_traits<Graph>::edge_descriptor& e, Graph& g) {
-			dv1.examine_edge(e, g);
-			dv2.examine_edge(e, g);
+			mainVisitor.examine_edge(e, g);
+			additionalVisitor.examine_edge(e, g);
 		};
 
 		void discover_vertex(const typename graph_traits<Graph>::vertex_descriptor& v, Graph& g) {
-			dv1.discover_vertex(v, g);
-			dv2.discover_vertex(v, g);
+			mainVisitor.discover_vertex(v, g);
+			additionalVisitor.discover_vertex(v, g);
 		};
 
 		void edge_relaxed(const typename graph_traits<Graph>::edge_descriptor& e, Graph& g) {
-			dv1.edge_relaxed(e, g);
-			dv2.edge_relaxed(e, g);
+			mainVisitor.edge_relaxed(e, g);
+			additionalVisitor.edge_relaxed(e, g);
 		};
 
 		void edge_not_relaxed(const typename graph_traits<Graph>::edge_descriptor& e, Graph& g) {
-			dv1.edge_not_relaxed(e, g);
-			dv2.edge_not_relaxed(e, g);
+			mainVisitor.edge_not_relaxed(e, g);
+			additionalVisitor.edge_not_relaxed(e, g);
 		};
 
 		void finish_vertex(const typename graph_traits<Graph>::vertex_descriptor& v, Graph& g) {
-			dv1.finish_vertex(v, g);
-			dv2.finish_vertex(v, g);
+			mainVisitor.finish_vertex(v, g);
+			additionalVisitor.finish_vertex(v, g);
 		};
 
 		bool should_relax(const typename graph_traits<Graph>::edge_descriptor& e, Graph& g) {
-			if (!dv1.should_relax(e, g)) return false;
-			return dv2.should_relax(e, g);
+			if (!mainVisitor.should_relax(e, g)) return false;
+			return additionalVisitor.should_relax(e, g);
 		};
 
 		bool should_continue() {
-			if (!dv1.should_continue()) return false;
-			return dv2.should_continue();
+			if (!mainVisitor.should_continue()) return false;
+			return additionalVisitor.should_continue();
 		};
 
+		DijkstraVisitorCombinator(MainVisitor& mainV, AdditionalVisitor& additionalV)
+			: mainVisitor(mainV),
+			  additionalVisitor(additionalV),
+			  Stored(mainV.Stored) {}
 
-		DijkstraVisitorCombinator(DVis& dv1, OptTraker& dv2, QueueType& queue)
-			: dv1(dv1),
-			  dv2(dv2),
-			  Queue(queue) {}
-
-		QueueType& GetQueue() {
-			return dv1.Queue;
-		}
-
-		DVis& dv1;
-		OptTraker& dv2;
-		QueueType& Queue;
+		MainVisitor& mainVisitor;
+		AdditionalVisitor& additionalVisitor;
+		typename MainVisitor::SharedDataStorage& Stored;
 	};
 
 
@@ -193,29 +195,24 @@ namespace graph
 		}
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 		using Queue = queue::FastHeapQueue<int, Vertex>;
-		using OptimalCriteriaTrakerType = OptimalCriteriaTraker<Graph, Queue, DistanceMapF, DistanceMapB, ColorMapF, ColorMapB>;
+		using OptimalCriteriaTrakerType = OptimalCriteriaTraker<Graph, IndexMap, DijkstraVisitorF, DijkstraVisitorB, DistanceMapF, DistanceMapB, ColorMapF, ColorMapB>;
 		auto invertedGraph = graph::ComplementGraph<Graph>(graph);
 
-		visitorF.initializeQueue(graph);
-		visitorB.initializeQueue(invertedGraph);
-		auto& queueF = visitorF.Queue;
-		auto& queueB = visitorB.Queue;
-
-		for (auto& v : graphUtil::Range(vertices(graph))) {
-			init_one_vertex(graph, v, predecessorF, distanceF, index, colorF, visitorF);
-			init_one_vertex(invertedGraph, v, predecessorB, distanceB, index, colorB, visitorB);
-		}
+		visitorF.Initialize(graph);
+		visitorB.Initialize(invertedGraph);
+		auto& queueF = visitorF.Stored.Queue;
+		auto& queueB = visitorB.Stored.Queue;
 
 		// Process start vertex
-		init_first_vertex(graph, s, distanceF, index, colorF, visitorF, queueF);
-		init_first_vertex(invertedGraph, t, distanceB, index, colorB, visitorB, queueB);
+		init_first_vertex(graph, s, predecessorF, distanceF, index, colorF, visitorF, queueF);
+		init_first_vertex(invertedGraph, t, predecessorB, distanceB, index, colorB, visitorB, queueB);
 
-		OptimalCriteriaTrakerType optTracker(queueF, queueB, distanceF, distanceB, colorF, colorB);
+		OptimalCriteriaTrakerType optTracker(visitorF, visitorB, distanceF, distanceB, colorF, colorB, index);
 
-		DijkstraVisitorCombinator<Graph, DijkstraVisitorF, OptimalCriteriaTrakerType, Queue>
-				bivisitorF(visitorF, optTracker, queueF);
-		DijkstraVisitorCombinator<Graph, DijkstraVisitorB, OptimalCriteriaTrakerType, Queue>
-				bivisitorB(visitorB, optTracker, queueB);
+		DijkstraVisitorCombinator<Graph, DijkstraVisitorF, OptimalCriteriaTrakerType>
+				bivisitorF(visitorF, optTracker);
+		DijkstraVisitorCombinator<Graph, DijkstraVisitorB, OptimalCriteriaTrakerType>
+				bivisitorB(visitorB, optTracker);
 
 		while (!queueF.IsEmpty() && !queueB.IsEmpty()) {
 			if (optTracker.forward_iteration_is_next()) {

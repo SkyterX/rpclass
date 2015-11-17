@@ -87,6 +87,10 @@ namespace graph {
 			}
 
 			void Clear() {
+				if (iterationId == std::numeric_limits<IterationType>::max()) {
+					iterationId = 0;
+					isDeleted.assign(isDeleted.size(), 0);
+				}
 				++iterationId;
 				q = QueueType();
 			}

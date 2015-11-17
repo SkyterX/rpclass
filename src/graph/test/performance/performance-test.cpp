@@ -190,6 +190,7 @@ TEST_P(DdsgGraphAlgorithm, DijkstraOne2All) {
         }
         auto vRange = vertices(graph);
         for (auto vIt = vRange.first; vIt != vRange.second; ++vIt) {
+			EnsureVertexInitialization(graph, *vIt, predecessor, distance, vertex_index, color, visitor);
             verificationFile >> file_src >> file_dist;
             EXPECT_EQ(file_src, *vIt);
             EXPECT_EQ(file_dist, get(distance, *vIt));
