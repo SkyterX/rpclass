@@ -58,22 +58,30 @@ namespace graph {
 		explicit ComplementGraph(Graph& graph)
 			: detail::internal::ComplementGraphObfuscated
 			<Graph, typename Graph::vertex_bundled, typename Graph::edge_bundled>(graph) {}
-		operator Graph&() { return detail::internal::ComplementGraphObfuscated
-			<Graph, typename Graph::vertex_bundled, typename Graph::edge_bundled>::innerGraph; }
+
+		operator Graph&() {
+			return detail::internal::ComplementGraphObfuscated
+					<Graph, typename Graph::vertex_bundled, typename Graph::edge_bundled>::innerGraph;
+		}
 	};
 
 	// PropertyMaps
 #define ComplementGraphTemplate template<typename Graph, typename VertexProperties, typename EdgeProperties>
 #define ComplementGraphType detail::internal::ComplementGraphObfuscated<Graph, VertexProperties, EdgeProperties>
 
-	ComplementGraphTemplate
-	struct property_map<ComplementGraphType, vertex_bundle_t> {
-		using type = typename property_map<typename ComplementGraphType::InnerGraphType, vertex_bundle_t>::type;
+	template <typename Graph>
+	struct property_map<Graph, vertex_bundle_t, std::enable_if_t<std::is_class<typename Graph::InnerGraphType>::value>> {
+		using type = typename property_map<typename Graph::InnerGraphType, vertex_bundle_t>::type;
 	};
 
-	ComplementGraphTemplate
-	struct property_map<ComplementGraphType, edge_bundle_t> {
-		using type = typename property_map<typename ComplementGraphType::InnerGraphType, edge_bundle_t>::type;
+	template <typename Graph>
+	struct property_map<Graph, edge_bundle_t, std::enable_if_t<std::is_class<typename Graph::InnerGraphType>::value>> {
+		using type = typename property_map<typename Graph::InnerGraphType, edge_bundle_t>::type;
+	};
+
+	template <typename Graph>
+	struct property_map<Graph, vertex_index_t, std::enable_if_t<std::is_class<typename Graph::InnerGraphType>::value>> {
+		using type = typename property_map<typename Graph::InnerGraphType, vertex_index_t>::type;
 	};
 
 	ComplementGraphTemplate
@@ -87,6 +95,13 @@ namespace graph {
 	get(const edge_bundle_t& bundle, ComplementGraphType& graph) {
 		return get(bundle, graph.innerGraph);
 	}
+
+	ComplementGraphTemplate
+	inline typename property_map<ComplementGraphType, vertex_index_t>::type
+	get(const vertex_index_t& bundle, ComplementGraphType& graph) {
+		return get(bundle, graph.innerGraph);
+	}
+
 
 	// External functions
 
