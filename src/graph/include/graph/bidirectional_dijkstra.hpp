@@ -57,13 +57,11 @@ namespace graph
 		};
 
 		bool should_continue() {
-			Vertex v1, v2;
-			int din, dout;
 			if (visitorF.Stored.Queue.IsEmpty() || visitorB.Stored.Queue.IsEmpty())
 				return false;
-			std::tie(din, v1) = visitorF.Stored.Queue.PeekMin();
-			std::tie(dout, v2) = visitorB.Stored.Queue.PeekMin();
-			return !(mu <= din + dout);
+			auto& topItemF = visitorF.Stored.Queue.PeekMin();
+			auto& topItemB = visitorB.Stored.Queue.PeekMin();
+			return !(mu <= topItemF.Distance + topItemB.Distance);
 		};
 
 		//can be easily changed to min queue iterator or something like it
@@ -201,7 +199,7 @@ namespace graph
 			return;
 		}
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
-		using Queue = queue::FastHeapQueue<int, Vertex>;
+		using Queue = typename DijkstraVisitorF::SharedDataStorage::QueueType;
 		using OptimalCriteriaTrakerType = OptimalCriteriaTraker<Graph, IndexMap, DijkstraVisitorF, DijkstraVisitorB, DistanceMapF, DistanceMapB, ColorMapF, ColorMapB>;
 		auto invertedGraph = graph::ComplementGraph<Graph>(graph);
 

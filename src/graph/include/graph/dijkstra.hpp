@@ -3,8 +3,7 @@
 #include <graph/properties.hpp>
 #include <graph/static_graph.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
-#include <graph/queue/SetQueue.hpp>
-#include <graph/queue/HeapQueue.hpp>
+#include <graph/queue/DijkstraQueue.hpp>
 #include <limits>
 
 namespace graph
@@ -110,7 +109,10 @@ namespace graph
 	template <typename Graph>
 	struct DefaultDijkstraVisitor : public IDijkstraVisitor<Graph> {
 		struct SharedDataStorage {
-			using QueueType = queue::FastHeapQueue<int, typename graph_traits<Graph>::vertex_descriptor>;
+			using QueueType = queue::DijkstraQueue<
+				uint32_t, 
+				typename graph_traits<Graph>::vertex_descriptor,
+				typename property_map<Graph, vertex_index_t>::type>;
 			QueueType Queue;
 			LazyVertexInitializer<Graph> VertexInitializer;
 		};
@@ -163,7 +165,7 @@ namespace graph
 		visitor.discover_vertex(v, graph);
 		put(distance, v, startDistance);
 		put(color, v, boost::two_bit_color_type::two_bit_green);
-		queue.Insert(startDistance, v);
+		queue.Insert(startDistance, v, index);
 	}
 
 	template <class Graph, class PredecessorMap, class DistanceMap, class WeightMap,
@@ -171,13 +173,12 @@ namespace graph
 	bool dijkstra_iteration(Graph& graph,
 	                        PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
 	                        IndexMap& index, ColorMap& color, DijkstraVisitor& visitor) {
-		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 		auto& queue = visitor.Stored.Queue;
 		// Get vertex from queue
-		Vertex v;
-		int vDistance;
-		std::tie(vDistance, v) = queue.PeekMin();
+		auto topItem = queue.PeekMin();
 		queue.DeleteMin();
+		auto& v = topItem.Vertex;
+		auto& vDistance = topItem.Distance;
 		visitor.examine_vertex(v, graph);
 
 		// Process edges	
@@ -186,7 +187,7 @@ namespace graph
 			if (!visitor.should_relax(edge, graph))
 				continue;
 			// Get edge Properties
-			Vertex to = target(edge, graph);
+			auto to = target(edge, graph);
 			EnsureVertexInitialization(graph, to, predecessor, distance, index, color, visitor);
 			auto edgeWeight = get(weight, edge);
 			auto newDistance = vDistance + edgeWeight;
@@ -199,10 +200,10 @@ namespace graph
 					// Vertex is new
 					visitor.discover_vertex(to, graph);
 					put(color, to, boost::two_bit_color_type::two_bit_green);
-					queue.Insert(newDistance, to);
+					queue.Insert(newDistance, to, index);
 				}
 				else {
-					queue.DecreaseKey(toDistance, to, newDistance);
+					queue.DecreaseKey(newDistance, to, index);
 				}
 				visitor.edge_relaxed(edge, graph);
 			}
@@ -236,8 +237,6 @@ namespace graph
 	              PredecessorMap& predecessor, DistanceMap& distance, WeightMap& weight,
 	              IndexMap& index, ColorMap& color, DijkstraVisitor& visitor) {
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
-		// TODO 
-		// - Use IndexMap instead of Vertex
 		visitor.Initialize(graph);
 		auto& queue = visitor.Stored.Queue;
 
