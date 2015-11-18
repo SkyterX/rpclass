@@ -18,6 +18,8 @@
 #include <util/statistics.h>
 #include <test.h>
 #include <generator.hpp>
+#include <random>
+#include <chrono>
 
 using namespace std;
 using namespace graph;
@@ -239,11 +241,48 @@ TEST_P(DdsgGraphAlgorithm, BiDijkstra) {
         EXPECT_EQ(distance, get(distanceF, tgt));
     }
     verificationFile.close();
+
+};
+
+
+TEST_P(DdsgGraphAlgorithm, BiDijkstraRandomQueries) {
+    using Graph = GenerateBiDijkstraGraph<predecessor_t, predecessorB_t,
+        distance_t, distanceB_t, weight_t, vertex_index_t, color_t, colorB_t,
+        Properties<>, Properties<>> ::type;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
+    Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);
+    auto predecessorF = graph::get(predecessor_t(), graph);
+    auto predecessorB = graph::get(predecessorB_t(), graph);
+    auto distanceF = graph::get(distance_t(), graph);
+    auto distanceB = graph::get(distanceB_t(), graph);
+    auto weight = graph::get(weight_t(), graph);
+    auto vertex_index = graph::get(vertex_index_t(), graph);
+    auto colorF = graph::get(color_t(), graph);
+    auto colorB = graph::get(colorB_t(), graph);
+    DefaultDijkstraVisitor<Graph> visitorF;
+    DefaultDijkstraVisitor<Graph> visitorB;    
+
+	mt19937 generator(3561237589);
+	uniform_int_distribution<Graph::vertex_descriptor> vertexDistribution(0, num_vertices(graph)-1);
+
+	auto startTime = chrono::high_resolution_clock::now();
+	for (auto it : graphUtil::Range(0, 100)) {
+		auto start = vertexDistribution(generator);
+		auto end = vertexDistribution(generator);
+
+		bidirectional_dijkstra(graph, graph_traits<Graph>::vertex_descriptor(start),
+			graph_traits<Graph>::vertex_descriptor(end), predecessorF, predecessorB,
+			distanceF, distanceB, weight, vertex_index, colorF, colorB, visitorF, visitorB);
+
+	}
+	auto endTime = chrono::high_resolution_clock::now();
+	auto timeElapsed = chrono::duration_cast<chrono::milliseconds>(endTime - startTime).count();
+	cout <<  timeElapsed << endl;
 };
 
 
 INSTANTIATE_TEST_CASE_P(CommandLine, DdsgGraphAlgorithm,
-    ::testing::Values("arc.ddsg","bel.ddsg"));
+    ::testing::Values("arc.ddsg", "bel.ddsg"));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

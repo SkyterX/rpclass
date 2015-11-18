@@ -52,18 +52,17 @@ namespace graph
 			uint32_t right = get(distanceF, to) + get(distanceB, to);
 			if (right < mu) {
 				mu = right;
-				m_center = to;
+				transitNode = to;
 			}
 		};
 
 		bool should_continue() {
 			Vertex v1, v2;
-			int din = 0;
-			int dout = 0;
-			if (!visitorF.Stored.Queue.IsEmpty())
-				std::tie(din, v1) = visitorF.Stored.Queue.PeekMin();
-			if (!visitorB.Stored.Queue.IsEmpty())
-				std::tie(dout, v2) = visitorB.Stored.Queue.PeekMin();
+			int din, dout;
+			if (visitorF.Stored.Queue.IsEmpty() || visitorB.Stored.Queue.IsEmpty())
+				return false;
+			std::tie(din, v1) = visitorF.Stored.Queue.PeekMin();
+			std::tie(dout, v2) = visitorB.Stored.Queue.PeekMin();
 			return !(mu <= din + dout);
 		};
 
@@ -71,6 +70,10 @@ namespace graph
 		bool forward_iteration_is_next() {
 			direction_flag_forward = !direction_flag_forward;
 			return direction_flag_forward;
+		}
+
+		bool AnyPathFound() const {
+			return mu < InfinityDistance<DistanceMapF>();
 		}
 
 		OptimalCriteriaTraker(const DijkstraVisitorF& visitorF, const DijkstraVisitorB& visitorB,
@@ -86,10 +89,11 @@ namespace graph
 			  colorB(colorB) {
 			mu = InfinityDistance<DistanceMapF>();
 			direction_flag_forward = false;
+			transitNode = std::numeric_limits<Vertex>::max();
 		}
 
 		DistanceType mu;
-		Vertex m_center;
+		Vertex transitNode;
 		bool direction_flag_forward;
 		const DijkstraVisitorF& visitorF;
 		const DijkstraVisitorB& visitorB;
@@ -219,24 +223,25 @@ namespace graph
 
 		while (!queueF.IsEmpty() && !queueB.IsEmpty()) {
 			if (optTracker.forward_iteration_is_next()) {
-				bool res = dijkstra_iteration(graph, predecessorF, distanceF, weight, index, colorF, bivisitorF);
-				if (!res)
+				bool shouldContinue = dijkstra_iteration(graph, predecessorF, distanceF, weight, index, colorF, bivisitorF);
+				if (!shouldContinue)
 					break;
 			}
 			else {
-				bool res = dijkstra_iteration(invertedGraph, predecessorB, distanceB, weight, index, colorB, bivisitorB);
-				if (!res)
+				bool shouldContinue = dijkstra_iteration(invertedGraph, predecessorB, distanceB, weight, index, colorB, bivisitorB);
+				if (!shouldContinue)
 					break;
 			}
 		}
 
+		if (!optTracker.AnyPathFound())
+			return;
 
 		//emulate simple dijkstra
 		uint32_t dis = optTracker.mu;
 		put(distanceF, t, dis);
-
-
-		Vertex predecessor = optTracker.m_center;
+		
+		Vertex predecessor = optTracker.transitNode;
 		Vertex current = get(predecessorB, predecessor);
 		while (current != t) {
 			put(predecessorF, current, predecessor);
