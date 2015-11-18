@@ -192,11 +192,11 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
 //	size_t src, tgt, dis;
 //	while (verificationFile >> src >> tgt >> dis) {
 //		cout << "Running ArcFlags query from " << src << " to " << tgt << endl;
-//		arcflags_query<N::value>(graph,
-//			graph_traits<Graph>::vertex_descriptor(src),
-//			graph_traits<Graph>::vertex_descriptor(tgt),
-//			predecessor, distance, weight, vertex_index,
-//			color, partition, arc_flags);
+//	bidirectional_arcflags_query<N::value>(graph,
+//		graph_traits<Graph>::vertex_descriptor(src),
+//		graph_traits<Graph>::vertex_descriptor(tgt),
+//		predecessor, predecessorB, distance, distanceB, weight, vertex_index,
+//		color, colorB, partition, arc_flags, arc_flagsB);
 //		EXPECT_EQ(dis, get(distance, tgt));
 //	}
 //	verificationFile.close();

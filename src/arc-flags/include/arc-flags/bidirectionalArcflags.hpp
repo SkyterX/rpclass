@@ -165,7 +165,7 @@ namespace arcflags
 	          typename ColorMapF, typename ColorMapB,
 	          typename PartitionMap,
 	          typename ArcFlagsMapF, typename ArcFlagsMapB>
-	void arcflags_query(Graph& graph,
+	void bidirectional_arcflags_query(Graph& graph,
 	                    const typename graph::graph_traits<Graph>::vertex_descriptor& s,
 	                    const typename graph::graph_traits<Graph>::vertex_descriptor& t,
 	                    PredecessorMapF& predcessorF, PredecessorMapB& predcessorB,
@@ -177,7 +177,7 @@ namespace arcflags
 	{
 		auto visitorF = ArcflagsQueryDijkstraVisitor<Graph, ArcFlagsMapF, PartitionMap>(arcflagsF, get(partition, t));
 		auto invertedFraph = graph::ComplementGraph<Graph>(graph);
-		auto visitorB = ArcflagsQueryDijkstraVisitor<graph::ComplementGraph<Graph>, ArcFlagsMapB, PartitionMap>(arcflagsB, get(partition, s));
+		auto visitorB = ArcflagsQueryDijkstraVisitor<Graph, ArcFlagsMapB, PartitionMap>(arcflagsB, get(partition, s));
 		graph::bidirectional_dijkstra(graph, s, t, predcessorF, predcessorB, distanceF, distanceB, weight, index, colorF, colorB, visitorF, visitorB);
 	};
 };
