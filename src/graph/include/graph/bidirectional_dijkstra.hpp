@@ -58,9 +58,12 @@ namespace graph
 
 		bool should_continue() {
 			Vertex v1, v2;
-			int din, dout;
-			std::tie(din, v1) = visitorF.Stored.Queue.PeekMin();
-			std::tie(dout, v2) = visitorB.Stored.Queue.PeekMin();
+			int din = 0;
+			int dout = 0;
+			if (!visitorF.Stored.Queue.IsEmpty())
+				std::tie(din, v1) = visitorF.Stored.Queue.PeekMin();
+			if (!visitorB.Stored.Queue.IsEmpty())
+				std::tie(dout, v2) = visitorB.Stored.Queue.PeekMin();
 			return !(mu <= din + dout);
 		};
 

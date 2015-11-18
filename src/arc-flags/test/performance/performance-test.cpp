@@ -89,7 +89,7 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
         FAIL();
     };    
 
-	cout << "Trying to laod arc-flags from file..." << endl;
+	cout << "Trying to load arc-flags from file..." << endl;
 	ss.str(string());
 	ss << m_path << "/" << m_baseName << "/arcflags" << N::value;
 	if (!ArcFlagsSavingEnabled || read_arcflags<N::value>(graph, arc_flags, ss.str().c_str())) {
