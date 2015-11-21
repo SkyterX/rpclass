@@ -5,6 +5,10 @@
 #include <boost/graph/two_bit_color_map.hpp>
 
 namespace arcflags {
+
+template <typename Graph>
+using ArcFlagsDefaultVisitor = graph::DefaultDijkstraVisitor<Graph>;
+
 template <typename PredecessorMapTag, class DisanceMapTag, typename WeightMapTag,
     typename IndexMapTag, typename ColorMapTag, typename ArcFlagsMapTag,
     typename PartitionMapTag, size_t N, 
@@ -45,13 +49,13 @@ template <size_t N, typename Graph, typename PredecessorMap, typename DistanceMa
 
 template <size_t N, typename Graph, typename PredecessorMap, typename DistanceMap,
     typename WeightMap, typename IndexMap, typename ColorMap, typename PartitionMap, 
-    typename ArcFlagsMap>
+    typename ArcFlagsMap, typename ArcFlagsVisitor = ArcFlagsDefaultVisitor<Graph>>
     void arcflags_query(Graph& graph, 
         const typename graph::graph_traits<Graph>::vertex_descriptor& s,
         const typename graph::graph_traits<Graph>::vertex_descriptor& t,
         PredecessorMap& predecessor, DistanceMap& distance,
         WeightMap& weight, IndexMap& index, ColorMap& color, PartitionMap& partition,
-        ArcFlagsMap& arcflags) {
+        ArcFlagsMap& arcflags, ArcFlagsVisitor&& visitor = ArcFlagsVisitor()) {
     graph::dijkstra(graph, s, predecessor, distance, weight, index, color);
 };
 };
