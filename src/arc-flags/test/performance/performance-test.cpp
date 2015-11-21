@@ -88,10 +88,12 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
     if (read_partitioning<N::value, partition_t>(graph, ss.str().c_str())) {
         FAIL();
     };
+
     start = std::chrono::high_resolution_clock::now();
     arcflags_preprocess<N::value>(graph, predecessor, distance, weight, vertex_index, 
         color, partition, arc_flags, m_filter);    
     end = std::chrono::high_resolution_clock::now();
+
     ArcFlagsMetricStatistics statistics(
         GeneralStatistics(m_baseName, Algorithm::arcFlags, Phase::metric, Metric::time,
             m_numOfNodes, m_numOfEdges,
@@ -108,6 +110,7 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
         FAIL();
     };
     size_t src, tgt, dis;
+    ArcFlagsDefaultVisitor<Graph> visitor;
     while (verificationFile >> src >> tgt >> dis) {
         cout << "Running ArcFlags query from " << src << " to " << tgt << endl;
         start = std::chrono::high_resolution_clock::now();
@@ -115,11 +118,11 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
             graph_traits<Graph>::vertex_descriptor(src),
             graph_traits<Graph>::vertex_descriptor(tgt),
             predecessor, distance, weight, vertex_index,
-            color, partition, arc_flags);
+            color, partition, arc_flags, visitor);
         end = std::chrono::high_resolution_clock::now();
         ArcFlagsQueryStatistic statistics(
             ArcFlagsMetricStatistics(
-                GeneralStatistics(m_baseName, Algorithm::arcFlags, Phase::metric, Metric::time,
+                GeneralStatistics(m_baseName, Algorithm::arcFlags, Phase::query, Metric::time,
                     m_numOfNodes, m_numOfEdges,
                     chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0),
                 N::value, m_filter), src, tgt, get(distance, tgt)
