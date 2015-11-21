@@ -2,7 +2,11 @@
 # Google Test
 #
 enable_testing()
-include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+include_directories(${gtest_SOURCE_DIR}/include 
+					${gtest_SOURCE_DIR}
+					${util_INCLUDE_DIRS}
+					include
+					)
 include_directories(include)
 
 
