@@ -5,16 +5,19 @@
 #include <vector>
 #include <string>
 #include <type_traits>
+#include <chrono>
 #include <gtest/gtest.h>
 #include <graph/static_graph.hpp>
 #include <graph/graph.hpp>
 #include <graph/properties.hpp>
 #include <graph/io.hpp>
 #include <arc-flags/arc-flags.hpp>
+#include <test.h>
 
 using namespace std;
 using namespace graph;
 using namespace arcflags;
+using namespace util::statistics;
 
 struct distance_t {};
 struct color_t {};
@@ -48,7 +51,11 @@ protected:
             [&](DdsgVecType::value_type left, DdsgVecType::value_type right) {
             return left.first.first < right.first.first;
         });
+        m_statistics.open("statistics", std::ofstream::out | std::ofstream::app);
     };
+    virtual void TearDown() {
+        m_statistics.close();
+    }
 
     using DdsgVecType = std::vector<std::pair<std::pair<size_t, size_t>, Properties<Property<weight_t, uint32_t>>>>;
     using N = integral_constant<size_t, 8>;
@@ -60,13 +67,15 @@ protected:
     double m_filter;
     size_t m_numOfNodes;
     size_t m_numOfEdges;
+    ofstream m_statistics;
 };
 
 TEST_P(DdsgGraphAlgorithm, ArcFlags) {
     using Graph = GenerateArcFlagsGraph<predecessor_t, distance_t, weight_t,
         vertex_index_t, color_t, arc_flags_t, partition_t, N::value,
         Properties<>, Properties< >> ::type;
-    Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);    
+    Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);  
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
     auto predecessor = graph::get(predecessor_t(), graph);
     auto distance = graph::get(distance_t(), graph);
     auto weight = graph::get(weight_t(), graph);
@@ -79,8 +88,15 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
     if (read_partitioning<N::value, partition_t>(graph, ss.str().c_str())) {
         FAIL();
     };
+    start = std::chrono::high_resolution_clock::now();
     arcflags_preprocess<N::value>(graph, predecessor, distance, weight, vertex_index, 
         color, partition, arc_flags, m_filter);    
+    end = std::chrono::high_resolution_clock::now();
+    ArcFlagsMetricStatistics statistics(
+        GeneralStatistics(m_baseName, Algorithm::arcFlags, Phase::metric, Metric::time,
+            m_numOfNodes, m_numOfEdges,
+            chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0),N::value, m_filter);
+    m_statistics << statistics << endl;
 
     ifstream verificationFile;    
     ss.str(string());
@@ -94,11 +110,21 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
     size_t src, tgt, dis;
     while (verificationFile >> src >> tgt >> dis) {
         cout << "Running ArcFlags query from " << src << " to " << tgt << endl;
+        start = std::chrono::high_resolution_clock::now();
         arcflags_query<N::value>(graph,
             graph_traits<Graph>::vertex_descriptor(src),
             graph_traits<Graph>::vertex_descriptor(tgt),
             predecessor, distance, weight, vertex_index,
             color, partition, arc_flags);
+        end = std::chrono::high_resolution_clock::now();
+        ArcFlagsQueryStatistic statistics(
+            ArcFlagsMetricStatistics(
+                GeneralStatistics(m_baseName, Algorithm::arcFlags, Phase::metric, Metric::time,
+                    m_numOfNodes, m_numOfEdges,
+                    chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0),
+                N::value, m_filter), src, tgt, get(distance, tgt)
+            );
+        m_statistics << statistics << endl;
         EXPECT_EQ(dis, get(distance, tgt));
     }
     verificationFile.close();
