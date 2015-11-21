@@ -72,6 +72,7 @@ int read_ddsg(BackInsertIterator backInserter, size_t& numOfNodes, size_t& numOf
     numOfEdges = input.NextUnsignedInt();
     size_t u, v, d;
     typename EdgeWeightProperty::value_type w;
+    using DirectionBit = typename EdgeDirectionProperty::value_type;
     while (input.HasNext()) {
         u = input.NextUnsignedInt();
         v = input.NextUnsignedInt();
@@ -80,17 +81,17 @@ int read_ddsg(BackInsertIterator backInserter, size_t& numOfNodes, size_t& numOf
         switch (d) {
         case 0:
         case 3:
-            *backInserter++ = make_pair(make_pair(u, v), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(2)));
-            *backInserter++ = make_pair(make_pair(v, u), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(2)));
+            *backInserter++ = make_pair(make_pair(u, v), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(0))));
+            *backInserter++ = make_pair(make_pair(v, u), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(0))));
             ++numOfEdges;
             break;
         case 1:
-            *backInserter++ = make_pair(make_pair(u, v), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(0)));
-            *backInserter++ = make_pair(make_pair(v, u), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(1)));
+            *backInserter++ = make_pair(make_pair(u, v), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(1))));
+            *backInserter++ = make_pair(make_pair(v, u), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(2))));
             break;
         case 2:
-            *backInserter++ = make_pair(make_pair(u, v), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(1)));
-            *backInserter++ = make_pair(make_pair(v, u), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(0)));
+            *backInserter++ = make_pair(make_pair(u, v), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(2))));
+            *backInserter++ = make_pair(make_pair(v, u), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(1))));
             break;
         default:
             std::cerr << "Wrong file format" << endl;

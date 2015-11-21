@@ -5,17 +5,18 @@
 #include <vector>
 #include <string>
 #include <fstream>
-
+#include <chrono>
 #include <gtest/gtest.h>
 #include <graph/io.hpp>
 #include <ch/contraction_hierarchy.hpp>
-
+#include <test.h>
 
 #include <gtest/gtest.h>
 
 using namespace std;
 using namespace graph;
 using namespace ch;
+using namespace util::statistics;
 
 struct distanceF_t {};
 struct distanceB_t {};
@@ -35,40 +36,47 @@ std::string baseFileName(const std::string& path) {
 
 char* globalPathToFiles = nullptr;
 
-class DdsgGraphAlgorithm : public ::testing::TestWithParam<tuple<const char*, double>> {
+class DdsgGraphAlgorithm : public ::testing::TestWithParam<tuple<const char*,int, bool>> {
 protected:
     DdsgGraphAlgorithm()
         :m_ddsgVecBackInserter(m_ddsgVec), m_path(globalPathToFiles),
-        m_fileName(get<0>(GetParam())),
-        m_baseName(baseFileName(m_fileName)),
-        m_filter(get<1>(GetParam())) {};
+        m_fileName(get<0>(GetParam())), m_baseName(baseFileName(m_fileName)),
+        m_numSteps(get<1>(GetParam())),m_stalling(get<2>(GetParam())) {};
     virtual void SetUp() {
-        if (read_ddsg<Property<weight_t, uint32_t>, Property<direction_t,char>>(m_ddsgVecBackInserter,
-            m_numOfNodes, m_numOfEdges, (m_path + "/" + m_fileName).c_str()))
+        if (read_ddsg<Property<weight_t, uint32_t>, Property<direction_t, DirectionBit>>(
+                m_ddsgVecBackInserter, m_numOfNodes, m_numOfEdges,
+                (m_path + "/" + m_fileName).c_str()))
             FAIL();
         std::sort(m_ddsgVec.begin(), m_ddsgVec.end(),
             [&](DdsgVecType::value_type left, DdsgVecType::value_type right) {
             return left.first.first < right.first.first;
         });
+        m_statistics.open("statistics", std::ofstream::out | std::ofstream::app);
     };
-
+    virtual void TearDown() {
+        m_statistics.close();
+    }
     using DdsgVecType = std::vector<std::pair<std::pair<size_t, size_t>, 
-        Properties<Property<weight_t, uint32_t>,Property<direction_t,char>>>>;
+        Properties<Property<weight_t, uint32_t>,Property<direction_t,DirectionBit>>>>;
     using N = integral_constant<size_t, 8>;
     DdsgVecType m_ddsgVec;
     back_insert_iterator<DdsgVecType> m_ddsgVecBackInserter;
     string m_path;
     string m_fileName;
     string m_baseName;
-    double m_filter;
+    size_t m_numSteps;
+    bool m_stalling;
     size_t m_numOfNodes;
     size_t m_numOfEdges;
+    ofstream m_statistics;
+    
 };
 
 TEST_P(DdsgGraphAlgorithm, CH) {
     using Graph = GenerateCHGraph<predecessor_t, distanceF_t, distanceB_t, weight_t,
         vertex_index_t, color_t, unpack_t, vertex_order_t, direction_t,
         Properties<>, Properties<>, Properties<>> ::type;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
     Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);
     auto predecessor = graph::get(predecessor_t(), graph);
     auto distanceF = graph::get(distanceF_t(), graph);
@@ -81,8 +89,17 @@ TEST_P(DdsgGraphAlgorithm, CH) {
     auto direction = graph::get(direction_t(), graph);
     stringstream ss;
     
+    start = std::chrono::high_resolution_clock::now();
     ch_preprocess<Graph>(graph, predecessor, distanceF, weight, vertex_index,
-        color, unpack, order, direction);
+        color, unpack, order, direction,m_numSteps);
+    end = std::chrono::high_resolution_clock::now();
+    CHMetricStatistics statistics(
+        GeneralStatistics(m_baseName, Algorithm::CH, Phase::metric, Metric::time,
+            m_numOfNodes, m_numOfEdges,
+            chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0),
+        m_numSteps, CHPriority::shortcut);
+    m_statistics << statistics << endl;
+
 
     ifstream verificationFile;
     ss.str(string());
@@ -94,20 +111,33 @@ TEST_P(DdsgGraphAlgorithm, CH) {
         FAIL();
     };
     size_t src, tgt, dis;
+
+    DefaultCHVisitor<Graph> visitor;
     while (verificationFile >> src >> tgt >> dis) {
         cout << "Running CH query from " << src << " to " << tgt << endl;
+        start = std::chrono::high_resolution_clock::now();
         ch_query(graph,
             graph_traits<Graph>::vertex_descriptor(src),
             graph_traits<Graph>::vertex_descriptor(tgt),
-            predecessor, distanceF, distanceB, weight, vertex_index, color, unpack, order, direction);
+            predecessor, distanceF, distanceB, weight, vertex_index, color, unpack, order, direction,visitor);
+        end = std::chrono::high_resolution_clock::now();
+        CHQueryStatistic statistics(
+            CHMetricStatistics(
+                GeneralStatistics(m_baseName, Algorithm::CH, Phase::query, Metric::time,
+                    m_numOfNodes, m_numOfEdges,
+                    chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0),
+                m_numSteps, CHPriority::shortcut), 
+            src, tgt, get(distanceF, tgt), m_stalling
+            );
+        m_statistics << statistics << endl;
         EXPECT_EQ(dis, get(distanceF, tgt));
-    }
+    }    
     verificationFile.close();
 };
 
 
 INSTANTIATE_TEST_CASE_P(CommandLine, DdsgGraphAlgorithm,
-    ::testing::Combine(::testing::Values("deu.ddsg"), ::testing::Values(0.0)));
+    ::testing::Combine(::testing::Values("deu.ddsg"), ::testing::Values(20), ::testing::Values(false)));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

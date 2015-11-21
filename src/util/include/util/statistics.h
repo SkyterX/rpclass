@@ -55,7 +55,8 @@ enum class Algorithm: char {
     dijkstra,
     dijkstraPtoP,
     biDijkstra,
-    arcFlags
+    arcFlags,
+    CH
 };
 
 
@@ -76,6 +77,10 @@ std::ostream& operator<<(std::ostream& osm, const Algorithm& arg) {
     case Algorithm::arcFlags:
         osm << "arcFlags";
         break;
+    case Algorithm::CH:
+        osm << "CH";
+        break;
+
     default:
         osm << "Unknown algorithm";
         break;
