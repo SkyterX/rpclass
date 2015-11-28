@@ -152,9 +152,11 @@ struct CHQueryVisitor : public graph::DefaultDijkstraVisitor<Graph> {
 
 		if (get(direction, edge) != directionBit) {
 			if (directionBit != DirectionBit::backward && get(order, to) > get(order, from)) {
+				cout << "Relaxing edge forward: " << from - 1 << " " << to - 1 << endl;
 				return true;
 			}
-			if (directionBit != DirectionBit::forward && get(order, to) < get(order, from)) {
+			if (directionBit != DirectionBit::forward && get(order, from) < get(order, to)) {
+				cout << "Relaxing edge backward: " << from - 1 << " " << to - 1 << endl;
 				return true;
 			}
 		}
@@ -218,6 +220,7 @@ void ch_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& dista
 						continue;
 				}
 
+				cout << "Shortcut added: " << in_v + 1 << " to " << out_v + 1 << "with length " << shortCutLength << endl;
 				shortCuts.push_back(make_tuple(in_v, out_v, shortCutLength));
 
 			}

@@ -142,7 +142,7 @@ TEST_P(DdsgGraphAlgorithm, CH) {
 
 
 INSTANTIATE_TEST_CASE_P(CommandLine, DdsgGraphAlgorithm,
-    ::testing::Combine(::testing::Values("deu.ddsg"), ::testing::Values(20), ::testing::Values(false)));
+    ::testing::Combine(::testing::Values("arc.ddsg"), ::testing::Values(20), ::testing::Values(false)));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
