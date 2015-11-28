@@ -44,11 +44,11 @@ namespace arcflags {
 	int read_partitioning(Graph& graph, const char* PathToFile) {
 		graphIO::FileReader fileReader;
 		fileReader.Open(PathToFile);
-		auto partitionMap = get(PartitionMapTag(), graph);
+		auto partitionMap = graph::get(PartitionMapTag(), graph);
 
 		for (auto& v : graphUtil::Range(graph::vertices(graph))) {
 			auto classIndex = fileReader.NextUnsignedInt();
-			put(partitionMap, v, static_cast<char>(classIndex));
+			graph::put(partitionMap, v, static_cast<char>(classIndex));
 		}
 
 		fileReader.Close();
@@ -74,7 +74,7 @@ namespace arcflags {
 				auto end = fileReader.NextUnsignedInt();
 				assert(start == source(outEdge, graph));
 				assert(end == target(outEdge, graph));
-				auto& arcFlag = get(arcflags, outEdge);
+				auto& arcFlag = graph::get(arcflags, outEdge);
 				for (const auto& bitIndex : Range(0, N)) {
 					char bit = fileReader.NextChar();
 					arcFlag.SetBit(bitIndex, bit == '1');
@@ -101,7 +101,7 @@ namespace arcflags {
 
 		for (const auto& v : Range(vertices(graph))) {
 			for (const auto& edge : Range(out_edges(v, graph))) {
-				auto bitset = get(arcflags, edge);
+				auto bitset = graph::get(arcflags, edge);
 				fprintf(outFile, "%d %d ", source(edge, graph), target(edge, graph));
 				for (const auto& bitIndex : Range(0, N)) {
 					fprintf(outFile, "%c", bitset.GetBit(bitIndex) == true ? '1' : '0');
@@ -125,19 +125,19 @@ namespace arcflags {
 		auto invertedGraph = graph::ComplementGraph<Graph>(graph);
 		//auto borderCnt = 0;
 		for (const auto& v : graphUtil::Range(graph::vertices(invertedGraph))) {
-			auto vPartIndex = get(partition, v);
+			auto vPartIndex = graph::get(partition, v);
 
 			for (const auto& edge : graphUtil::Range(graph::out_edges(v, invertedGraph))) {
 				const auto& to = target(edge, invertedGraph);
-				if (get(partition, to) == vPartIndex) {
-					auto& bitset = get(arcflags, edge);
+				if (graph::get(partition, to) == vPartIndex) {
+					auto& bitset = graph::get(arcflags, edge);
 					bitset.SetBit(vPartIndex);
 				}
 			}
 
 			auto borderVertex = false;
 			for (const auto& to : graphUtil::Range(graph::adjacent_vertices(v, invertedGraph))) {
-				if (get(partition, to) != vPartIndex) {
+				if (graph::get(partition, to) != vPartIndex) {
 					borderVertex = true;
 					break;
 				}
@@ -150,15 +150,15 @@ namespace arcflags {
 
 				for (const auto& fromVertex : graphUtil::Range(graph::vertices(invertedGraph))) {
 					EnsureVertexInitialization(invertedGraph, fromVertex, predecessor, distance, index, color, visitor);
-					auto predVertex = get(predecessor, fromVertex);
+					auto predVertex = graph::get(predecessor, fromVertex);
 					if (predVertex == fromVertex)
 						continue;
-					auto predecessorEdgeWeight = get(distance, fromVertex) - get(distance, predVertex);
+					auto predecessorEdgeWeight = graph::get(distance, fromVertex) - graph::get(distance, predVertex);
 					for (const auto& edge : graphUtil::Range(graph::in_edges(fromVertex, invertedGraph))) {
 						auto toVertex = graph::source(edge, invertedGraph);
-						if (toVertex == predVertex && get(weight, edge) == predecessorEdgeWeight) {
+						if (toVertex == predVertex && graph::get(weight, edge) == predecessorEdgeWeight) {
 							//						if (get(distance, fromVertex) + get(weight, edge) == get(distance, toVertex)) {
-							auto& bitset = get(arcflags, edge);
+							auto& bitset = graph::get(arcflags, edge);
 							bitset.SetBit(vPartIndex);
 						}
 					}

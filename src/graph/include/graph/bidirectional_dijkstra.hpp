@@ -194,8 +194,8 @@ namespace graph
 	                            DijkstraVisitorB& visitorB) {
 
 		if (s == t) {
-			put(distanceF, t, 0);
-			put(predecessorF, t, t);
+			graph::put(distanceF, t, 0);
+			graph::put(predecessorF, t, t);
 			return;
 		}
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
@@ -237,14 +237,14 @@ namespace graph
 
 		//emulate simple dijkstra
 		uint32_t dis = optTracker.mu;
-		put(distanceF, t, dis);
+		graph::put(distanceF, t, dis);
 		
 		Vertex predecessor = optTracker.transitNode;
 		Vertex current = get(predecessorB, predecessor);
 		while (current != t) {
-			put(predecessorF, current, predecessor);
+			graph::put(predecessorF, current, predecessor);
 			predecessor = current;
-			current = get(predecessorB, current);
+			current = graph::get(predecessorB, current);
 		}
 	}
 }

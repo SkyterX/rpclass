@@ -184,12 +184,12 @@ void ch_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& dista
 	auto curVert = strategy.next(graph);
 
 	for (const auto& vertex: Range(vertices(graph))) {
-		put(order, vertex, numeric_limits<size_t>::max());
+		graph::put(order, vertex, numeric_limits<size_t>::max());
 	}
 
 	size_t curOrder = 0;
 	while (curVert != graph.null_vertex()) {
-		put(order, curVert, curOrder++);
+		graph::put(order, curVert, curOrder++);
 
 		vector<tuple<Vertex, Vertex, size_t>> shortCuts;
 
@@ -225,14 +225,14 @@ void ch_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& dista
 
 		for (auto shortCut : shortCuts) {
 			auto pr = add_edge(get<0>(shortCut), get<1>(shortCut), graph);
-			put(weight, pr.first, get<2>(shortCut));
-			put(direction, pr.first, DirectionBit::forward);
-			put(unpack, pr.first, curVert);
+			graph::put(weight, pr.first, get<2>(shortCut));
+			graph::put(direction, pr.first, DirectionBit::forward);
+			graph::put(unpack, pr.first, curVert);
 
 			auto pr1 = add_edge(get<1>(shortCut), get<0>(shortCut), graph);
-			put(weight, pr1.first, get<2>(shortCut));
-			put(direction, pr1.first, DirectionBit::backward);
-			put(unpack, pr1.first, curVert);
+			graph::put(weight, pr1.first, get<2>(shortCut));
+			graph::put(direction, pr1.first, DirectionBit::backward);
+			graph::put(unpack, pr1.first, curVert);
 		}
 
 		curVert = strategy.next(graph);

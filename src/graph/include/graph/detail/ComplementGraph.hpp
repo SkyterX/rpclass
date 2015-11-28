@@ -19,7 +19,7 @@ namespace graph {
 			public:
 				using InnerGraphType = Graph;
 
-				using edge_size_type = typename Graph::edge_size_type;
+//				using edge_size_type = typename Graph::edge_size_type;
 				using vertices_size_type = typename Graph::vertices_size_type;
 				using edges_size_type = typename Graph::edges_size_type;
 				using degree_size_type = typename Graph::degree_size_type;
@@ -29,8 +29,8 @@ namespace graph {
 				using traversal_category = typename Graph::traversal_category;
 				using edge_descriptor = typename Graph::edge_descriptor;
 
-				using VertexPropertyMapType = typename Graph::VertexPropertyMapType;
-				using EdgePropertyMapType = typename Graph::EdgePropertyMapType;
+//				using VertexPropertyMapType = typename Graph::VertexPropertyMapType;
+//				using EdgePropertyMapType = typename Graph::EdgePropertyMapType;
 				using vertex_bundled = typename Graph::vertex_bundled;
 				using edge_bundled = typename Graph::edge_bundled;
 

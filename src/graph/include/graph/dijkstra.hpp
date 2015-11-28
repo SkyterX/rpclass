@@ -145,9 +145,9 @@ namespace graph
 			return;
 
 		visitor.initialize_vertex(v, graph);
-		put(distance, v, InfinityDistance<DistanceMap>());
-		put(predecessor, v, v);
-		put(color, v, boost::two_bit_color_type::two_bit_white);
+		graph::put(distance, v, InfinityDistance<DistanceMap>());
+		graph::put(predecessor, v, v);
+		graph::put(color, v, boost::two_bit_color_type::two_bit_white);
 	}
 
 	template <class Graph, class PredecessorMap, class DistanceMap, class IndexMap,
@@ -163,8 +163,8 @@ namespace graph
 
 		EnsureVertexInitialization(graph, v, predecessor, distance, index, color, visitor);
 		visitor.discover_vertex(v, graph);
-		put(distance, v, startDistance);
-		put(color, v, boost::two_bit_color_type::two_bit_green);
+		graph::put(distance, v, startDistance);
+		graph::put(color, v, boost::two_bit_color_type::two_bit_green);
 		queue.Insert(startDistance, v, index);
 	}
 
@@ -189,17 +189,17 @@ namespace graph
 			// Get edge Properties
 			auto to = target(edge, graph);
 			EnsureVertexInitialization(graph, to, predecessor, distance, index, color, visitor);
-			auto edgeWeight = get(weight, edge);
+			auto edgeWeight = graph::get(weight, edge);
 			auto newDistance = vDistance + edgeWeight;
-			auto toDistance = get(distance, to);
+			auto toDistance = graph::get(distance, to);
 			if (newDistance < toDistance) {
 				// Found better distance -> update
-				put(distance, to, newDistance);
-				put(predecessor, to, v);
-				if (get(color, to) == boost::two_bit_color_type::two_bit_white) {
+				graph::put(distance, to, newDistance);
+				graph::put(predecessor, to, v);
+				if (graph::get(color, to) == boost::two_bit_color_type::two_bit_white) {
 					// Vertex is new
 					visitor.discover_vertex(to, graph);
-					put(color, to, boost::two_bit_color_type::two_bit_green);
+					graph::put(color, to, boost::two_bit_color_type::two_bit_green);
 					queue.Insert(newDistance, to, index);
 				}
 				else {
@@ -214,7 +214,7 @@ namespace graph
 		}
 
 		// Teardown vertex
-		put(color, v, boost::two_bit_color_type::two_bit_black);
+		graph::put(color, v, boost::two_bit_color_type::two_bit_black);
 		visitor.finish_vertex(v, graph);
 		return visitor.should_continue();
 	};
