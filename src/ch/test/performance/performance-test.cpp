@@ -20,8 +20,10 @@ using namespace util::statistics;
 
 struct distanceF_t {};
 struct distanceB_t {};
-struct color_t {};
-struct predecessor_t {};
+struct colorF_t {};
+struct colorB_t {};
+struct predecessorF_t {};
+struct predecessorB_t {};
 struct weight_t {};
 struct unpack_t {};
 struct vertex_order_t {};
@@ -73,25 +75,28 @@ protected:
 };
 
 TEST_P(DdsgGraphAlgorithm, CH) {
-    using Graph = GenerateCHGraph<predecessor_t, distanceF_t, distanceB_t, weight_t,
-        vertex_index_t, color_t, unpack_t, vertex_order_t, direction_t,
+    using Graph = GenerateCHGraph<predecessorF_t, predecessorB_t, distanceF_t, distanceB_t, weight_t,
+        vertex_index_t, colorF_t, colorB_t, unpack_t, vertex_order_t, direction_t,
         Properties<>, Properties<>, Properties<>> ::type;
     std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
     Graph graph(m_ddsgVec.begin(), m_ddsgVec.end(), m_numOfNodes, m_numOfEdges);
-    auto predecessor = graph::get(predecessor_t(), graph);
+    auto predecessorF = graph::get(predecessorF_t(), graph);
+	auto predecessorB = graph::get(predecessorB_t(), graph);
     auto distanceF = graph::get(distanceF_t(), graph);
     auto distanceB = graph::get(distanceB_t(), graph);
     auto weight = graph::get(weight_t(), graph);
     auto vertex_index = graph::get(vertex_index_t(), graph);
-    auto color = graph::get(color_t(), graph);
+    auto colorF = graph::get(colorF_t(), graph);
+	auto colorB = graph::get(colorB_t(), graph);
     auto unpack = graph::get(unpack_t(), graph);
     auto order = graph::get(vertex_order_t(), graph);
     auto direction = graph::get(direction_t(), graph);
     stringstream ss;
     
     start = std::chrono::high_resolution_clock::now();
-    ch_preprocess<Graph>(graph, predecessor, distanceF, weight, vertex_index,
-        color, unpack, order, direction,m_numSteps);
+    ch_preprocess<Graph>(graph, predecessorF, distanceF, weight, vertex_index,
+        colorF, unpack, order, direction, m_numSteps,
+		DumbOrderStrategy<Graph, property_map<Graph, vertex_order_t>::type>(graph));
     end = std::chrono::high_resolution_clock::now();
     CHMetricStatistics statistics(
         GeneralStatistics(m_baseName, Algorithm::CH, Phase::metric, Metric::time,
@@ -119,7 +124,7 @@ TEST_P(DdsgGraphAlgorithm, CH) {
         ch_query(graph,
             graph_traits<Graph>::vertex_descriptor(src),
             graph_traits<Graph>::vertex_descriptor(tgt),
-            predecessor, distanceF, distanceB, weight, vertex_index, color, unpack, order, direction,visitor);
+            predecessorF, predecessorB, distanceF, distanceB, weight, vertex_index, colorF, colorB, unpack, order, direction,visitor);
         end = std::chrono::high_resolution_clock::now();
         CHQueryStatistic statistics(
             CHMetricStatistics(
