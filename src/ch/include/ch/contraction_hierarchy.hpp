@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <graph/dijkstra.hpp>
 #include <graph/dynamic_graph.hpp>
 #include <boost/graph/two_bit_color_map.hpp>
@@ -152,11 +153,11 @@ struct CHQueryVisitor : public graph::DefaultDijkstraVisitor<Graph> {
 
 		if (get(direction, edge) != directionBit) {
 			if (directionBit != DirectionBit::backward && get(order, to) > get(order, from)) {
-				cout << "Relaxing edge forward: " << from - 1 << " " << to - 1 << endl;
+				std::cout << "Relaxing edge forward: " << from - 1 << " " << to - 1 << std::endl;
 				return true;
 			}
 			if (directionBit != DirectionBit::forward && get(order, from) < get(order, to)) {
-				cout << "Relaxing edge backward: " << from - 1 << " " << to - 1 << endl;
+				std::cout << "Relaxing edge backward: " << from - 1 << " " << to - 1 << std::endl;
 				return true;
 			}
 		}
