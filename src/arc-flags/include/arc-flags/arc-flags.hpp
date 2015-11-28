@@ -185,16 +185,22 @@ namespace arcflags {
 		size_t targetPart;
 	};
 
+	template <typename Graph, typename ArcFlagsMap, typename PartitionMap>
+	inline decltype(auto) CreateDefaultArcFlagsVisitor(Graph& graph,
+		const typename graph::graph_traits<Graph>::vertex_descriptor& t,
+		PartitionMap& partition, ArcFlagsMap& arcflags) {
+		return ArcflagsQueryDijkstraVisitor<Graph, ArcFlagsMap, PartitionMap>(arcflags, get(partition, t));
+	}
+
 	template <size_t N, typename Graph, typename PredecessorMap, typename DistanceMap,
 			  typename WeightMap, typename IndexMap, typename ColorMap, typename PartitionMap,
-			  typename ArcFlagsMap>
+			  typename ArcFlagsMap, typename ArcFlagsVisitor = ArcflagsQueryDijkstraVisitor<Graph, ArcFlagsMap, PartitionMap>>
 	void arcflags_query(Graph& graph,
 						const typename graph::graph_traits<Graph>::vertex_descriptor& s,
 						const typename graph::graph_traits<Graph>::vertex_descriptor& t,
 						PredecessorMap& predecessor, DistanceMap& distance,
 						WeightMap& weight, IndexMap& index, ColorMap& color, PartitionMap& partition,
-						ArcFlagsMap& arcflags) {
-		auto visitor = ArcflagsQueryDijkstraVisitor<Graph, ArcFlagsMap, PartitionMap>(arcflags, get(partition, t));
+						ArcFlagsMap& arcflags, ArcFlagsVisitor&& visitor) {
 		graph::dijkstra(graph, s, predecessor, distance, weight, index, color, visitor);
 	};
 };

@@ -98,17 +98,6 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
         FAIL();
     };
 
-    start = std::chrono::high_resolution_clock::now();
-    arcflags_preprocess<N::value>(graph, predecessor, distance, weight, vertex_index, 
-        color, partition, arc_flags, m_filter);    
-    end = std::chrono::high_resolution_clock::now();
-
-    ArcFlagsMetricStatistics statistics(
-        GeneralStatistics(m_baseName, Algorithm::arcFlags, Phase::metric, Metric::time,
-            m_numOfNodes, m_numOfEdges,
-            chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0),N::value, m_filter);
-    m_statistics << statistics << endl;
-
 	cout << "Trying to load arc-flags from file..." << endl;
 	ss.str(string());
 	ss << m_path << "/" << m_baseName << "/arcflags" << N::value;
@@ -118,8 +107,16 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
 		else
 			cout << "Arc-flags saving is disabled." << endl;
 		cout << "Building arc-flags..." << endl;
+		start = std::chrono::high_resolution_clock::now();
 		arcflags_preprocess<N::value>(graph, predecessor, distance, weight, vertex_index,
 			color, partition, arc_flags, m_filter);
+		end = std::chrono::high_resolution_clock::now();
+
+		ArcFlagsMetricStatistics statistics(
+			GeneralStatistics(m_baseName, Algorithm::arcFlags, Phase::metric, Metric::time,
+				m_numOfNodes, m_numOfEdges,
+				chrono::duration_cast<chrono::milliseconds>(end - start).count(), 0), N::value, m_filter);
+		m_statistics << statistics << endl;
 		
 		if (ArcFlagsSavingEnabled) {
 			cout << "Saving arc-flags..." << endl;
@@ -142,10 +139,10 @@ TEST_P(DdsgGraphAlgorithm, ArcFlags) {
         FAIL();
     };
     size_t src, tgt, dis;
-    ArcFlagsDefaultVisitor<Graph> visitor;
     while (verificationFile >> src >> tgt >> dis) {
         cout << "Running ArcFlags query from " << src << " to " << tgt << endl;
         start = std::chrono::high_resolution_clock::now();
+		auto visitor = CreateDefaultArcFlagsVisitor(graph, graph_traits<Graph>::vertex_descriptor(tgt), partition, arc_flags);
         arcflags_query<N::value>(graph,
             graph_traits<Graph>::vertex_descriptor(src),
             graph_traits<Graph>::vertex_descriptor(tgt),

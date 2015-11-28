@@ -34,6 +34,9 @@ namespace arcflags {
 			const static std::hash<BitsetType> hasher;
 			BitsetType bitset;
 		};
+
+		template<size_t size>
+		const std::hash<typename Bitset<size>::BitsetType> Bitset<size>::hasher = std::hash<typename Bitset<size>::BitsetType>();
 	}
 }
 
