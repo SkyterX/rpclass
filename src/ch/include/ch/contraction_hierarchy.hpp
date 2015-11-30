@@ -151,13 +151,13 @@ struct CHQueryVisitor : public graph::DefaultDijkstraVisitor<Graph> {
 		auto to = target(edge, graph);
 		auto from = source(edge, graph);
 
-		if (get(direction, edge) != directionBit) {
-			if (directionBit != DirectionBit::backward && get(order, to) > get(order, from)) {
-				std::cout << "Relaxing edge forward: " << from - 1 << " " << to - 1 << std::endl;
+		if (get(direction, edge) != DirectionBit::backward) {
+			if (directionBit != DirectionBit::backward && get(order, to) < get(order, from)) {
+//				std::cout << "Relaxing edge forward: " << from + 1 << " " << to + 1 << std::endl;
 				return true;
 			}
-			if (directionBit != DirectionBit::forward && get(order, from) < get(order, to)) {
-				std::cout << "Relaxing edge backward: " << from - 1 << " " << to - 1 << std::endl;
+			if (directionBit != DirectionBit::forward && get(order, to) > get(order, from)) {
+//				std::cout << "Relaxing edge backward: " << from + 1 << " " << to + 1 << std::endl;
 				return true;
 			}
 		}
@@ -193,6 +193,7 @@ void ch_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& dista
 	size_t curOrder = 0;
 	while (curVert != graph.null_vertex()) {
 		graph::put(order, curVert, curOrder++);
+//		cout << "Processing vertex " << curVert + 1 << endl;
 
 		vector<tuple<Vertex, Vertex, size_t>> shortCuts;
 
@@ -216,12 +217,14 @@ void ch_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& dista
 				CHPreprocessDijkstraVisitor<Graph, VertexOrderMap, DirectionMap> visitor(curVert, out_v, dijLimit, order, direction);
 				graph::dijkstra(graph, in_v, predecessor, distance, weight, index, color, visitor);
 
+				// One can't just simply use dijkstra
+				EnsureVertexInitialization(graph, out_v, predecessor, distance, index, color, visitor);
 				if (get(color, out_v) == boost::two_bit_black) {
 					if (get(distance, out_v) < shortCutLength)
 						continue;
 				}
 
-				cout << "Shortcut added: " << in_v + 1 << " to " << out_v + 1 << "with length " << shortCutLength << endl;
+//				cout << "Shortcut added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
 				shortCuts.push_back(make_tuple(in_v, out_v, shortCutLength));
 
 			}
