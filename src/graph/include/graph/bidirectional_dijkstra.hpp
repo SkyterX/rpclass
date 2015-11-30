@@ -43,7 +43,7 @@ namespace graph
 		using DistanceType = typename DistanceMapF::value_type;
 	public :
 		void edge_relaxed(const typename graph_traits<Graph>::edge_descriptor& edge, Graph& graph) {
-			Vertex to = target(edge, graph);
+			Vertex to = direction_flag_forward ? target(edge, graph) : source(edge, graph);
 			if (!visitorF.Stored.VertexInitializer.IsInitialized(to, index) ||
 				!visitorB.Stored.VertexInitializer.IsInitialized(to, index) ||
 				get(colorF, to) == boost::two_bit_white ||
@@ -232,6 +232,7 @@ namespace graph
 			}
 		}
 
+		EnsureVertexInitialization(graph, t, predecessorF, distanceF, index, colorF, visitorF);
 		if (!optTracker.AnyPathFound())
 			return;
 
