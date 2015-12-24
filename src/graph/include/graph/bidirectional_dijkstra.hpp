@@ -58,7 +58,7 @@ namespace graph
 
 		bool should_continue() {
 			if (visitorF.Stored.Queue.IsEmpty() || visitorB.Stored.Queue.IsEmpty())
-				return false;
+				return true;
 			auto& topItemF = visitorF.Stored.Queue.PeekMin();
 			auto& topItemB = visitorB.Stored.Queue.PeekMin();
 			return !(mu <= topItemF.Distance + topItemB.Distance);
@@ -160,7 +160,6 @@ namespace graph
 		typename MainVisitor::SharedDataStorage& Stored;
 	};
 
-
 	template <class Graph, class PredecessorMapF, class PredecessorMapB,
 	          class DistanceMapF, class DistanceMapB,
 	          class WeightMap, class IndexMap, class ColorMapF, class ColorMapB,
@@ -178,13 +177,33 @@ namespace graph
 		                       distanceF, distanceB, weight, index, colorF, colorB, visitorF, visitorB);
 	}
 
-
 	template <class Graph, class PredecessorMapF, class PredecessorMapB,
 	          class DistanceMapF, class DistanceMapB,
 	          class WeightMap, class IndexMap, class ColorMapF, class ColorMapB,
 	          class DijkstraVisitorF = DefaultDijkstraVisitor<Graph>,
 	          class DijkstraVisitorB = DefaultDijkstraVisitor<Graph>>
 	void bidirectional_dijkstra(Graph& graph,
+	                            const typename graph_traits<Graph>::vertex_descriptor& s,
+	                            const typename graph_traits<Graph>::vertex_descriptor& t,
+	                            PredecessorMapF& predecessorF, PredecessorMapB& predecessorB,
+	                            DistanceMapF& distanceF, DistanceMapB& distanceB, WeightMap& weight,
+	                            IndexMap& index, ColorMapF& colorF, ColorMapB& colorB,
+	                            DijkstraVisitorF& visitorF,
+	                            DijkstraVisitorB& visitorB) {
+		using TrackerType = OptimalCriteriaTraker<Graph, IndexMap, DijkstraVisitorF, DijkstraVisitorB, DistanceMapF, DistanceMapB, ColorMapF, ColorMapB>;
+		fancy_bidirectional_dijkstra<TrackerType>(graph, graph::ComplementGraph<Graph>(graph), s, t,
+		                                    predecessorF, predecessorB, distanceF, distanceB,
+		                                    weight, index, colorF, colorB, visitorF, visitorB);
+	}
+
+	template <class OptimalCriteriaTrackerType,
+	          class Graph, class ComplementGraph, 
+			  class PredecessorMapF, class PredecessorMapB,
+	          class DistanceMapF, class DistanceMapB,
+	          class WeightMap, class IndexMap, class ColorMapF, class ColorMapB,
+	          class DijkstraVisitorF = DefaultDijkstraVisitor<Graph>,
+	          class DijkstraVisitorB = DefaultDijkstraVisitor<Graph>>
+	void fancy_bidirectional_dijkstra(Graph& graph, ComplementGraph& invertedGraph,
 	                            const typename graph_traits<Graph>::vertex_descriptor& s,
 	                            const typename graph_traits<Graph>::vertex_descriptor& t,
 	                            PredecessorMapF& predecessorF, PredecessorMapB& predecessorB,
@@ -200,8 +219,6 @@ namespace graph
 		}
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 		using Queue = typename DijkstraVisitorF::SharedDataStorage::QueueType;
-		using OptimalCriteriaTrakerType = OptimalCriteriaTraker<Graph, IndexMap, DijkstraVisitorF, DijkstraVisitorB, DistanceMapF, DistanceMapB, ColorMapF, ColorMapB>;
-		auto invertedGraph = graph::ComplementGraph<Graph>(graph);
 
 		visitorF.Initialize(graph);
 		visitorB.Initialize(invertedGraph);
@@ -212,20 +229,22 @@ namespace graph
 		init_first_vertex(graph, s, predecessorF, distanceF, index, colorF, visitorF, queueF);
 		init_first_vertex(invertedGraph, t, predecessorB, distanceB, index, colorB, visitorB, queueB);
 
-		OptimalCriteriaTrakerType optTracker(visitorF, visitorB, distanceF, distanceB, colorF, colorB, index);
+		OptimalCriteriaTrackerType optTracker(visitorF, visitorB, distanceF, distanceB, colorF, colorB, index);
 
-		DijkstraVisitorCombinator<Graph, DijkstraVisitorF, OptimalCriteriaTrakerType>
+		DijkstraVisitorCombinator<Graph, DijkstraVisitorF, OptimalCriteriaTrackerType>
 				bivisitorF(visitorF, optTracker);
-		DijkstraVisitorCombinator<Graph, DijkstraVisitorB, OptimalCriteriaTrakerType>
+		DijkstraVisitorCombinator<Graph, DijkstraVisitorB, OptimalCriteriaTrackerType>
 				bivisitorB(visitorB, optTracker);
 
-		while (!queueF.IsEmpty() && !queueB.IsEmpty()) {
+		while (!queueF.IsEmpty() || !queueB.IsEmpty()) {
 			if (optTracker.forward_iteration_is_next()) {
+				if (queueF.IsEmpty()) continue;
 				bool shouldContinue = dijkstra_iteration(graph, predecessorF, distanceF, weight, index, colorF, bivisitorF);
 				if (!shouldContinue)
 					break;
 			}
 			else {
+				if (queueB.IsEmpty()) continue;
 				bool shouldContinue = dijkstra_iteration(invertedGraph, predecessorB, distanceB, weight, index, colorB, bivisitorB);
 				if (!shouldContinue)
 					break;

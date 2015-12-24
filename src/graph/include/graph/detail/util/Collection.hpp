@@ -66,6 +66,15 @@ namespace graphUtil {
 	};
 
 	template<typename Iterator>
+	inline std::vector<typename Iterator::value_type> AsArray(Collection<Iterator> collection) {
+		std::vector<typename Iterator::value_type> items;
+		for (const auto& item : collection) {
+			items.push_back(item);
+		}
+		return items;
+	}
+
+	template<typename Iterator>
 	inline Collection<Iterator> Range(const Iterator& begin, const Iterator& end) {
 		return Collection<Iterator>(begin, end);
 	}

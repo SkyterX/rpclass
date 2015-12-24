@@ -1,10 +1,12 @@
 #pragma once
 
+#include <map>
 #include <iostream>
 #include <graph/dijkstra.hpp>
 #include <graph/dynamic_graph.hpp>
 #include <boost/graph/two_bit_color_map.hpp>
 #include <graph/bidirectional_dijkstra.hpp>
+#include <graph/detail/IncidenceGraph.hpp>
 
 namespace ch {
 
@@ -145,19 +147,21 @@ struct CHQueryVisitor : public graph::DefaultDijkstraVisitor<Graph> {
 	using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
 
 	CHQueryVisitor(OrderMap& order, DirectionMap& direction, DirectionBit ignoredDirection)
-		: directionBit(ignoredDirection), order(order), direction(direction) {}
+		: ignoredDirection(ignoredDirection), order(order), direction(direction) {}
 
 	bool should_relax(const typename graph::graph_traits<Graph>::edge_descriptor& edge, Graph& graph) {
 		auto to = target(edge, graph);
 		auto from = source(edge, graph);
-
-		if (get(direction, edge) != DirectionBit::backward) {
-			if (directionBit != DirectionBit::backward && get(order, to) < get(order, from)) {
-//				std::cout << "Relaxing edge forward: " << from + 1 << " " << to + 1 << std::endl;
+//		std::cout << "\tShould " << (ignoredDirection == DirectionBit::backward ? "forward" : "backward") << " search relax edge "
+//			<< from + 1 << " " << to + 1 << " "
+//			<< (get(direction, edge) == DirectionBit::backward ? "backward" : "forward") << std::endl;
+		if (get(direction, edge) != ignoredDirection) {
+			if (ignoredDirection != DirectionBit::backward && get(order, to) > get(order, from)) {
+//				std::cout << "\tRelaxing edge backward: " << to + 1 << " " << from + 1 << std::endl;
 				return true;
 			}
-			if (directionBit != DirectionBit::forward && get(order, to) > get(order, from)) {
-//				std::cout << "Relaxing edge backward: " << from + 1 << " " << to + 1 << std::endl;
+			if (ignoredDirection != DirectionBit::forward && get(order, to) > get(order, from)) {
+//				std::cout << "\tRelaxing edge forward: " << from + 1 << " " << to + 1 << std::endl;
 				return true;
 			}
 		}
@@ -165,10 +169,60 @@ struct CHQueryVisitor : public graph::DefaultDijkstraVisitor<Graph> {
 	}
 
 private:
-	DirectionBit directionBit;
+	DirectionBit ignoredDirection;
 	OrderMap order;
 	DirectionMap direction;
 };
+
+	template <typename Graph, typename IndexMap,
+	          typename DijkstraVisitorF, typename DijkstraVisitorB,
+	          typename DistanceMapF, typename DistanceMapB,
+	          typename ColorMapF, typename ColorMapB>
+	class CHOptimalCriteriaTraker : public graph::OptimalCriteriaTraker<
+				Graph, IndexMap,
+				DijkstraVisitorF, DijkstraVisitorB,
+				DistanceMapF, DistanceMapB,
+				ColorMapF, ColorMapB> {
+		using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
+		using DistanceType = typename DistanceMapF::value_type;
+	public:
+
+		CHOptimalCriteriaTraker(
+			const DijkstraVisitorF& visitorF, const DijkstraVisitorB& visitorB,
+			DistanceMapF& distanceF, DistanceMapB& distanceB,
+			ColorMapF& colorF, ColorMapB& colorB, const IndexMap& index)
+			: graph::OptimalCriteriaTraker<
+				Graph, IndexMap,
+				DijkstraVisitorF, DijkstraVisitorB,
+				DistanceMapF, DistanceMapB,
+				ColorMapF, ColorMapB>(
+				visitorF, visitorB,
+				distanceF, distanceB,
+				colorF, colorB, index) {}
+
+		void edge_relaxed(const typename graph::graph_traits<Graph>::edge_descriptor& edge, Graph& graph) {
+			Vertex to = target(edge, graph);
+			if (!visitorF.Stored.VertexInitializer.IsInitialized(to, index) ||
+				!visitorB.Stored.VertexInitializer.IsInitialized(to, index) ||
+				get(colorF, to) == boost::two_bit_white ||
+				get(colorB, to) == boost::two_bit_white)
+				return;
+			uint32_t right = get(distanceF, to) + get(distanceB, to);
+			if (right < mu) {
+				mu = right;
+				transitNode = to;
+			}
+		};
+
+		bool should_continue() {
+			if (visitorF.Stored.Queue.IsEmpty() || visitorB.Stored.Queue.IsEmpty())
+				return true;
+			auto& topItem = direction_flag_forward 
+				? visitorF.Stored.Queue.PeekMin() 
+				: visitorB.Stored.Queue.PeekMin();
+			return !(mu <= topItem.Distance);
+		}
+	};
 
 
 // uses dijkstra, therefore should have at least all property maps used by dijkstra
@@ -176,7 +230,7 @@ template <typename Graph, typename PredecessorMap, typename DistanceMap,
     typename WeightMap, typename IndexMap, typename ColorMap,typename UnPackMap,
     typename VertexOrderMap, typename DirectionMap,
     typename OrderStrategy = ShortCutOrderStrategy<Graph>>
-void ch_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& distance,
+void ch_preprocess(Graph& originalGraph, PredecessorMap& predecessor, DistanceMap& distance,
         WeightMap& weight, IndexMap& index, ColorMap& color, UnPackMap& unpack,
         VertexOrderMap& order, DirectionMap& direction, size_t dijLimit,
         OrderStrategy&& strategy = OrderStrategy()) {
@@ -184,6 +238,7 @@ void ch_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& dista
 	using namespace graphUtil;
 	using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
 
+	auto graph = IncidenceGraph<Graph>(originalGraph);
 	auto curVert = strategy.next(graph);
 
 	for (const auto& vertex: Range(vertices(graph))) {
@@ -191,12 +246,13 @@ void ch_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& dista
 	}
 
 	size_t curOrder = 0;
+	int counter = 0;
 	while (curVert != graph.null_vertex()) {
 		graph::put(order, curVert, curOrder++);
-//		cout << "Processing vertex " << curVert + 1 << endl;
+//		if(++counter % 1000 == 0)
+//			cout << "Processing vertex " << curVert + 1 << " Degree : " << out_degree(curVert, graph) <<endl;
 
-		vector<tuple<Vertex, Vertex, size_t>> shortCuts;
-
+		map<pair<Vertex, Vertex>, size_t> shortCuts;
 		for (const auto& out_e: Range(out_edges(curVert, graph))) {
 			if (get(direction, out_e) == DirectionBit::backward) {
 				continue;
@@ -209,8 +265,12 @@ void ch_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& dista
 					continue;
 				}
 				
-				auto out_v = target(out_e, graph);
 				auto in_v = target(in_e, graph);
+				auto out_v = target(out_e, graph);
+				auto curVertexOrder = get(order, curVert);
+				if (get(order, in_v) <= curVertexOrder 
+					|| get(order, out_v) <= curVertexOrder)
+					continue;
 				
 				auto shortCutLength = get(weight, out_e) + get(weight, in_e);
 
@@ -220,27 +280,46 @@ void ch_preprocess(Graph& graph, PredecessorMap& predecessor, DistanceMap& dista
 				// One can't just simply use dijkstra
 				EnsureVertexInitialization(graph, out_v, predecessor, distance, index, color, visitor);
 				if (get(color, out_v) == boost::two_bit_black) {
-					if (get(distance, out_v) < shortCutLength)
+					auto dist = get(distance, out_v);
+					if (dist < shortCutLength) {
+//						cout << "\tShortcut NOT added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
 						continue;
+					}
 				}
 
-//				cout << "Shortcut added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
-				shortCuts.push_back(make_tuple(in_v, out_v, shortCutLength));
+//				cout << "\tShortcut added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
+				auto shortCutKey = make_pair(in_v, out_v);
+				auto it = shortCuts.find(shortCutKey);
+				if(it == shortCuts.end() || it->second > shortCutLength)
+					shortCuts[shortCutKey] = shortCutLength;
 
 			}
 		}
+		//remove edges
+		for (const auto& edge : AsArray(Range(out_edges(curVert, graph)))) {
+			auto to = target(edge, graph);
+			auto from = source(edge, graph);
+			if(get(order, to) <= get(order, from)) {
+				remove_edge(edge, graph);
+			}
+		}
 
-		for (auto shortCut : shortCuts) {
-			auto pr = add_edge(get<0>(shortCut), get<1>(shortCut), graph);
-			graph::put(weight, pr.first, get<2>(shortCut));
+		for (auto& shortCut : shortCuts) {
+			auto u = shortCut.first.first;
+			auto v = shortCut.first.second;
+			auto shortCutWeight = shortCut.second;
+//			cout << "\tShortcut added: " << u + 1 << " to " << v + 1 << " with length " << shortCutWeight << endl;
+			auto pr = add_edge(u, v, graph);
+			graph::put(weight, pr.first, shortCutWeight);
 			graph::put(direction, pr.first, DirectionBit::forward);
 			graph::put(unpack, pr.first, curVert);
 
-			auto pr1 = add_edge(get<1>(shortCut), get<0>(shortCut), graph);
-			graph::put(weight, pr1.first, get<2>(shortCut));
+			auto pr1 = add_edge(v, u, graph);
+			graph::put(weight, pr1.first, shortCutWeight);
 			graph::put(direction, pr1.first, DirectionBit::backward);
 			graph::put(unpack, pr1.first, curVert);
 		}
+//		cin.get();
 
 		curVert = strategy.next(graph);
 	}
@@ -262,7 +341,7 @@ void examine_edge(const typename graph::graph_traits<Graph>::edge_descriptor& e,
 template <typename Graph, typename PredecessorFMap, typename PredecessorBMap, typename DistanceFMap,
     typename DistanceBMap, typename WeightMap, typename IndexMap, typename ColorFMap, typename ColorBMap, typename UnPackMap,
     typename VertexOrderMap, typename DirectionMap, typename CHVisitor = DefaultCHVisitor<Graph>>
-    void ch_query(Graph& graph, 
+    void ch_query(Graph& originalGraph, 
         const typename graph::graph_traits<Graph>::vertex_descriptor& s,
         const typename graph::graph_traits<Graph>::vertex_descriptor& t,
         PredecessorFMap& predecessorF, PredecessorBMap& predecessorB, DistanceFMap& distanceF, DistanceBMap& distanceB,
@@ -270,11 +349,16 @@ template <typename Graph, typename PredecessorFMap, typename PredecessorBMap, ty
         VertexOrderMap& order, DirectionMap& direction, CHVisitor&& visitor = CHVisitor()) {
         //IncreaseWeightOfIncommingEdgeVisitor<Graph,DirectionMap,WeightMap> dijVisitor(direction, weight);
         //graph::dijkstra(graph, s, predecessor, distanceF, weight, index, color, dijVisitor);
+	using VisitorFType = CHQueryVisitor<Graph, VertexOrderMap, DirectionMap>;
+	using VisitorBType = CHQueryVisitor<Graph, VertexOrderMap, DirectionMap>;
+	using TrackerType = CHOptimalCriteriaTraker<Graph, IndexMap, VisitorFType, VisitorBType, DistanceFMap, DistanceBMap, ColorFMap, ColorBMap>;
+	auto graph = IncidenceGraph<Graph>(originalGraph);
 
-	auto chFVisitor = CHQueryVisitor<Graph, VertexOrderMap, DirectionMap>(order, direction, DirectionBit::backward);
-	auto chBVisitor = CHQueryVisitor<Graph, VertexOrderMap, DirectionMap>(order, direction, DirectionBit::forward);
+	auto chFVisitor = VisitorFType(order, direction, DirectionBit::backward);
+	auto chBVisitor = VisitorBType(order, direction, DirectionBit::forward);
 
-	graph::bidirectional_dijkstra(graph, s, t, predecessorF, predecessorB, distanceF, distanceB, weight, index, colorF, colorB, chFVisitor, chBVisitor);
+	graph::fancy_bidirectional_dijkstra<TrackerType>(graph, graph, s, t, predecessorF, predecessorB, distanceF, distanceB, weight, index, colorF, colorB, chFVisitor, chBVisitor);
+//	graph::dijkstra(graph, s, predecessorF, distanceF, weight, index, colorF, chFVisitor);
 
     };
 };

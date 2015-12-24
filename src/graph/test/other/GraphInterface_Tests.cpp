@@ -10,8 +10,10 @@ using namespace std;
 using namespace graph;
 using namespace graphUtil;
 
-struct SomeVertexPropertyType{};
-struct SomeEdgePropertyType{};
+struct SomeVertexPropertyType {};
+
+struct SomeEdgePropertyType {};
+
 using VertexProperties = Properties<Property<SomeVertexPropertyType, uint32_t>>;
 using EdgeProperties = Properties<Property<SomeEdgePropertyType, uint32_t>>;
 using Graph = StaticGraph<VertexProperties, EdgeProperties>;
@@ -32,9 +34,8 @@ inline vector<pair<size_t, size_t>> GenerateRandomEdgeList(int verticesCount, in
 	return possibleEdges;
 }
 
-template<typename Graph, bool IsBidirectional = true>
-inline void VerifyGraphStructure(Graph &g, int n, int m) {
-
+template <typename Graph>
+inline void VerifyGraphStructure(Graph& g, int n, int m) {
 	EXPECT_EQ(num_vertices(g), n);
 	EXPECT_EQ(num_edges(g), m);
 
@@ -54,20 +55,39 @@ inline void VerifyGraphStructure(Graph &g, int n, int m) {
 			auto toInEdges = ValuesRange(in_edges(to, g));
 			EXPECT_TRUE(toInEdges.contains(e));
 		}
-		
-		if (IsBidirectional) {
-			EXPECT_EQ(Range(in_edges(v, g)).size(), in_degree(v, g));
-			for (const auto& e : Range(in_edges(v, g))) {
-				auto to = source(e, g);
-				auto toOutEdges = ValuesRange(out_edges(to, g));
-				EXPECT_TRUE(toOutEdges.contains(e));
-			}
+
+		EXPECT_EQ(Range(in_edges(v, g)).size(), in_degree(v, g));
+		for (const auto& e : Range(in_edges(v, g))) {
+			auto to = source(e, g);
+			auto toOutEdges = ValuesRange(out_edges(to, g));
+			EXPECT_TRUE(toOutEdges.contains(e));
 		}
 	}
 }
 
-template<typename Graph>
-inline void VerifyPropertyMaps(Graph &g, int n, int m) {
+template <typename Graph>
+inline void VerifyIncidenceGraphStructure(Graph& g, int n, int m) {
+	EXPECT_EQ(num_vertices(g), n);
+	EXPECT_EQ(num_edges(g), m);
+
+	auto graphVertices = SortedValuesRange(vertices(g));
+	EXPECT_TRUE(graphVertices.contains(0));
+	EXPECT_FALSE(graphVertices.contains(n));
+
+	for (auto& v : graphVertices) {
+		auto inAdjacencies = Range(in_adjacent_vertices(v, g));
+		EXPECT_TRUE(std::is_sorted(inAdjacencies.begin(), inAdjacencies.end()));
+		auto outAdjacencies = Range(adjacent_vertices(v, g));
+		EXPECT_TRUE(std::is_sorted(outAdjacencies.begin(), outAdjacencies.end()));
+
+		EXPECT_EQ(Range(out_edges(v, g)).size(), out_degree(v, g));
+		EXPECT_EQ(Range(in_edges(v, g)).size(), in_degree(v, g));
+	}
+}
+
+
+template <typename Graph>
+inline void VerifyPropertyMaps(Graph& g, int n, int m) {
 	auto vertexIndex = graph::get(vertex_index_t(), g);
 	auto someVertexProperty = graph::get(SomeVertexPropertyType(), g);
 	auto someEdgeProperty = graph::get(SomeEdgePropertyType(), g);
@@ -127,6 +147,7 @@ TEST(GraphInterface, IncidenceGraphValidation) {
 	auto graph = Graph(edgeList.begin(), edgeList.end(), n, m);
 	auto iGraph = IGraph(graph);
 
-	VerifyGraphStructure<IGraph, false>(iGraph, n, m);
+	VerifyIncidenceGraphStructure(iGraph, n, m);
 	VerifyPropertyMaps(iGraph, n, m);
 }
+

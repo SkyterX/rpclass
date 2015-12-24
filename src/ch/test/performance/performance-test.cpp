@@ -119,7 +119,8 @@ TEST_P(DdsgGraphAlgorithm, CH) {
 
     DefaultCHVisitor<Graph> visitor;
     while (verificationFile >> src >> tgt >> dis) {
-        cout << "Running CH query from " << src << " to " << tgt << endl;
+//		if (src != 5 || tgt != 3) continue;
+        cout << "Running CH query from " << src+1 << " to " << tgt+1 << endl;
         start = std::chrono::high_resolution_clock::now();
         ch_query(graph,
             graph_traits<Graph>::vertex_descriptor(src),
@@ -142,7 +143,7 @@ TEST_P(DdsgGraphAlgorithm, CH) {
 
 
 INSTANTIATE_TEST_CASE_P(CommandLine, DdsgGraphAlgorithm,
-    ::testing::Combine(::testing::Values("deu.ddsg"), ::testing::Values(20), ::testing::Values(false)));
+    ::testing::Combine(::testing::Values("bel.ddsg"), ::testing::Values(20), ::testing::Values(false)));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

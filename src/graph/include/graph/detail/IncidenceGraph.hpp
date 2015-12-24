@@ -46,6 +46,11 @@ namespace graph
 			return innerGraph;
 		}
 
+		template <typename TargetGraph = typename Graph::InnerGraphType>
+		operator std::enable_if_t<std::is_class<TargetGraph>::value, TargetGraph>&() {
+			return static_cast<typename Graph::InnerGraphType>(innerGraph);
+		}
+
 		Graph& innerGraph;
 	};
 
@@ -113,13 +118,13 @@ namespace graph
 	IncidenceGraphTemplate
 	inline typename IncidenceGraphType::vertex_descriptor source(
 		typename IncidenceGraphType::edge_descriptor e, const IncidenceGraphType& g) {
-		return target(e, g.innerGraph);
+		return source(e, g.innerGraph);
 	}
 
 	IncidenceGraphTemplate
 	inline typename IncidenceGraphType::vertex_descriptor target(
 		typename IncidenceGraphType::edge_descriptor e, const IncidenceGraphType& g) {
-		return source(e, g.innerGraph);
+		return target(e, g.innerGraph);
 	}
 
 	IncidenceGraphTemplate
@@ -167,8 +172,24 @@ namespace graph
 		typename IncidenceGraphType::vertex_descriptor u,
 		typename IncidenceGraphType::vertex_descriptor v,
 		const IncidenceGraphType& graph) {
-		return edge(v, u, graph.innerGraph);
+		return edge(u, v, graph.innerGraph);
 	}
+
+	IncidenceGraphTemplate
+	inline decltype(auto) add_edge(
+		typename IncidenceGraphType::vertex_descriptor u,
+		typename IncidenceGraphType::vertex_descriptor v,
+		const IncidenceGraphType& graph) {
+		return add_edge(u, v, graph.innerGraph);
+	}
+
+	IncidenceGraphTemplate
+	inline decltype(auto) remove_edge(
+		typename IncidenceGraphType::edge_descriptor e,
+		const IncidenceGraphType& graph) {
+		return remove_edge(e, graph.innerGraph);
+	}
+
 #undef IncidenceGraphType
 #undef IncidenceGraphTemplate
 }
