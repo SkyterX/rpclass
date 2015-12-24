@@ -1,87 +1,77 @@
 #pragma once
 #include <graph/properties.hpp>
 
-namespace graph {
-	namespace detail {
-		namespace internal {
-			template <typename Graph, typename VertexProperties, typename EdgeProperties, typename EnableIf = void>
-			class ComplementGraphObfuscated;
+namespace graph
+{
+	template <typename Graph, typename VertexProperties, typename EdgeProperties, typename EnableIf = void>
+	class ComplementGraphObfuscated;
 
-			template <typename Graph, typename VertexProperties, typename EdgeProperties>
-			class ComplementGraphObfuscated
-					<Graph, VertexProperties, EdgeProperties,
-					 std::enable_if_t<
-						 detail::IsGraph<Graph>::value &&
-						 std::is_same<VertexProperties, typename Graph::vertex_bundled>::value &&
-						 std::is_same<EdgeProperties, typename Graph::edge_bundled>::value
-					 >
-					> {
-			public:
-				using InnerGraphType = Graph;
-
-//				using edge_size_type = typename Graph::edge_size_type;
-				using vertices_size_type = typename Graph::vertices_size_type;
-				using edges_size_type = typename Graph::edges_size_type;
-				using degree_size_type = typename Graph::degree_size_type;
-				using vertex_descriptor = typename Graph::vertex_descriptor;
-				using directed_category = typename Graph::directed_category;
-				using edge_parallel_category = typename Graph::edge_parallel_category;
-				using traversal_category = typename Graph::traversal_category;
-				using edge_descriptor = typename Graph::edge_descriptor;
-
-//				using VertexPropertyMapType = typename Graph::VertexPropertyMapType;
-//				using EdgePropertyMapType = typename Graph::EdgePropertyMapType;
-				using vertex_bundled = typename Graph::vertex_bundled;
-				using edge_bundled = typename Graph::edge_bundled;
-
-				using in_edge_iterator = typename Graph::out_edge_iterator;
-				using out_edge_iterator = typename Graph::in_edge_iterator;
-				using adjacency_iterator = typename Graph::adjacency_iterator;
-				using vertex_iterator = typename Graph::vertex_iterator;
-
-				static vertex_descriptor null_vertex() {
-					return Graph::null_vertex();
-				};
-
-				explicit ComplementGraphObfuscated(Graph& graph)
-					: innerGraph(graph) {}
-
-				Graph& innerGraph;
-			};
-		}
-	}
-
-	template <typename Graph>
-	class ComplementGraph : public detail::internal::ComplementGraphObfuscated
-			<Graph, typename Graph::vertex_bundled, typename Graph::edge_bundled> {
+	template <typename Graph, typename VertexProperties, typename EdgeProperties>
+	class ComplementGraphObfuscated
+			<Graph, VertexProperties, EdgeProperties,
+			 std::enable_if_t<
+				 detail::IsGraph<Graph>::value &&
+				 std::is_same<VertexProperties, typename Graph::vertex_bundled>::value &&
+				 std::is_same<EdgeProperties, typename Graph::edge_bundled>::value
+			 >
+			> {
 	public:
-		explicit ComplementGraph(Graph& graph)
-			: detail::internal::ComplementGraphObfuscated
-			<Graph, typename Graph::vertex_bundled, typename Graph::edge_bundled>(graph) {}
+		using InnerGraphType = Graph;
+
+		//		using edge_size_type = typename Graph::edge_size_type;
+		using vertices_size_type = typename Graph::vertices_size_type;
+		using edges_size_type = typename Graph::edges_size_type;
+		using degree_size_type = typename Graph::degree_size_type;
+		using vertex_descriptor = typename Graph::vertex_descriptor;
+		using directed_category = typename Graph::directed_category;
+		using edge_parallel_category = typename Graph::edge_parallel_category;
+		using traversal_category = typename Graph::traversal_category;
+		using edge_descriptor = typename Graph::edge_descriptor;
+
+		//		using VertexPropertyMapType = typename Graph::VertexPropertyMapType;
+		//		using EdgePropertyMapType = typename Graph::EdgePropertyMapType;
+		using vertex_bundled = typename Graph::vertex_bundled;
+		using edge_bundled = typename Graph::edge_bundled;
+
+		using in_edge_iterator = typename Graph::out_edge_iterator;
+		using out_edge_iterator = typename Graph::in_edge_iterator;
+		using adjacency_iterator = typename Graph::adjacency_iterator;
+		using vertex_iterator = typename Graph::vertex_iterator;
+
+		static vertex_descriptor null_vertex() {
+			return Graph::null_vertex();
+		};
+
+		explicit ComplementGraphObfuscated(Graph& graph)
+			: innerGraph(graph) {}
 
 		operator Graph&() {
-			return detail::internal::ComplementGraphObfuscated
-					<Graph, typename Graph::vertex_bundled, typename Graph::edge_bundled>::innerGraph;
+			return innerGraph;
 		}
+
+		Graph& innerGraph;
 	};
+
+	template <typename Graph>
+	using ComplementGraph = ComplementGraphObfuscated<Graph, typename Graph::vertex_bundled, typename Graph::edge_bundled>;
 
 	// PropertyMaps
 #define ComplementGraphTemplate template<typename Graph, typename VertexProperties, typename EdgeProperties>
-#define ComplementGraphType detail::internal::ComplementGraphObfuscated<Graph, VertexProperties, EdgeProperties>
+#define ComplementGraphType ComplementGraphObfuscated<Graph, VertexProperties, EdgeProperties>
 
-	template <typename Graph>
-	struct property_map<Graph, vertex_bundle_t, std::enable_if_t<std::is_class<typename Graph::InnerGraphType>::value>> {
-		using type = typename property_map<typename Graph::InnerGraphType, vertex_bundle_t>::type;
+	ComplementGraphTemplate
+	struct property_map<ComplementGraphType, vertex_bundle_t> {
+		using type = typename property_map<typename ComplementGraphType::InnerGraphType, vertex_bundle_t>::type;
 	};
 
-	template <typename Graph>
-	struct property_map<Graph, edge_bundle_t, std::enable_if_t<std::is_class<typename Graph::InnerGraphType>::value>> {
-		using type = typename property_map<typename Graph::InnerGraphType, edge_bundle_t>::type;
+	ComplementGraphTemplate
+	struct property_map<ComplementGraphType, edge_bundle_t> {
+		using type = typename property_map<typename ComplementGraphType::InnerGraphType, edge_bundle_t>::type;
 	};
 
-	template <typename Graph>
-	struct property_map<Graph, vertex_index_t, std::enable_if_t<std::is_class<typename Graph::InnerGraphType>::value>> {
-		using type = typename property_map<typename Graph::InnerGraphType, vertex_index_t>::type;
+	ComplementGraphTemplate
+	struct property_map<ComplementGraphType, vertex_index_t> {
+		using type = typename property_map<typename ComplementGraphType::InnerGraphType, vertex_index_t>::type;
 	};
 
 	ComplementGraphTemplate

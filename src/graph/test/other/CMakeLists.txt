@@ -1,3 +1,5 @@
+include_directories(include)
+
 #
 # Test headers
 #
