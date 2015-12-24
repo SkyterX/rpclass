@@ -202,25 +202,25 @@ private:
 
 		void edge_relaxed(const typename graph::graph_traits<Graph>::edge_descriptor& edge, Graph& graph) {
 			Vertex to = target(edge, graph);
-			if (!visitorF.Stored.VertexInitializer.IsInitialized(to, index) ||
-				!visitorB.Stored.VertexInitializer.IsInitialized(to, index) ||
-				get(colorF, to) == boost::two_bit_white ||
-				get(colorB, to) == boost::two_bit_white)
+			if (!this->visitorF.Stored.VertexInitializer.IsInitialized(to, this->index) ||
+				!this->visitorB.Stored.VertexInitializer.IsInitialized(to, this->index) ||
+				get(this->colorF, to) == boost::two_bit_white ||
+				get(this->colorB, to) == boost::two_bit_white)
 				return;
-			uint32_t right = get(distanceF, to) + get(distanceB, to);
-			if (right < mu) {
-				mu = right;
-				transitNode = to;
+			uint32_t right = get(this->distanceF, to) + get(this->distanceB, to);
+			if (right < this->mu) {
+				this->mu = right;
+				this->transitNode = to;
 			}
 		};
 
 		bool should_continue() {
-			if (visitorF.Stored.Queue.IsEmpty() || visitorB.Stored.Queue.IsEmpty())
+			if (this->visitorF.Stored.Queue.IsEmpty() || this->visitorB.Stored.Queue.IsEmpty())
 				return true;
-			auto& topItem = direction_flag_forward 
-				? visitorF.Stored.Queue.PeekMin() 
-				: visitorB.Stored.Queue.PeekMin();
-			return !(mu <= topItem.Distance);
+			auto& topItem = this->direction_flag_forward
+				? this->visitorF.Stored.Queue.PeekMin()
+				: this->visitorB.Stored.Queue.PeekMin();
+			return !(this->mu <= topItem.Distance);
 		}
 	};
 
@@ -236,7 +236,9 @@ void ch_preprocess(Graph& originalGraph, PredecessorMap& predecessor, DistanceMa
         OrderStrategy&& strategy = OrderStrategy()) {
 	using namespace std;
 	using namespace graphUtil;
-	using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
+	using namespace graph;
+
+	using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 
 	auto graph = IncidenceGraph<Graph>(originalGraph);
 	auto curVert = strategy.next(graph);
@@ -300,7 +302,7 @@ void ch_preprocess(Graph& originalGraph, PredecessorMap& predecessor, DistanceMa
 			auto to = target(edge, graph);
 			auto from = source(edge, graph);
 			if(get(order, to) <= get(order, from)) {
-				remove_edge(edge, graph);
+				graph::remove_edge(edge, graph);
 			}
 		}
 
@@ -309,12 +311,12 @@ void ch_preprocess(Graph& originalGraph, PredecessorMap& predecessor, DistanceMa
 			auto v = shortCut.first.second;
 			auto shortCutWeight = shortCut.second;
 //			cout << "\tShortcut added: " << u + 1 << " to " << v + 1 << " with length " << shortCutWeight << endl;
-			auto pr = add_edge(u, v, graph);
+			auto pr = graph::add_edge(u, v, graph);
 			graph::put(weight, pr.first, shortCutWeight);
 			graph::put(direction, pr.first, DirectionBit::forward);
 			graph::put(unpack, pr.first, curVert);
 
-			auto pr1 = add_edge(v, u, graph);
+			auto pr1 = graph::add_edge(v, u, graph);
 			graph::put(weight, pr1.first, shortCutWeight);
 			graph::put(direction, pr1.first, DirectionBit::backward);
 			graph::put(unpack, pr1.first, curVert);
@@ -352,7 +354,7 @@ template <typename Graph, typename PredecessorFMap, typename PredecessorBMap, ty
 	using VisitorFType = CHQueryVisitor<Graph, VertexOrderMap, DirectionMap>;
 	using VisitorBType = CHQueryVisitor<Graph, VertexOrderMap, DirectionMap>;
 	using TrackerType = CHOptimalCriteriaTraker<Graph, IndexMap, VisitorFType, VisitorBType, DistanceFMap, DistanceBMap, ColorFMap, ColorBMap>;
-	auto graph = IncidenceGraph<Graph>(originalGraph);
+	auto graph = graph::IncidenceGraph<Graph>(originalGraph);
 
 	auto chFVisitor = VisitorFType(order, direction, DirectionBit::backward);
 	auto chBVisitor = VisitorBType(order, direction, DirectionBit::forward);

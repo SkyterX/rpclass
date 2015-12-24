@@ -160,42 +160,6 @@ namespace graph
 		typename MainVisitor::SharedDataStorage& Stored;
 	};
 
-	template <class Graph, class PredecessorMapF, class PredecessorMapB,
-	          class DistanceMapF, class DistanceMapB,
-	          class WeightMap, class IndexMap, class ColorMapF, class ColorMapB,
-	          class DijkstraVisitorF = DefaultDijkstraVisitor<Graph>,
-	          class DijkstraVisitorB = DefaultDijkstraVisitor<Graph>>
-	void bidirectional_dijkstra(Graph& graph,
-	                            const typename graph_traits<Graph>::vertex_descriptor& s,
-	                            const typename graph_traits<Graph>::vertex_descriptor& t,
-	                            PredecessorMapF& predecessorF, PredecessorMapB& predecessorB,
-	                            DistanceMapF& distanceF, DistanceMapB& distanceB, WeightMap& weight,
-	                            IndexMap& index, ColorMapF& colorF, ColorMapB& colorB) {
-		DijkstraVisitorF visitorF;
-		DijkstraVisitorB visitorB;
-		bidirectional_dijkstra(graph, s, t, predecessorF, predecessorB,
-		                       distanceF, distanceB, weight, index, colorF, colorB, visitorF, visitorB);
-	}
-
-	template <class Graph, class PredecessorMapF, class PredecessorMapB,
-	          class DistanceMapF, class DistanceMapB,
-	          class WeightMap, class IndexMap, class ColorMapF, class ColorMapB,
-	          class DijkstraVisitorF = DefaultDijkstraVisitor<Graph>,
-	          class DijkstraVisitorB = DefaultDijkstraVisitor<Graph>>
-	void bidirectional_dijkstra(Graph& graph,
-	                            const typename graph_traits<Graph>::vertex_descriptor& s,
-	                            const typename graph_traits<Graph>::vertex_descriptor& t,
-	                            PredecessorMapF& predecessorF, PredecessorMapB& predecessorB,
-	                            DistanceMapF& distanceF, DistanceMapB& distanceB, WeightMap& weight,
-	                            IndexMap& index, ColorMapF& colorF, ColorMapB& colorB,
-	                            DijkstraVisitorF& visitorF,
-	                            DijkstraVisitorB& visitorB) {
-		using TrackerType = OptimalCriteriaTraker<Graph, IndexMap, DijkstraVisitorF, DijkstraVisitorB, DistanceMapF, DistanceMapB, ColorMapF, ColorMapB>;
-		fancy_bidirectional_dijkstra<TrackerType>(graph, graph::ComplementGraph<Graph>(graph), s, t,
-		                                    predecessorF, predecessorB, distanceF, distanceB,
-		                                    weight, index, colorF, colorB, visitorF, visitorB);
-	}
-
 	template <class OptimalCriteriaTrackerType,
 	          class Graph, class ComplementGraph, 
 			  class PredecessorMapF, class PredecessorMapB,
@@ -266,5 +230,43 @@ namespace graph
 			predecessor = current;
 			current = graph::get(predecessorB, current);
 		}
+	}
+
+
+	template <class Graph, class PredecessorMapF, class PredecessorMapB,
+	          class DistanceMapF, class DistanceMapB,
+	          class WeightMap, class IndexMap, class ColorMapF, class ColorMapB,
+	          class DijkstraVisitorF = DefaultDijkstraVisitor<Graph>,
+	          class DijkstraVisitorB = DefaultDijkstraVisitor<Graph>>
+	void bidirectional_dijkstra(Graph& graph,
+	                            const typename graph_traits<Graph>::vertex_descriptor& s,
+	                            const typename graph_traits<Graph>::vertex_descriptor& t,
+	                            PredecessorMapF& predecessorF, PredecessorMapB& predecessorB,
+	                            DistanceMapF& distanceF, DistanceMapB& distanceB, WeightMap& weight,
+	                            IndexMap& index, ColorMapF& colorF, ColorMapB& colorB) {
+		DijkstraVisitorF visitorF;
+		DijkstraVisitorB visitorB;
+		bidirectional_dijkstra(graph, s, t, predecessorF, predecessorB,
+		                       distanceF, distanceB, weight, index, colorF, colorB, visitorF, visitorB);
+	}
+
+	template <class Graph, class PredecessorMapF, class PredecessorMapB,
+	          class DistanceMapF, class DistanceMapB,
+	          class WeightMap, class IndexMap, class ColorMapF, class ColorMapB,
+	          class DijkstraVisitorF = DefaultDijkstraVisitor<Graph>,
+	          class DijkstraVisitorB = DefaultDijkstraVisitor<Graph>>
+	void bidirectional_dijkstra(Graph& graph,
+	                            const typename graph_traits<Graph>::vertex_descriptor& s,
+	                            const typename graph_traits<Graph>::vertex_descriptor& t,
+	                            PredecessorMapF& predecessorF, PredecessorMapB& predecessorB,
+	                            DistanceMapF& distanceF, DistanceMapB& distanceB, WeightMap& weight,
+	                            IndexMap& index, ColorMapF& colorF, ColorMapB& colorB,
+	                            DijkstraVisitorF& visitorF,
+	                            DijkstraVisitorB& visitorB) {
+		using TrackerType = OptimalCriteriaTraker<Graph, IndexMap, DijkstraVisitorF, DijkstraVisitorB, DistanceMapF, DistanceMapB, ColorMapF, ColorMapB>;
+		auto complementGraph = graph::ComplementGraph<Graph>(graph);
+		fancy_bidirectional_dijkstra<TrackerType>(graph, complementGraph, s, t,
+		                                          predecessorF, predecessorB, distanceF, distanceB,
+		                                          weight, index, colorF, colorB, visitorF, visitorB);
 	}
 }

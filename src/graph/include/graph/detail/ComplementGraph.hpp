@@ -49,10 +49,10 @@ namespace graph
 			return innerGraph;
 		}
 
-		template<typename TargetGraph = typename Graph::InnerGraphType>
-		operator std::enable_if_t<std::is_class<TargetGraph>::value, TargetGraph>&() {
-			return static_cast<typename Graph::InnerGraphType>(innerGraph);
-		}
+//		template<typename TargetGraph = typename Graph::InnerGraphType>
+//		operator std::enable_if_t<std::is_class<TargetGraph>::value, TargetGraph>&() {
+//			return static_cast<typename Graph::InnerGraphType>(innerGraph);
+//		}
 
 		Graph& innerGraph;
 	};
