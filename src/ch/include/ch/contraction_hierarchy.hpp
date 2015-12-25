@@ -1,5 +1,6 @@
 #pragma once
 
+#include <random>
 #include <map>
 #include <iostream>
 #include <graph/dijkstra.hpp>
@@ -73,18 +74,49 @@ public:
         next(Graph& graph) {};
 };
 
-template <typename Graph, typename VertexOrderMap>
+template <typename Graph>
+class RandomStrategy {
+	using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
+	using VertexOrder = std::vector<Vertex>;
+	using VertexIterator = typename VertexOrder::iterator;
+	VertexOrder order;
+	VertexIterator current;
+
+public:
+
+	RandomStrategy(Graph& graph) {
+		order = graphUtil::AsArray(graphUtil::Range(vertices(graph)));
+		std::mt19937 generator(3561237589);
+		std::shuffle(order.begin(), order.end(), generator);
+//		std::cout << "Order : ";
+//		for(auto &v : order) {
+//			std::cout << v+1 << " ";
+//		}
+//		std::cout << std::endl;
+		current = order.begin();
+	}
+
+	typename graph::graph_traits<Graph>::vertex_descriptor
+		next(Graph& graph) {
+		if(current != order.end()) {
+			auto v = *current;
+			++current;
+			return v;
+		}
+		return graph.null_vertex();
+	};
+};
+
+template <typename Graph>
 class DumbOrderStrategy {
 private:
 	using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
 	using VertexIterator = typename graph::graph_traits<Graph>::vertex_iterator;
 	VertexIterator currentIterator, endIterator;
-	size_t order;
 public:
 
 	DumbOrderStrategy(Graph& graph) {
 		std::tie(currentIterator, endIterator) = vertices(graph);
-		order = 0;
 	}
 
 	Vertex
@@ -93,7 +125,6 @@ public:
 		if (currentIterator != endIterator) {
 			auto v = *currentIterator;
 			++currentIterator;
-			++order;
 			return v;
 		}
 		return graph.null_vertex();
@@ -251,8 +282,9 @@ void ch_preprocess(Graph& originalGraph, PredecessorMap& predecessor, DistanceMa
 	int counter = 0;
 	while (curVert != graph.null_vertex()) {
 		graph::put(order, curVert, curOrder++);
-//		if(++counter % 1000 == 0)
-//			cout << "Processing vertex " << curVert + 1 << " Degree : " << out_degree(curVert, graph) <<endl;
+		++counter;
+		if(counter % 1000 == 0)
+			cout << "Processing "<< counter << " vertex Id : " << curVert + 1 << " Degree : " << out_degree(curVert, graph) <<endl;
 
 		map<pair<Vertex, Vertex>, size_t> shortCuts;
 		for (const auto& out_e: Range(out_edges(curVert, graph))) {

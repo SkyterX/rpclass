@@ -202,5 +202,6 @@ namespace arcflags {
 						WeightMap& weight, IndexMap& index, ColorMap& color, PartitionMap& partition,
 						ArcFlagsMap& arcflags, ArcFlagsVisitor&& visitor) {
 		graph::dijkstra(graph, s, predecessor, distance, weight, index, color, visitor);
+		EnsureVertexInitialization(graph, t, predecessor, distance, index, color, visitor);
 	};
 };

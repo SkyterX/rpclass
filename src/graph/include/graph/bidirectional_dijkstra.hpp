@@ -200,18 +200,17 @@ namespace graph
 		DijkstraVisitorCombinator<Graph, DijkstraVisitorB, OptimalCriteriaTrackerType>
 				bivisitorB(visitorB, optTracker);
 
-		while (!queueF.IsEmpty() || !queueB.IsEmpty()) {
+		bool shouldContinueForward = true;
+		bool shouldContinueBackward = true;
+		while ((!queueF.IsEmpty() && shouldContinueForward)
+			|| (!queueB.IsEmpty() && shouldContinueBackward)) {
 			if (optTracker.forward_iteration_is_next()) {
-				if (queueF.IsEmpty()) continue;
-				bool shouldContinue = dijkstra_iteration(graph, predecessorF, distanceF, weight, index, colorF, bivisitorF);
-				if (!shouldContinue)
-					break;
+				if (queueF.IsEmpty() || !shouldContinueForward) continue;
+				shouldContinueForward = dijkstra_iteration(graph, predecessorF, distanceF, weight, index, colorF, bivisitorF);
 			}
 			else {
-				if (queueB.IsEmpty()) continue;
-				bool shouldContinue = dijkstra_iteration(invertedGraph, predecessorB, distanceB, weight, index, colorB, bivisitorB);
-				if (!shouldContinue)
-					break;
+				if (queueB.IsEmpty() || !shouldContinueBackward) continue;
+				shouldContinueBackward = dijkstra_iteration(invertedGraph, predecessorB, distanceB, weight, index, colorB, bivisitorB);
 			}
 		}
 

@@ -96,7 +96,7 @@ TEST_P(DdsgGraphAlgorithm, CH) {
     start = std::chrono::high_resolution_clock::now();
     ch_preprocess<Graph>(graph, predecessorF, distanceF, weight, vertex_index,
         colorF, unpack, order, direction, m_numSteps,
-		DumbOrderStrategy<Graph, property_map<Graph, vertex_order_t>::type>(graph));
+		RandomStrategy<Graph>(graph));
     end = std::chrono::high_resolution_clock::now();
     CHMetricStatistics statistics(
         GeneralStatistics(m_baseName, Algorithm::CH, Phase::metric, Metric::time,
@@ -119,7 +119,7 @@ TEST_P(DdsgGraphAlgorithm, CH) {
 
     DefaultCHVisitor<Graph> visitor;
     while (verificationFile >> src >> tgt >> dis) {
-//		if (src != 5 || tgt != 3) continue;
+//		if (src+1 != 8 || tgt+1 != 2) continue;
         cout << "Running CH query from " << src+1 << " to " << tgt+1 << endl;
         start = std::chrono::high_resolution_clock::now();
         ch_query(graph,
@@ -137,13 +137,14 @@ TEST_P(DdsgGraphAlgorithm, CH) {
             );
         m_statistics << statistics << endl;
         EXPECT_EQ(dis, get(distanceF, tgt));
+//		break;
     }    
     verificationFile.close();
 };
 
 
 INSTANTIATE_TEST_CASE_P(CommandLine, DdsgGraphAlgorithm,
-    ::testing::Combine(::testing::Values("bel.ddsg"), ::testing::Values(20), ::testing::Values(false)));
+    ::testing::Combine(::testing::Values("rome99.ddsg"), ::testing::Values(3000), ::testing::Values(false)));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
