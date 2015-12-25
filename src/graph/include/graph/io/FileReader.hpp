@@ -29,6 +29,7 @@ namespace graphIO
 			isClosed = false;
 			this->input = input;
 			memset(buffer, 0, BUFFER_SIZE + 1);
+			currentPosition = buffer + BUFFER_SIZE;
 		}
 
 		virtual ~FileReader() {
@@ -44,8 +45,7 @@ namespace graphIO
 				return false;
 			
 			isClosed = false;
-			fread(buffer, sizeof(char), BUFFER_SIZE, input);
-			currentPosition = buffer;
+			currentPosition = buffer + BUFFER_SIZE;
 			return true;
 		}
 
