@@ -1,9 +1,9 @@
 #pragma once
 
 #include <graph/dijkstra.hpp>
+#include <graph/detail/IncidenceGraph.hpp>
 #include <boost/graph/two_bit_color_map.hpp>
 #include <graph/bidirectional_dijkstra.hpp>
-#include <graph/detail/IncidenceGraph.hpp>
 #include <ch/ContractionHierarchyStructures.hpp>
 #include <ch/ContractionHierarchyOrderings.hpp>
 #include <ch/ContractionHierarchyPreprocessing.hpp>
@@ -127,7 +127,5 @@ template <typename Graph, typename PredecessorFMap, typename PredecessorBMap, ty
 	auto chBVisitor = VisitorBType(order, direction, DirectionBit::forward);
 
 	graph::fancy_bidirectional_dijkstra<TrackerType>(graph, graph, s, t, predecessorF, predecessorB, distanceF, distanceB, weight, index, colorF, colorB, chFVisitor, chBVisitor);
-//	graph::dijkstra(graph, s, predecessorF, distanceF, weight, index, colorF, chFVisitor);
-
     };
 };

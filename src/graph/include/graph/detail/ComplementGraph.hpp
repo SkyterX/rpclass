@@ -60,6 +60,11 @@ namespace graph
 	template <typename Graph>
 	using ComplementGraph = ComplementGraphObfuscated<Graph, typename Graph::vertex_bundled, typename Graph::edge_bundled>;
 
+	template <typename Graph>
+	ComplementGraph<Graph> CreateComplementGraph(Graph& graph) {
+		return ComplementGraph<Graph>(graph);
+	}
+
 	// PropertyMaps
 #define ComplementGraphTemplate template<typename Graph, typename VertexProperties, typename EdgeProperties>
 #define ComplementGraphType ComplementGraphObfuscated<Graph, VertexProperties, EdgeProperties>

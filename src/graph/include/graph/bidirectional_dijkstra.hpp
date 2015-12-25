@@ -1,6 +1,7 @@
 #pragma once
 #include <graph/dijkstra.hpp>
 #include <graph/detail/ComplementGraph.hpp>
+#include <graph/detail/IncidenceGraph.hpp>
 
 namespace graph
 {
@@ -175,17 +176,20 @@ namespace graph
 	                            IndexMap& index, ColorMapF& colorF, ColorMapB& colorB,
 	                            DijkstraVisitorF& visitorF,
 	                            DijkstraVisitorB& visitorB) {
-
-		if (s == t) {
-			graph::put(distanceF, t, 0);
-			graph::put(predecessorF, t, t);
-			return;
-		}
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 		using Queue = typename DijkstraVisitorF::SharedDataStorage::QueueType;
 
 		visitorF.Initialize(graph);
 		visitorB.Initialize(invertedGraph);
+		EnsureVertexInitialization(graph, t, predecessorF, distanceF, index, colorF, visitorF);
+
+		if (s == t) {
+			graph::put(distanceF, t, 0);
+			graph::put(predecessorF, t, t);
+			graph::put(colorF, t, boost::two_bit_black);
+			return;
+		}
+
 		auto& queueF = visitorF.Stored.Queue;
 		auto& queueB = visitorB.Stored.Queue;
 
@@ -213,14 +217,14 @@ namespace graph
 				shouldContinueBackward = dijkstra_iteration(invertedGraph, predecessorB, distanceB, weight, index, colorB, bivisitorB);
 			}
 		}
-
-		EnsureVertexInitialization(graph, t, predecessorF, distanceF, index, colorF, visitorF);
+		
 		if (!optTracker.AnyPathFound())
 			return;
 
 		//emulate simple dijkstra
 		uint32_t dis = optTracker.mu;
 		graph::put(distanceF, t, dis);
+		graph::put(colorF, t, boost::two_bit_black);
 		
 		Vertex predecessor = optTracker.transitNode;
 		Vertex current = get(predecessorB, predecessor);
@@ -263,7 +267,7 @@ namespace graph
 	                            DijkstraVisitorF& visitorF,
 	                            DijkstraVisitorB& visitorB) {
 		using TrackerType = OptimalCriteriaTraker<Graph, IndexMap, DijkstraVisitorF, DijkstraVisitorB, DistanceMapF, DistanceMapB, ColorMapF, ColorMapB>;
-		auto complementGraph = graph::ComplementGraph<Graph>(graph);
+		auto complementGraph = graph::CreateComplementGraph(graph);
 		fancy_bidirectional_dijkstra<TrackerType>(graph, complementGraph, s, t,
 		                                          predecessorF, predecessorB, distanceF, distanceB,
 		                                          weight, index, colorF, colorB, visitorF, visitorB);

@@ -57,6 +57,11 @@ namespace graph
 	template <typename Graph>
 	using IncidenceGraph = IncidenceGraphObfuscated<Graph, typename Graph::vertex_bundled, typename Graph::edge_bundled>;
 
+	template <typename Graph>
+	IncidenceGraph<Graph> CreateIncidenceGraph(Graph& graph) {
+		return IncidenceGraph<Graph>(graph);
+	}
+
 	// PropertyMaps
 #define IncidenceGraphTemplate template<typename Graph, typename VertexProperties, typename EdgeProperties>
 #define IncidenceGraphType IncidenceGraphObfuscated<Graph, VertexProperties, EdgeProperties>
