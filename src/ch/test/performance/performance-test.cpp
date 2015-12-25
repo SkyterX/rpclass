@@ -96,7 +96,7 @@ TEST_P(DdsgGraphAlgorithm, CH) {
     start = std::chrono::high_resolution_clock::now();
     ch_preprocess<Graph>(graph, predecessorF, distanceF, weight, vertex_index,
         colorF, unpack, order, direction, m_numSteps,
-		RandomStrategy<Graph>(graph));
+		VertexDegreeOrderStrategy<Graph>(graph));
     end = std::chrono::high_resolution_clock::now();
     CHMetricStatistics statistics(
         GeneralStatistics(m_baseName, Algorithm::CH, Phase::metric, Metric::time,
@@ -144,7 +144,7 @@ TEST_P(DdsgGraphAlgorithm, CH) {
 
 
 INSTANTIATE_TEST_CASE_P(CommandLine, DdsgGraphAlgorithm,
-    ::testing::Combine(::testing::Values("rome99.ddsg"), ::testing::Values(3000), ::testing::Values(false)));
+    ::testing::Combine(::testing::Values("rome99.ddsg"), ::testing::Values(1500), ::testing::Values(false)));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

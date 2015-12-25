@@ -96,7 +96,8 @@ namespace ch
 					auto in_v = target(in_e, graph);
 					auto out_v = target(out_e, graph);
 					auto curVertexOrder = get(order, curVert);
-					if (get(order, in_v) <= curVertexOrder
+					if (in_v == out_v
+						|| get(order, in_v) <= curVertexOrder
 						|| get(order, out_v) <= curVertexOrder)
 						continue;
 
