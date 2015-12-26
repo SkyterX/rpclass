@@ -3,8 +3,10 @@
 #include <graph/detail/ComplementGraph.hpp>
 #include <graph/detail/IncidenceGraph.hpp>
 #include <graph/detail/util/Collection.hpp>
+#include <graph/dynamic/DynamicGraph.hpp>
 #include <vector>
 #include <random>
+#include <algorithm>
 
 using namespace std;
 using namespace graph;
@@ -17,6 +19,7 @@ struct SomeEdgePropertyType {};
 using VertexProperties = Properties<Property<SomeVertexPropertyType, uint32_t>>;
 using EdgeProperties = Properties<Property<SomeEdgePropertyType, uint32_t>>;
 using Graph = StaticGraph<VertexProperties, EdgeProperties>;
+using DGraph = DynamicGraph<VertexProperties, EdgeProperties>;
 
 inline vector<pair<size_t, size_t>> GenerateRandomEdgeList(int verticesCount, int edgesCount) {
 	vector<pair<size_t, size_t>> possibleEdges;
@@ -132,6 +135,45 @@ TEST(GraphInterface, ComplementGraphValidation) {
 
 	VerifyGraphStructure(cGraph, n, m);
 	VerifyPropertyMaps(cGraph, n, m);
+}
+
+TEST(GraphInterface, DynamicGraphCorrectness) {
+	size_t n = 100;
+	size_t m = 1000;
+
+	auto edgeList = GenerateRandomEdgeList(n, m);
+	vector<vector<size_t>> edges;
+	edges.resize(n);
+	for (auto e : edgeList) {
+		edges[e.first].push_back(e.second);
+	}
+	for (auto& vEdges : edges) {
+		stable_sort(vEdges.begin(), vEdges.end());
+	}
+
+	auto g = DGraph(edgeList.begin(), edgeList.end(), n, m);
+
+	EXPECT_EQ(num_vertices(g), n);
+	EXPECT_EQ(num_edges(g), m);
+
+	auto graphVertices = SortedValuesRange(vertices(g));
+	EXPECT_TRUE(graphVertices.contains(0));
+	EXPECT_FALSE(graphVertices.contains(n));
+	for (auto& v : graphVertices) {
+		auto outAdjacencies = AsArray(Range(adjacent_vertices(v, g)));
+		auto outEdges = Range(out_edges(v, g));
+		EXPECT_EQ(outAdjacencies.size(), outEdges.size());
+		EXPECT_EQ(outEdges.size(), out_degree(v, g));
+		int idx = 0;
+		for(const auto& e : outEdges) {
+			EXPECT_EQ(v, source(e, g));
+			EXPECT_EQ(outAdjacencies[idx++], target(e, g));
+		}
+
+		stable_sort(outAdjacencies.begin(), outAdjacencies.end());
+		EXPECT_TRUE(std::equal(edges[v].begin(), edges[v].end(), outAdjacencies.begin()));
+	}
+	//	VerifyPropertyMaps(g, n, m);
 }
 
 TEST(GraphInterface, IncidenceGraphValidation) {
