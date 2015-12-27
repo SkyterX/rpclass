@@ -203,6 +203,11 @@ namespace ch
 				Init(graph);
 			}
 
+				if (queue.empty()) {
+					return graph.null_vertex();
+				}
+				
+			
 			// take vertex with least priority
 			QueueItemType queueItem = queue.top();
 			Vertex return_v = queueItem.Data();
