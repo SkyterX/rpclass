@@ -2,83 +2,41 @@
 #include <map>
 #include <graph/detail/IncidenceGraph.hpp>
 #include <graph/detail/util/Collection.hpp>
+#include <ch/ch_util.hpp>
 #include <ch/ContractionHierarchyOrderings.hpp>
 #include <ch/ContractionHierarchyStructures.hpp>
 
 namespace ch
 {
-	template <typename Graph, typename OrderMap, typename DirectionMap>
-	struct CHPreprocessDijkstraVisitor : public graph::DefaultDijkstraVisitor<Graph> {
-		using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
+	template <typename Graph, typename DirectionMap, typename WeightMap>
+	void RemovePairedEdges(Graph& graph, DirectionMap& direction, WeightMap& weight) {
+		using Edge = typename graph::graph_traits<Graph>::edge_descriptor;
+		for (const auto& curVert : graphUtil::Range(vertices(graph))) {
+			for (const Edge& edge : AsArray(graphUtil::Range(out_edges(curVert, graph)))) {
+				auto out_vertex = target(edge, graph);
 
-		CHPreprocessDijkstraVisitor(Vertex& ignoredVertex, size_t hopCount, OrderMap& order, DirectionMap& direction, DirectionBit ignoredDirection)
-			: ignoredVertex(ignoredVertex), order(order), direction(direction), maxHopCount(hopCount), ignoredDirection(ignoredDirection) {
-			currentHopCount = 0;
-		}
+				if (get(direction, edge) != DirectionBit::backward) {
+					graph::remove_out_edge_if(curVert, [&out_vertex, &graph, &edge, &direction, &weight](const Edge& other_edge)-> bool {
+						auto other_vertex = target(other_edge, graph);
+						return other_vertex == out_vertex 
+							&& get(direction, other_edge) != DirectionBit::backward
+							&& edge != other_edge
+							&& get(weight, other_edge) >= get(weight, edge);
+					}, graph);
+				}
 
-		bool should_relax(const typename graph::graph_traits<Graph>::edge_descriptor& edge, Graph& graph) {
-			if (get(direction, edge) != ignoredDirection) {
-				auto to = target(edge, graph);
-				return get(order, to) > get(order, ignoredVertex);
+				if (get(direction, edge) != DirectionBit::forward) {
+					graph::remove_out_edge_if(curVert, [&out_vertex, &graph, &edge, &direction, &weight](const Edge& other_edge)-> bool {
+						auto other_vertex = target(other_edge, graph);
+						return other_vertex == out_vertex
+							&& get(direction, other_edge) != DirectionBit::forward 
+							&& edge != other_edge
+							&& get(weight, other_edge) >= get(weight, edge);
+					}, graph);
+				}
 			}
-			return false;
 		}
-
-		bool should_continue() {
-			return currentHopCount++ < maxHopCount;
-		};
-
-	private:
-		Vertex ignoredVertex;
-		OrderMap order;
-		DirectionMap direction;
-		DirectionBit ignoredDirection;
-		size_t maxHopCount;
-		size_t currentHopCount;
-	};
-
-
-	template <typename Graph, typename IndexMap,
-		typename DijkstraVisitorF, typename DijkstraVisitorB,
-		typename DistanceMapF, typename DistanceMapB,
-		typename ColorMapF, typename ColorMapB>
-	class CHPreprocessOptimalCriteriaTraker : public graph::OptimalCriteriaTraker<
-		Graph, IndexMap,
-		DijkstraVisitorF, DijkstraVisitorB,
-		DistanceMapF, DistanceMapB,
-		ColorMapF, ColorMapB> {
-		using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
-		using DistanceType = typename DistanceMapF::value_type;
-	public:
-
-		CHPreprocessOptimalCriteriaTraker(
-			const DijkstraVisitorF& visitorF, const DijkstraVisitorB& visitorB,
-			DistanceMapF& distanceF, DistanceMapB& distanceB,
-			ColorMapF& colorF, ColorMapB& colorB, const IndexMap& index)
-			: graph::OptimalCriteriaTraker<
-			Graph, IndexMap,
-			DijkstraVisitorF, DijkstraVisitorB,
-			DistanceMapF, DistanceMapB,
-			ColorMapF, ColorMapB>(
-				visitorF, visitorB,
-				distanceF, distanceB,
-				colorF, colorB, index) {}
-
-		void edge_relaxed(const typename graph::graph_traits<Graph>::edge_descriptor& edge, Graph& graph) {
-			Vertex to = target(edge, graph);
-			if (!this->visitorF.Stored.VertexInitializer.IsInitialized(to, this->index) ||
-				!this->visitorB.Stored.VertexInitializer.IsInitialized(to, this->index) ||
-				get(this->colorF, to) == boost::two_bit_white ||
-				get(this->colorB, to) == boost::two_bit_white)
-				return;
-			uint32_t right = get(this->distanceF, to) + get(this->distanceB, to);
-			if (right < this->mu) {
-				this->mu = right;
-				this->transitNode = to;
-			}
-		};
-	};
-
+	}
 
 	// uses dijkstra, therefore should have at least all property maps used by dijkstra
 	template <typename Graph, typename PredecessorFMap, typename PredecessorBMap, typename DistanceFMap,
@@ -102,8 +60,9 @@ namespace ch
 		using TrackerType = CHPreprocessOptimalCriteriaTraker<Graph, IndexMap, DijkstraVisitorType, DijkstraVisitorType, DistanceFMap, DistanceBMap, ColorFMap, ColorBMap>;
 
 		auto graph = CreateIncidenceGraph(originalGraph);
+		RemovePairedEdges(graph, direction, weight);
 		auto curVert = strategy.next(graph);
-
+		
 		for (const auto& vertex : Range(vertices(graph))) {
 			graph::put(order, vertex, numeric_limits<size_t>::max());
 		}
@@ -156,11 +115,20 @@ namespace ch
 					}
 
 //				cout << "\tShortcut added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
+
 					auto shortCutKey = make_pair(in_v, out_v);
 					auto it = shortCuts.find(shortCutKey);
-					if (it == shortCuts.end() || it->second > shortCutLength)
+					if (it == shortCuts.end() || it->second > shortCutLength) {
 						shortCuts[shortCutKey] = shortCutLength;
-
+						graph::remove_out_edge_if(in_v, [&graph, &out_v, &direction](const auto& edge)-> bool {
+							auto out_vertex = target(edge, graph);
+							return out_v == out_vertex && get(direction, edge) != DirectionBit::backward;
+						}, graph);
+						graph::remove_out_edge_if(out_v, [&graph, &in_v, &direction](const auto& edge)-> bool {
+							auto in_vertex = target(edge, graph);
+							return in_v == in_vertex && get(direction, edge) != DirectionBit::forward;
+						}, graph);
+					}
 				}
 			}
 			//remove edges

@@ -195,6 +195,14 @@ namespace graph
 		return remove_edge(e, graph.innerGraph);
 	}
 
+	template<typename Graph, typename VertexProperties, typename EdgeProperties, typename Predicate>
+	inline decltype(auto) remove_out_edge_if(
+		typename IncidenceGraphType::vertex_descriptor in_v,
+		Predicate& predicate,
+		const IncidenceGraphType& graph) {
+		return remove_out_edge_if(in_v, predicate, graph.innerGraph);
+	}
+
 #undef IncidenceGraphType
 #undef IncidenceGraphTemplate
 }
