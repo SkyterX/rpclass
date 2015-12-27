@@ -72,13 +72,13 @@ namespace graph {
 		return std::make_pair(EdgeDescriptor(), false);
 	}
 
-	//	DynamicGraphTemplate
-	//		inline decltype(auto) add_edge(
-	//			typename DynamicGraphType::vertex_descriptor u,
-	//			typename DynamicGraphType::vertex_descriptor v,
-	//			const DynamicGraphType& graph) {
-	//		return add_edge(u, v, graph.innerGraph);
-	//	}
+	DynamicGraphTemplate
+	inline std::pair<typename DynamicGraphType::edge_descriptor, bool> add_edge(
+		typename DynamicGraphType::vertex_descriptor u,
+		typename DynamicGraphType::vertex_descriptor v,
+		const DynamicGraphType& graph) {
+		return graph.AddEdge(u, v);
+	}
 	//
 	//	DynamicGraphTemplate
 	//		inline decltype(auto) remove_edge(

@@ -27,7 +27,7 @@ namespace ch
 	struct GenerateCHGraph<PredecessorFMapTag, PredecessorBMapTag, DisanceMapFTag, DisanceMapBTag, WeightMapTag,
 	                       IndexMapTag, ColorFMapTag, ColorBMapTag, UnPackMapTag, VertexOrderMapTag, DirectionMapTag,
 	                       graph::Properties<P1s...>, graph::Properties<P2s...>, graph::Properties<P3s...>> {
-		using EmptyGraph = graph::DynamicGraph<
+		using EmptyGraph = graph::BDynamicGraph<
 			graph::Properties<>, graph::Properties<>, graph::Properties<>>;
 
 		using vertex_descriptor =
@@ -35,7 +35,7 @@ namespace ch
 		using vertices_size_type =
 		typename graph::graph_traits<EmptyGraph>::vertices_size_type;
 
-		using type = graph::DynamicGraph<
+		using type = graph::BDynamicGraph<
 			graph::Properties<
 				graph::Property<PredecessorFMapTag, vertex_descriptor>,
 				graph::Property<PredecessorBMapTag, vertex_descriptor>,

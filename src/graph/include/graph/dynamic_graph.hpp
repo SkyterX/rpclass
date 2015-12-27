@@ -14,7 +14,7 @@ namespace graph {
     template <typename VP = Properties<>,
         typename EP = Properties<>,
         typename GP = Properties<>>
-    class DynamicGraph:public boost::adjacency_list<
+    class BDynamicGraph:public boost::adjacency_list<
         boost::vecS, boost::vecS, boost::bidirectionalS,
         VP, EP>{
     public:
@@ -22,16 +22,16 @@ namespace graph {
             boost::vecS, boost::vecS, boost::bidirectionalS,
             VP, EP>;
         struct traversal_category : bidirectional_graph_tag, vertex_list_graph_tag, BoostBase::traversal_category {};
-        DynamicGraph(){};
-        DynamicGraph(BoostBase& base) :BoostBase(base) {};
-        DynamicGraph(BoostBase&& base) :BoostBase(base) {};
+		BDynamicGraph(){};
+		BDynamicGraph(BoostBase& base) :BoostBase(base) {};
+		BDynamicGraph(BoostBase&& base) :BoostBase(base) {};
 
-        DynamicGraph(std::vector<std::pair<size_t, size_t>>::iterator begin,
+		BDynamicGraph(std::vector<std::pair<size_t, size_t>>::iterator begin,
             std::vector<std::pair<size_t, size_t>>::iterator end,
             size_t n, size_t m = 0):BoostBase(begin, end, n, m) {};
 
         template <typename Iterator>
-        DynamicGraph(Iterator begin, Iterator end, size_t n, size_t m = 0):BoostBase() {
+		BDynamicGraph(Iterator begin, Iterator end, size_t n, size_t m = 0):BoostBase() {
             using namespace std;
             vector<pair<size_t, size_t>> edges;
             edges.reserve(m);
@@ -49,56 +49,56 @@ namespace graph {
   
     template <typename VP, typename EP, typename GP>
     struct property_map<
-        DynamicGraph<VP, EP, GP>, 
+		BDynamicGraph<VP, EP, GP>,
         graph::vertex_bundle_t,
         void > {
         using type = typename boost::property_map<
-            typename DynamicGraph<VP, EP, GP>::BoostBase, 
+            typename BDynamicGraph<VP, EP, GP>::BoostBase,
             boost::vertex_bundle_t>::type;
     };
     template <typename VP, typename EP, typename GP>
     struct property_map< 
-        DynamicGraph<VP, EP, GP>,
+		BDynamicGraph<VP, EP, GP>,
         graph::edge_bundle_t,
         void > {
         using type = typename boost::property_map<
-            typename DynamicGraph<VP, EP, GP>::BoostBase,
+            typename BDynamicGraph<VP, EP, GP>::BoostBase,
             boost::edge_bundle_t>::type;
     };
     template <typename VP, typename EP, typename GP>
     struct property_map<
-        DynamicGraph<VP, EP, GP>,
+		BDynamicGraph<VP, EP, GP>,
         graph::vertex_index_t,
         void > {
         using type = typename boost::property_map<
-            typename DynamicGraph<VP, EP, GP>::BoostBase,
+            typename BDynamicGraph<VP, EP, GP>::BoostBase,
             boost::vertex_index_t>::type;
     };
 
     template <typename VP, typename EP, typename GP>
     inline typename property_map<
-        DynamicGraph<VP, EP, GP>,
+		BDynamicGraph<VP, EP, GP>,
         vertex_bundle_t>::type
         get(const vertex_bundle_t&,
-            DynamicGraph<VP, EP, GP>& graph) {
+			BDynamicGraph<VP, EP, GP>& graph) {
         return boost::get(boost::vertex_bundle, graph);
     };
 
     template <typename VP, typename EP, typename GP>
     inline typename property_map<
-        DynamicGraph<VP, EP, GP>,
+		BDynamicGraph<VP, EP, GP>,
         edge_bundle_t>::type
         get(const edge_bundle_t&,
-            DynamicGraph<VP, EP, GP>& graph) {
+			BDynamicGraph<VP, EP, GP>& graph) {
         return boost::get(boost::edge_bundle, graph);
     };
 
     template <typename VP, typename EP, typename GP>
     inline typename property_map<
-        DynamicGraph<VP, EP, GP>,
+		BDynamicGraph<VP, EP, GP>,
         vertex_index_t>::type
         get(const vertex_index_t&,
-            DynamicGraph<VP, EP, GP>& graph) {
+			BDynamicGraph<VP, EP, GP>& graph) {
         return boost::get(boost::vertex_index, graph);
     };
 

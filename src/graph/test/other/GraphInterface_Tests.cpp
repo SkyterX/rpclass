@@ -173,7 +173,7 @@ TEST(GraphInterface, DynamicGraphCorrectness) {
 		stable_sort(outAdjacencies.begin(), outAdjacencies.end());
 		EXPECT_TRUE(std::equal(edges[v].begin(), edges[v].end(), outAdjacencies.begin()));
 	}
-	//	VerifyPropertyMaps(g, n, m);
+	VerifyPropertyMaps(g, n, m);
 }
 
 TEST(GraphInterface, IncidenceGraphValidation) {

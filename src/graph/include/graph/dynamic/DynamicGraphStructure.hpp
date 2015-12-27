@@ -29,7 +29,7 @@ namespace graph {
 		size_t nextLink;
 		EdgePropertiesType properties;
 
-		DGFancyLink() : BaseType() {}
+		DGFancyLink() : BaseType(), nextLink(nullLink) {}
 		
 		explicit DGFancyLink(const Vertex& target, size_t nextLink = nullLink)
 			: BaseType(target), nextLink(nextLink) {}

@@ -175,64 +175,61 @@ namespace graph {
 	};
 }
 
-//// PropertyMaps
-//namespace graph {
-//#define StaticGraphType DynamicGraph
-//	//	<VertexProperties, EdgeProperties>
-//
-//	template <typename VertexProperties, typename EdgeProperties>
-//	struct property_map<StaticGraphType, vertex_bundle_t> {
-//		using type = typename StaticGraphType::VertexPropertyMapType;
-//	};
-//
-//	template <typename VertexProperties, typename EdgeProperties>
-//	struct property_map<StaticGraphType, edge_bundle_t> {
-//		using type = typename StaticGraphType::EdgePropertyMapType;
-//	};
-//
-//	template <typename VertexProperties, typename EdgeProperties>
-//	inline typename property_map<StaticGraphType, vertex_bundle_t>::type
-//		get(const vertex_bundle_t&, StaticGraphType& graph) {
-//		return graph.GetVertexPropertyMap();
-//	}
-//
-//	template <typename VertexProperties, typename EdgeProperties>
-//	inline typename property_map<StaticGraphType, edge_bundle_t>::type
-//		get(const edge_bundle_t&, StaticGraphType& graph) {
-//		return graph.GetEdgePropertyMap();
-//	}
-//
-//
-//	template <typename Graph>
-//	struct VertexIndexPropertyMap {};
-//
-//	template <typename VertexProperties, typename EdgeProperties>
-//	struct VertexIndexPropertyMap<StaticGraphType> {
-//		using key_type = typename graph_traits<StaticGraphType>::vertex_descriptor;
-//		using value_type = typename graph_traits<StaticGraphType>::vertices_size_type;
-//		using reference = value_type&;
-//		using category = boost::readable_property_map_tag;
-//	};
-//
-//	template <typename VertexProperties, typename EdgeProperties>
-//	struct property_map<StaticGraphType, vertex_index_t> {
-//		using type = VertexIndexPropertyMap<StaticGraphType>;
-//	};
-//
-//	template <typename VertexProperties, typename EdgeProperties>
-//	typename VertexIndexPropertyMap<StaticGraphType>::value_type
-//		get(const VertexIndexPropertyMap<StaticGraphType>& index,
-//			const typename VertexIndexPropertyMap<StaticGraphType>::key_type& key) {
-//		return key;
-//	};
-//
-//	template<typename VertexProperties, typename EdgeProperties>
-//	inline typename property_map<StaticGraphType, vertex_index_t>::type
-//		get(const vertex_index_t&, StaticGraphType&) {
-//		return VertexIndexPropertyMap<StaticGraphType>();
-//	};
-//
-//#undef StaticGraphType
-//}
+// PropertyMaps
+namespace graph {
+#define DynamicGraphTemplate template<typename VertexProperties, typename EdgeProperties>
+#define DynamicGraphType DynamicGraph<VertexProperties, EdgeProperties>
+
+	DynamicGraphTemplate
+	struct property_map<DynamicGraphType, vertex_bundle_t> {
+		using type = typename DynamicGraphType::VertexPropertyMapType;
+	};
+
+	DynamicGraphTemplate
+	struct property_map<DynamicGraphType, edge_bundle_t> {
+		using type = typename DynamicGraphType::EdgePropertyMapType;
+	};
+
+	DynamicGraphTemplate
+	inline typename property_map<DynamicGraphType, vertex_bundle_t>::type
+		get(const vertex_bundle_t&, DynamicGraphType& graph) {
+		return graph.GetVertexPropertyMap();
+	}
+
+	DynamicGraphTemplate
+	inline typename property_map<DynamicGraphType, edge_bundle_t>::type
+		get(const edge_bundle_t&, DynamicGraphType& graph) {
+		return graph.GetEdgePropertyMap();
+	}
+
+	DynamicGraphTemplate
+	struct VertexIndexPropertyMap<DynamicGraphType> {
+		using key_type = typename graph_traits<DynamicGraphType>::vertex_descriptor;
+		using value_type = typename graph_traits<DynamicGraphType>::vertices_size_type;
+		using reference = value_type&;
+		using category = boost::readable_property_map_tag;
+	};
+
+	DynamicGraphTemplate
+	struct property_map<DynamicGraphType, vertex_index_t> {
+		using type = VertexIndexPropertyMap<DynamicGraphType>;
+	};
+
+	DynamicGraphTemplate
+	typename VertexIndexPropertyMap<DynamicGraphType>::value_type
+		get(const VertexIndexPropertyMap<DynamicGraphType>& index,
+			const typename VertexIndexPropertyMap<DynamicGraphType>::key_type& key) {
+		return key;
+	};
+
+	template<typename VertexProperties, typename EdgeProperties>
+	inline typename property_map<DynamicGraphType, vertex_index_t>::type
+		get(const vertex_index_t&, DynamicGraphType&) {
+		return VertexIndexPropertyMap<DynamicGraphType>();
+	};
+
+#undef DynamicGraphType
+#undef DynamicGraphTemplate
+}
 
 #include <graph/dynamic/DynamicGraphTools.hpp>
