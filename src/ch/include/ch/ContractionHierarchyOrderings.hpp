@@ -279,8 +279,8 @@ namespace ch
 			std::stable_sort(order.begin(), order.end(),
 				[&graph](const Vertex & a, const Vertex & b) -> bool
 			{
-				auto a_degree = (out_degree(a, graph) + in_degree(a, graph));
-				auto b_degree = (out_degree(b, graph) + in_degree(b, graph));
+				auto a_degree = degree(a, graph);
+				auto b_degree = degree(b, graph);
 				return  a_degree < b_degree;
 			});
 			current = order.begin();

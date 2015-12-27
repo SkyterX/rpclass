@@ -11,21 +11,20 @@
 #include <graph/dynamic/DynamicGraphIterators.hpp>
 #include <graph/detail/StaticGraphPropertyMaps.hpp>
 
-namespace graph {
-
+namespace graph
+{
 	struct DGTraversalCategory :
-		public adjacency_graph_tag, public boost::adjacency_graph_tag,
-		public incidence_graph_tag, public boost::incidence_graph_tag,
-		public vertex_list_graph_tag, public boost::vertex_list_graph_tag
-	{ };
+			public adjacency_graph_tag, public boost::adjacency_graph_tag,
+			public incidence_graph_tag, public boost::incidence_graph_tag,
+			public vertex_list_graph_tag, public boost::vertex_list_graph_tag { };
 
 	struct DGNoProperties : public Properties<> {};
 
 	template <typename VertexProperties = DGNoProperties, typename EdgeProperties = DGNoProperties>
 	class DynamicGraph {
-//		using VertexProperties = DGNoProperties;
-//		using EdgeProperties = DGNoProperties;
-//		using type = DynamicGraph;
+		//		using VertexProperties = DGNoProperties;
+		//		using EdgeProperties = DGNoProperties;
+		//		using type = DynamicGraph;
 		using type = DynamicGraph<VertexProperties, EdgeProperties>;
 	public:
 
@@ -47,8 +46,8 @@ namespace graph {
 	private:
 
 		using EdgePropertiesVecType = std::vector<EdgeProperties>;
-		
-		const size_t nullLink = std::numeric_limits<size_t>::max();
+
+		const static size_t nullLink = std::numeric_limits<size_t>::max();
 		using StoredAdjacencyType = DGFancyLink<vertex_descriptor, EdgeProperties>;
 		using AdjacenciesVecType = std::vector<StoredAdjacencyType>;
 		using AdjacenciesVecIteratorType = typename AdjacenciesVecType::const_iterator;
@@ -76,19 +75,20 @@ namespace graph {
 		};
 
 		DynamicGraph(vertices_size_type n = 0, edges_size_type m = 0)
-			: edgePropertyMap(new EdgePropertyMapType()),
-			vertexPropertyMap(new VertexPropertyMapType(this)) {
+			: freeLinkIndex(nullLink),
+			  edgePropertyMap(new EdgePropertyMapType()),
+			  vertexPropertyMap(new VertexPropertyMapType(this)) {
 			this->vertices.reserve(n);
 			this->adjacencies.reserve(m);
 
-			for(auto& v : graphUtil::Range(0, n)) {
+			for (auto& v : graphUtil::Range(0, n)) {
 				AddVertex();
 			}
 		}
 
 		template <class PairIterator>
 		DynamicGraph(PairIterator begin, PairIterator end,
-			vertices_size_type n, edges_size_type m = 0) : DynamicGraph(n, m) {
+		             vertices_size_type n, edges_size_type m = 0) : DynamicGraph(n, m) {
 
 			for (auto& it = begin; it != end; ++it) {
 				EdgeProperties edgeProperties;
@@ -98,8 +98,8 @@ namespace graph {
 		}
 
 		DynamicGraph(std::vector<std::pair<size_t, size_t>>::iterator begin,
-			std::vector<std::pair<size_t, size_t>>::iterator end,
-			size_t n, size_t m = 0) : DynamicGraph(n, m) {
+		             std::vector<std::pair<size_t, size_t>>::iterator end,
+		             size_t n, size_t m = 0) : DynamicGraph(n, m) {
 
 			for (auto& it = begin; it != end; ++it) {
 				AddEdge(it->first, it->second);
@@ -116,22 +116,86 @@ namespace graph {
 			const vertex_descriptor& from, const vertex_descriptor& to,
 			const EdgeProperties& properties = EdgeProperties()) {
 
-			auto newEdgeIndex = this->adjacencies.size();
-			auto& firstEdgeIndex = this->vertices[from].firstEdgeIndex;
-			this->adjacencies.push_back(StoredAdjacencyType(to, properties));
+			auto newEdgeIndex = CreateEdge();
+			auto firstEdgeIndex = this->vertices[from].firstEdgeIndex;
+			this->adjacencies[newEdgeIndex] = StoredAdjacencyType(to, properties);
 
-			if(firstEdgeIndex == nullLink) {
-				firstEdgeIndex = newEdgeIndex;
+			if (firstEdgeIndex == nullLink) {
+				this->vertices[from].firstEdgeIndex = newEdgeIndex;
 			}
 			else {
 				std::swap(this->adjacencies[firstEdgeIndex], this->adjacencies[newEdgeIndex]);
 				this->adjacencies[firstEdgeIndex].nextLink = newEdgeIndex;
-			}	
+			}
 
 			auto propertiesPtr = &this->adjacencies[firstEdgeIndex].properties;
 			++this->vertices[from].degree;
-			return std::make_pair(edge_descriptor(from, to, propertiesPtr), true);
+			return std::make_pair(CreateLinkDescriptor(from, firstEdgeIndex), true);
 		}
+
+		void RemoveEdge(const vertex_descriptor& from, const vertex_descriptor& to) {
+			RemoveEdge(from, [&to] (edge_descriptor& link) {
+				           return link.target == to;
+			           });
+		}
+
+		void RemoveEdge(const edge_descriptor& e) {
+			RemoveEdge(e.source, [&e](edge_descriptor& link) {
+				           return e == link;
+			           });
+		}
+
+		template <typename Predicate>
+		void RemoveEdge(const vertex_descriptor& v, Predicate predicate) {
+			auto edgeIndex = this->vertices[v].firstEdgeIndex;
+			while (edgeIndex != nullLink) {
+				auto nextEdgeIndex = this->adjacencies[edgeIndex].nextLink;
+				auto linkDescriptor = CreateLinkDescriptor(v, edgeIndex);
+				if (!predicate(linkDescriptor))
+					break;
+				DoRemoveEdge(v, edgeIndex);
+				this->vertices[v].firstEdgeIndex = nextEdgeIndex;
+				edgeIndex = nextEdgeIndex;
+			}
+			while (edgeIndex != nullLink) {
+				auto nextEdgeIndex = this->adjacencies[edgeIndex].nextLink;
+				auto linkDescriptor = CreateLinkDescriptor(v, nextEdgeIndex);
+				if (nextEdgeIndex != nullLink && predicate(linkDescriptor)) {
+					this->adjacencies[edgeIndex].nextLink = this->adjacencies[nextEdgeIndex].nextLink;
+					DoRemoveEdge(v, nextEdgeIndex);
+				}
+				else {
+					edgeIndex = nextEdgeIndex;
+				}
+			}
+		}
+
+	private:
+
+		edge_descriptor CreateLinkDescriptor(const vertex_descriptor& v, size_t linkIndex) {
+			return edge_descriptor(v, this->adjacencies[linkIndex].target, &this->adjacencies[linkIndex].properties);
+		}
+
+		void DoRemoveEdge(const vertex_descriptor& v, size_t linkIndex) {
+			--this->vertices[v].degree;
+			this->adjacencies[linkIndex].nextLink = freeLinkIndex;
+			freeLinkIndex = linkIndex;
+		}
+
+		size_t CreateEdge() {
+			size_t newEdgeIndex;
+			if (freeLinkIndex != nullLink) {
+				newEdgeIndex = freeLinkIndex;
+				freeLinkIndex = this->adjacencies[freeLinkIndex].nextLink;
+			}
+			else {
+				newEdgeIndex = this->adjacencies.size();
+				this->adjacencies.push_back(StoredAdjacencyType());
+			}
+			return newEdgeIndex;
+		}
+
+	public:
 
 		degree_size_type Degree(const vertex_descriptor& v) const {
 			return this->vertices[v].degree;
@@ -168,6 +232,7 @@ namespace graph {
 
 	private:
 
+		size_t freeLinkIndex;
 		AdjacenciesVecType adjacencies;
 		VerticesVecType vertices;
 		std::unique_ptr<EdgePropertyMapType> edgePropertyMap;
@@ -176,7 +241,8 @@ namespace graph {
 }
 
 // PropertyMaps
-namespace graph {
+namespace graph
+{
 #define DynamicGraphTemplate template<typename VertexProperties, typename EdgeProperties>
 #define DynamicGraphType DynamicGraph<VertexProperties, EdgeProperties>
 
@@ -192,13 +258,13 @@ namespace graph {
 
 	DynamicGraphTemplate
 	inline typename property_map<DynamicGraphType, vertex_bundle_t>::type
-		get(const vertex_bundle_t&, DynamicGraphType& graph) {
+	get(const vertex_bundle_t&, DynamicGraphType& graph) {
 		return graph.GetVertexPropertyMap();
 	}
 
 	DynamicGraphTemplate
 	inline typename property_map<DynamicGraphType, edge_bundle_t>::type
-		get(const edge_bundle_t&, DynamicGraphType& graph) {
+	get(const edge_bundle_t&, DynamicGraphType& graph) {
 		return graph.GetEdgePropertyMap();
 	}
 
@@ -217,14 +283,14 @@ namespace graph {
 
 	DynamicGraphTemplate
 	typename VertexIndexPropertyMap<DynamicGraphType>::value_type
-		get(const VertexIndexPropertyMap<DynamicGraphType>& index,
-			const typename VertexIndexPropertyMap<DynamicGraphType>::key_type& key) {
+	get(const VertexIndexPropertyMap<DynamicGraphType>& index,
+	    const typename VertexIndexPropertyMap<DynamicGraphType>::key_type& key) {
 		return key;
 	};
 
-	template<typename VertexProperties, typename EdgeProperties>
+	template <typename VertexProperties, typename EdgeProperties>
 	inline typename property_map<DynamicGraphType, vertex_index_t>::type
-		get(const vertex_index_t&, DynamicGraphType&) {
+	get(const vertex_index_t&, DynamicGraphType&) {
 		return VertexIndexPropertyMap<DynamicGraphType>();
 	};
 

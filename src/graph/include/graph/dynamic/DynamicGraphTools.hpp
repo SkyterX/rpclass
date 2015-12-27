@@ -1,7 +1,8 @@
 #pragma once
 #pragma once
 
-namespace graph {
+namespace graph
+{
 #define DynamicGraphTemplate template<typename VertexProperties, typename EdgeProperties>
 #define DynamicGraphType DynamicGraph<VertexProperties, EdgeProperties>
 	DynamicGraphTemplate
@@ -76,17 +77,24 @@ namespace graph {
 	inline std::pair<typename DynamicGraphType::edge_descriptor, bool> add_edge(
 		typename DynamicGraphType::vertex_descriptor u,
 		typename DynamicGraphType::vertex_descriptor v,
-		const DynamicGraphType& graph) {
+		DynamicGraphType& graph) {
 		return graph.AddEdge(u, v);
 	}
-	//
-	//	DynamicGraphTemplate
-	//		inline decltype(auto) remove_edge(
-	//			typename DynamicGraphType::edge_descriptor e,
-	//			const DynamicGraphType& graph) {
-	//		return remove_edge(e, graph.innerGraph);
-	//	}
 
+	DynamicGraphTemplate
+	inline void remove_edge(
+		typename DynamicGraphType::edge_descriptor e,
+		DynamicGraphType& graph) {
+		graph.RemoveEdge(e);
+	}
+
+	template <typename VertexProperties, typename EdgeProperties, typename Predicate>
+	inline void remove_out_edge_if(
+		typename DynamicGraphType::vertex_descriptor u,
+		Predicate predicate,
+		DynamicGraphType& graph) {
+		graph.RemoveEdge(u, predicate);
+	}
 #undef DynamicGraphType
 #undef DynamicGraphTemplate
 }

@@ -64,8 +64,12 @@ namespace ch
 		auto curVert = strategy.next(graph);
 		
 		for (const auto& vertex : Range(vertices(graph))) {
-			graph::put(order, vertex, numeric_limits<size_t>::max());
+			graph::put(order, vertex, numeric_limits<typename VertexOrderMap::value_type>::max());
 		}
+		
+//		for (auto v : Range(vertices(graph))) {
+//			DumpEdges(v, graph, weight, direction);
+//		}
 
 		size_t curOrder = 0;
 		int counter = 0;
@@ -132,6 +136,8 @@ namespace ch
 				}
 			}
 			//remove edges
+//			cout << "Original Edges" << endl;
+//			DumpEdges(curVert, graph, weight, direction);
 			for (const auto& edge : AsArray(Range(out_edges(curVert, graph)))) {
 				auto to = target(edge, graph);
 				auto from = source(edge, graph);
@@ -139,6 +145,8 @@ namespace ch
 					graph::remove_edge(edge, graph);
 				}
 			}
+//			cout << "After deletion" << endl;
+//			DumpEdges(curVert, graph, weight, direction);
 
 			for (auto& shortCut : shortCuts) {
 				auto u = shortCut.first.first;
@@ -160,5 +168,24 @@ namespace ch
 			curVert = strategy.next(graph);
 		}
 
+//		for(auto v : Range(vertices(graph))) {
+//			DumpEdges(v, graph, weight, direction);
+//		}
+
 	};
+
+	template<typename Graph, typename WeightMap, typename DirectionMap>
+	void DumpEdges(const typename Graph::vertex_descriptor& v, Graph& g, WeightMap& weight, DirectionMap& direction) {
+		using namespace std;
+		using namespace graphUtil;
+		cout << v << " : ";
+		for (const auto &e : Range(out_edges(v, g))) {
+			cout << "\t[" <<
+				target(e, g) << ", " <<
+				get(weight, e) << ", " <<
+				(get(direction, e) == DirectionBit::forward ? "f" : "b") <<
+				"], " << endl;
+		}
+		cout << endl;
+	}
 }

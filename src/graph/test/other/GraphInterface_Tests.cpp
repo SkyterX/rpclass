@@ -30,8 +30,7 @@ inline vector<pair<size_t, size_t>> GenerateRandomEdgeList(int verticesCount, in
 		}
 	}
 
-	random_device random_device;
-	mt19937 generator(random_device());
+	mt19937 generator(1211451212);
 	shuffle(possibleEdges.begin(), possibleEdges.end(), generator);
 	possibleEdges.erase(possibleEdges.begin() + edgesCount, possibleEdges.end());
 	return possibleEdges;
@@ -141,6 +140,8 @@ TEST(GraphInterface, DynamicGraphCorrectness) {
 	size_t n = 100;
 	size_t m = 1000;
 
+	mt19937 generator(74274912);
+
 	auto edgeList = GenerateRandomEdgeList(n, m);
 	vector<vector<size_t>> edges;
 	edges.resize(n);
@@ -165,14 +166,48 @@ TEST(GraphInterface, DynamicGraphCorrectness) {
 		EXPECT_EQ(outAdjacencies.size(), outEdges.size());
 		EXPECT_EQ(outEdges.size(), out_degree(v, g));
 		int idx = 0;
-		for(const auto& e : outEdges) {
+		for (const auto& e : outEdges) {
 			EXPECT_EQ(v, source(e, g));
 			EXPECT_EQ(outAdjacencies[idx++], target(e, g));
 		}
 
 		stable_sort(outAdjacencies.begin(), outAdjacencies.end());
 		EXPECT_TRUE(std::equal(edges[v].begin(), edges[v].end(), outAdjacencies.begin()));
+
+		auto vDegree = out_degree(v, g);
+		auto outEdgesList = AsArray(outEdges);
+		shuffle(outEdgesList.begin(), outEdgesList.end(), generator);
+		for (const auto& e : outEdgesList) {
+			remove_edge(e, g);
+			--vDegree;
+			EXPECT_EQ(vDegree, out_degree(v, g));
+			EXPECT_EQ(vDegree, AsArray(Range(adjacent_vertices(v, g))).size());
+		}
 	}
+
+	for (auto& v : graphVertices) {
+		EXPECT_EQ(0, out_degree(v, g));
+
+		auto vDegree = 0;
+		for (auto& to : edges[v]) {
+			add_edge(v, to, g);
+			++vDegree;
+			EXPECT_EQ(vDegree, out_degree(v, g));
+
+		}
+
+		auto outAdjacencies = AsArray(Range(adjacent_vertices(v, g)));
+		stable_sort(outAdjacencies.begin(), outAdjacencies.end());
+		EXPECT_TRUE(std::equal(edges[v].begin(), edges[v].end(), outAdjacencies.begin()));
+	}
+
+	for (auto& v : graphVertices) {
+		remove_out_edge_if(v, [](auto e) {
+			                   return true;
+		                   }, g);
+		EXPECT_EQ(0, out_degree(v, g));
+	}
+
 	VerifyPropertyMaps(g, n, m);
 }
 
@@ -192,4 +227,3 @@ TEST(GraphInterface, IncidenceGraphValidation) {
 	VerifyIncidenceGraphStructure(iGraph, n, m);
 	VerifyPropertyMaps(iGraph, n, m);
 }
-

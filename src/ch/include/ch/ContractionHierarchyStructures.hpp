@@ -1,7 +1,8 @@
 #pragma once
 #include <graph/properties.hpp>
 #include <graph/dijkstra.hpp>
-#include <graph/dynamic_graph.hpp>
+//#include <graph/dynamic_graph.hpp>
+#include <graph/dynamic/DynamicGraph.hpp>
 
 namespace ch
 {
@@ -27,15 +28,15 @@ namespace ch
 	struct GenerateCHGraph<PredecessorFMapTag, PredecessorBMapTag, DisanceMapFTag, DisanceMapBTag, WeightMapTag,
 	                       IndexMapTag, ColorFMapTag, ColorBMapTag, UnPackMapTag, VertexOrderMapTag, DirectionMapTag,
 	                       graph::Properties<P1s...>, graph::Properties<P2s...>, graph::Properties<P3s...>> {
-		using EmptyGraph = graph::BDynamicGraph<
-			graph::Properties<>, graph::Properties<>, graph::Properties<>>;
+		using EmptyGraph = graph::DynamicGraph<
+			graph::Properties<>, graph::Properties<>>;
 
 		using vertex_descriptor =
 		typename graph::graph_traits<EmptyGraph>::vertex_descriptor;
 		using vertices_size_type =
 		typename graph::graph_traits<EmptyGraph>::vertices_size_type;
 
-		using type = graph::BDynamicGraph<
+		using type = graph::DynamicGraph<
 			graph::Properties<
 				graph::Property<PredecessorFMapTag, vertex_descriptor>,
 				graph::Property<PredecessorBMapTag, vertex_descriptor>,
@@ -49,8 +50,7 @@ namespace ch
 				graph::Property<WeightMapTag, uint32_t>,
 				graph::Property<UnPackMapTag, vertex_descriptor>,
 				graph::Property<DirectionMapTag, DirectionBit>,
-				P2s...>,
-			graph::Properties<P3s...>
+				P2s...>			
 		>;
 	};
 }

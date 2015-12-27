@@ -2,7 +2,8 @@
 #include <limits>
 #include <graph/detail/BasicGraphStructures.hpp>
 
-namespace graph {
+namespace graph
+{
 	template <typename Graph>
 	class DGVertex { // inner struture
 		using EdgesSizeType = typename Graph::edges_size_type;
@@ -13,7 +14,7 @@ namespace graph {
 		DegreeType degree;
 		size_t firstEdgeIndex;
 		VertexProperties properties;
-		
+
 		DGVertex(const VertexProperties& properties = VertexProperties(), EdgesSizeType firstEdgeIndex = nullLink)
 			: degree(0), firstEdgeIndex(firstEdgeIndex), properties(properties) {}
 	};
@@ -30,12 +31,12 @@ namespace graph {
 		EdgePropertiesType properties;
 
 		DGFancyLink() : BaseType(), nextLink(nullLink) {}
-		
+
 		explicit DGFancyLink(const Vertex& target, size_t nextLink = nullLink)
 			: BaseType(target), nextLink(nextLink) {}
 
 
 		DGFancyLink(const Vertex& target, const EdgeProperties& properties, size_t nextLink = nullLink)
-			:BaseType(target), properties(properties), nextLink(nextLink) {}		
+			:BaseType(target), properties(properties), nextLink(nextLink) {}
 	};
 }
