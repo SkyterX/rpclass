@@ -45,6 +45,8 @@ namespace ch
 		VertexOrderMap& order;
 		size_t dijLimit;
 		bool isInitialized;
+		uint32_t itCount = 0;
+		uint32_t maxGLCount = 0;
 
 		template <typename Tkey, typename Tval, typename TMap>
 		Tval initOrGet(Tkey key, Tval defaultValue, TMap& map) {
@@ -160,7 +162,7 @@ namespace ch
 				delimOrd = (static_cast<double>(ordA) / ordD);
 			}
 			double delimSumH = 0;
-			if (ordD != 0) {
+			if (sumhD != 0) {
 				delimSumH = (static_cast<double>(sumhA) / sumhD);
 			}
 			return lx + delimOrd + delimSumH;
@@ -203,15 +205,16 @@ namespace ch
 				Init(graph);
 			}
 
-				if (queue.empty()) {
-					return graph.null_vertex();
-				}
-				
+			if (queue.empty()) {
+				return graph.null_vertex();
+			}
 			
 			// take vertex with least priority
 			QueueItemType queueItem = queue.top();
 			Vertex return_v = queueItem.Data();
 			queue.pop();
+
+			uint32_t goodLuckCount = 1;
 
 			do {
 				// is it still least?
@@ -223,7 +226,7 @@ namespace ch
 				// compare with second
 				QueueItemType secondQueueItem = queue.top();
 				auto nextVertex = secondQueueItem.Data();
-				auto nextPriority = secondQueueItem.Key();
+				auto nextPriority = calculatePriority(nextVertex, graph);
 
 				if (nextPriority >= newPriority) {
 					break;
@@ -233,9 +236,15 @@ namespace ch
 					queue.pop();
 					queue.push(QueueItemType(newPriority, return_v));
 					return_v = nextVertex;
+					goodLuckCount++;
 				}
 			} while (true);
 
+			maxGLCount = std::max(goodLuckCount, maxGLCount);
+			if (itCount++ % 250 == 0) {
+				std::cout << "\t Max Good luck on " << maxGLCount << std::endl;
+				maxGLCount = 0;
+			}
 
 			//при  контракции x все смежные y l(y):=max{l(y), l(x)+1}
 			int lx = initOrGet(return_v, 0, L);

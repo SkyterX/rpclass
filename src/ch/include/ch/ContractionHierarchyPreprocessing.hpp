@@ -73,13 +73,16 @@ namespace ch
 
 		size_t curOrder = 0;
 		int counter = 0;
+		int shortcutAmount = 0;
 		while (curVert != graph.null_vertex()) {
 			graph::put(order, curVert, curOrder++);
 			++counter;
-			if (counter % 1000 == 0)
+			if (counter % 1000 == 0) {
 				cout << "Processing " << counter << " vertex Id : " << curVert + 1 << " Degree : " << out_degree(curVert, graph) << endl;
+				cout << "Shortcuts amount " << shortcutAmount<< endl;
 
-			map<pair<Vertex, Vertex>, size_t> shortCuts;
+			}
+
 			for (const auto& out_e : Range(out_edges(curVert, graph))) {
 				if (get(direction, out_e) == DirectionBit::backward) {
 					continue;
@@ -120,19 +123,31 @@ namespace ch
 
 //				cout << "\tShortcut added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
 
-					auto shortCutKey = make_pair(in_v, out_v);
-					auto it = shortCuts.find(shortCutKey);
-					if (it == shortCuts.end() || it->second > shortCutLength) {
-						shortCuts[shortCutKey] = shortCutLength;
-						graph::remove_out_edge_if(in_v, [&graph, &out_v, &direction](const auto& edge)-> bool {
-							auto out_vertex = target(edge, graph);
-							return out_v == out_vertex && get(direction, edge) != DirectionBit::backward;
-						}, graph);
-						graph::remove_out_edge_if(out_v, [&graph, &in_v, &direction](const auto& edge)-> bool {
-							auto in_vertex = target(edge, graph);
-							return in_v == in_vertex && get(direction, edge) != DirectionBit::forward;
-						}, graph);
-					}
+					// removing larger edges
+					graph::remove_out_edge_if(in_v, [&graph, &out_v, &direction](const auto& edge)-> bool {
+						auto out_vertex = target(edge, graph);
+						return out_v == out_vertex && get(direction, edge) != DirectionBit::backward;
+					}, graph);
+					graph::remove_out_edge_if(out_v, [&graph, &in_v, &direction](const auto& edge)-> bool {
+						auto in_vertex = target(edge, graph);
+						return in_v == in_vertex && get(direction, edge) != DirectionBit::forward;
+					}, graph);
+
+					// adding shortcut
+					shortcutAmount++;
+					auto u = in_v;
+					auto v = out_v;
+					auto shortCutWeight = shortCutLength;
+					//			cout << "\tShortcut added: " << u + 1 << " to " << v + 1 << " with length " << shortCutWeight << endl;
+					auto pr = graph::add_edge(u, v, graph);
+					graph::put(weight, pr.first, shortCutWeight);
+					graph::put(direction, pr.first, DirectionBit::forward);
+					graph::put(unpack, pr.first, curVert);
+
+					auto pr1 = graph::add_edge(v, u, graph);
+					graph::put(weight, pr1.first, shortCutWeight);
+					graph::put(direction, pr1.first, DirectionBit::backward);
+					graph::put(unpack, pr1.first, curVert);
 				}
 			}
 			//remove edges
@@ -147,24 +162,6 @@ namespace ch
 			}
 //			cout << "After deletion" << endl;
 //			DumpEdges(curVert, graph, weight, direction);
-
-			for (auto& shortCut : shortCuts) {
-				auto u = shortCut.first.first;
-				auto v = shortCut.first.second;
-				auto shortCutWeight = shortCut.second;
-//			cout << "\tShortcut added: " << u + 1 << " to " << v + 1 << " with length " << shortCutWeight << endl;
-				auto pr = graph::add_edge(u, v, graph);
-				graph::put(weight, pr.first, shortCutWeight);
-				graph::put(direction, pr.first, DirectionBit::forward);
-				graph::put(unpack, pr.first, curVert);
-
-				auto pr1 = graph::add_edge(v, u, graph);
-				graph::put(weight, pr1.first, shortCutWeight);
-				graph::put(direction, pr1.first, DirectionBit::backward);
-				graph::put(unpack, pr1.first, curVert);
-			}
-//		cin.get();
-
 			curVert = strategy.next(graph);
 		}
 

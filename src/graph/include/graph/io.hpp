@@ -81,8 +81,10 @@ int read_ddsg(BackInsertIterator backInserter, size_t& numOfNodes, size_t& numOf
         switch (d) {
         case 0:
         case 3:
-            *backInserter++ = make_pair(make_pair(u, v), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(0))));
-            *backInserter++ = make_pair(make_pair(v, u), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(0))));
+			*backInserter++ = make_pair(make_pair(u, v), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(1))));
+			*backInserter++ = make_pair(make_pair(v, u), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(2))));
+			*backInserter++ = make_pair(make_pair(u, v), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(2))));
+			*backInserter++ = make_pair(make_pair(v, u), graph::make_properties(EdgeWeightProperty(w), EdgeDirectionProperty(static_cast<DirectionBit>(1))));
             ++numOfEdges;
             break;
         case 1:
