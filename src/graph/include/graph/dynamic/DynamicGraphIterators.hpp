@@ -17,7 +17,8 @@ namespace graph {
 			boost::random_access_traversal_tag>;
 		using DifferenceType = typename BaseType::difference_type;
 		using VertexDescriptor = typename Graph::vertex_descriptor;
-		const size_t nullLink = std::numeric_limits<size_t>::max();
+		using EdgesSizeType = typename Graph::edges_size_type;
+		const EdgesSizeType nullLink = std::numeric_limits<EdgesSizeType>::max();
 	public:
 		DGAdjacencyIterator(DifferenceType size)
 			: index(size), linkIndex(nullLink), graph(nullptr) {}
@@ -48,7 +49,7 @@ namespace graph {
 		}
 
 		DifferenceType index;
-		size_t linkIndex;
+		EdgesSizeType linkIndex;
 		const Graph* graph;
 	};
 
@@ -67,7 +68,8 @@ namespace graph {
 		using VertexDescriptor = typename Graph::vertex_descriptor;
 		using EdgeDescriptor = typename Graph::edge_descriptor;
 		using EdgeProperties = typename Graph::edge_bundled;
-		const size_t nullLink = std::numeric_limits<size_t>::max();
+		using EdgesSizeType = typename Graph::edges_size_type;
+		const EdgesSizeType nullLink = std::numeric_limits<EdgesSizeType>::max();
 	public:
 		DGEdgeIterator(DifferenceType size)
 			: index(size), linkIndex(nullLink), graph(nullptr) {}
@@ -103,7 +105,7 @@ namespace graph {
 
 		DifferenceType index;
 		VertexDescriptor vertex;
-		size_t linkIndex;
+		EdgesSizeType linkIndex;
 		Graph* graph;
 	};
 }

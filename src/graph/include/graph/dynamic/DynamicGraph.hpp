@@ -47,8 +47,8 @@ namespace graph
 
 		using EdgePropertiesVecType = std::vector<EdgeProperties>;
 
-		const static edges_size_type nullLink = std::numeric_limits<edges_size_type>::max();
-		using StoredAdjacencyType = DGFancyLink<vertex_descriptor, EdgeProperties>;
+		const edges_size_type nullLink = std::numeric_limits<edges_size_type>::max();
+		using StoredAdjacencyType = DGFancyLink<type>;
 		using AdjacenciesVecType = std::vector<StoredAdjacencyType>;
 		using AdjacenciesVecIteratorType = typename AdjacenciesVecType::const_iterator;
 
@@ -101,7 +101,6 @@ namespace graph
 		DynamicGraph(std::vector<std::pair<size_t, size_t>>::iterator begin,
 		             std::vector<std::pair<size_t, size_t>>::iterator end,
 		             size_t n, size_t m = 0) : DynamicGraph(n, m) {
-
 			for (auto& it = begin; it != end; ++it) {
 				AddEdge(it->first, it->second);
 			}
@@ -121,7 +120,6 @@ namespace graph
 			auto newEdgeIndex = CreateEdge();
 			auto firstEdgeIndex = this->vertices[from].firstEdgeIndex;
 			this->adjacencies[newEdgeIndex] = StoredAdjacencyType(to, properties);
-
 			if (firstEdgeIndex == nullLink) {
 				this->vertices[from].firstEdgeIndex = newEdgeIndex;
 			}
@@ -236,7 +234,7 @@ namespace graph
 		}
 
 		void OptimizeSpace() {
-			std::vector<size_t> permutation;
+			std::vector<edges_size_type> permutation;
 			permutation.resize(this->adjacencies.size(), nullLink);
 			edges_size_type lastFreeId = 0;
 			for(auto v : graphUtil::Range(0, this->vertices.size())) {

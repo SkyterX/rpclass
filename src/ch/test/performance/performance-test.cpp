@@ -122,7 +122,8 @@ TEST_P(DdsgGraphAlgorithm, CH) {
         cerr << "Verification file " << ss.str() << " is not found." << endl;
         FAIL();
     };
-    size_t src, tgt, dis;
+	graph_traits<Graph>::vertex_descriptor src, tgt;
+	property_map<Graph, distanceF_t>::type::value_type dis;
 
     DefaultCHVisitor<Graph> visitor;
     while (verificationFile >> src >> tgt >> dis) {

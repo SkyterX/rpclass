@@ -12,31 +12,34 @@ namespace graph
 		const static EdgesSizeType nullLink = std::numeric_limits<EdgesSizeType>::max();
 	public:
 		DegreeType degree;
-		size_t firstEdgeIndex;
+		EdgesSizeType firstEdgeIndex;
 		VertexProperties properties;
 
 		DGVertex(const VertexProperties& properties = VertexProperties(), EdgesSizeType firstEdgeIndex = nullLink)
 			: degree(0), firstEdgeIndex(firstEdgeIndex), properties(properties) {}
 	};
 
-	template <typename Vertex, typename EdgeProperties>
-	class DGFancyLink : public Link<Vertex> {
-		using BaseType = Link<Vertex>;
+	template <typename Graph>
+	class DGFancyLink : public Link<typename Graph::vertex_descriptor> {
+		using BaseType = Link<typename Graph::vertex_descriptor>;
+		using Vertex = typename Graph::vertex_descriptor;
+		using EdgeProperties = typename Graph::edge_bundled;
+		using EdgesSizeType = typename Graph::edges_size_type;
 
-		const static size_t nullLink = std::numeric_limits<size_t>::max();
-	public:
+		const static EdgesSizeType nullLink = std::numeric_limits<EdgesSizeType>::max();
+	public:		
 		using EdgePropertiesType = EdgeProperties;
 
-		size_t nextLink;
+		EdgesSizeType nextLink;
 		EdgePropertiesType properties;
 
 		DGFancyLink() : BaseType(), nextLink(nullLink) {}
 
-		explicit DGFancyLink(const Vertex& target, size_t nextLink = nullLink)
+		explicit DGFancyLink(const Vertex& target, EdgesSizeType nextLink = nullLink)
 			: BaseType(target), nextLink(nextLink) {}
 
 
-		DGFancyLink(const Vertex& target, const EdgeProperties& properties, size_t nextLink = nullLink)
-			:BaseType(target), properties(properties), nextLink(nextLink) {}
+		DGFancyLink(const Vertex& target, const EdgeProperties& properties, EdgesSizeType nextLink = nullLink)
+			:BaseType(target), nextLink(nextLink), properties(properties) {}
 	};
 }
