@@ -2,7 +2,7 @@
 #include <map>
 #include <graph/detail/IncidenceGraph.hpp>
 #include <graph/detail/util/Collection.hpp>
-#include <ch/ch_util.hpp>
+#include <ch/ContractionHierarchyUtils.hpp>
 #include <ch/ContractionHierarchyOrderings.hpp>
 #include <ch/ContractionHierarchyStructures.hpp>
 

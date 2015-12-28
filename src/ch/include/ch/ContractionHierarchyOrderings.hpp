@@ -7,7 +7,7 @@
 #include <graph/detail/util/Collection.hpp>
 #include <graph/queue/HeapQueue.hpp>
 #include <graph/Hash.hpp>
-#include "ch_util.hpp"
+#include <ch/ContractionHierarchyUtils.hpp>
 
 namespace ch
 {
