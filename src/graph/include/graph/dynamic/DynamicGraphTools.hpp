@@ -95,6 +95,15 @@ namespace graph
 		DynamicGraphType& graph) {
 		graph.RemoveEdge(u, predicate);
 	}
+
+	template<typename Graph>
+	inline void optimize_space(Graph& graph) {
+	}
+
+	DynamicGraphTemplate
+	inline void optimize_space(DynamicGraphType& graph) {
+		graph.OptimizeSpace();
+	}
 #undef DynamicGraphType
 #undef DynamicGraphTemplate
 }

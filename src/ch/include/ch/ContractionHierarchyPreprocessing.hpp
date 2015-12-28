@@ -172,6 +172,8 @@ namespace ch
 //			DumpEdges(v, graph, weight, direction);
 //		}
 
+		optimize_space(graph);
+
 	};
 
 	template<typename Graph, typename WeightMap, typename DirectionMap>

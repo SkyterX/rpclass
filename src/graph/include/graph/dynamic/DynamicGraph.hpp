@@ -47,7 +47,7 @@ namespace graph
 
 		using EdgePropertiesVecType = std::vector<EdgeProperties>;
 
-		const static size_t nullLink = std::numeric_limits<size_t>::max();
+		const static edges_size_type nullLink = std::numeric_limits<edges_size_type>::max();
 		using StoredAdjacencyType = DGFancyLink<vertex_descriptor, EdgeProperties>;
 		using AdjacenciesVecType = std::vector<StoredAdjacencyType>;
 		using AdjacenciesVecIteratorType = typename AdjacenciesVecType::const_iterator;
@@ -95,6 +95,7 @@ namespace graph
 				edgeProperties = it->second;
 				AddEdge((it->first).first, (it->first).second, edgeProperties);
 			}
+			OptimizeSpace();
 		}
 
 		DynamicGraph(std::vector<std::pair<size_t, size_t>>::iterator begin,
@@ -104,6 +105,7 @@ namespace graph
 			for (auto& it = begin; it != end; ++it) {
 				AddEdge(it->first, it->second);
 			}
+			OptimizeSpace();
 		}
 
 		vertex_descriptor AddVertex(const VertexProperties& properties = VertexProperties()) {
@@ -126,11 +128,12 @@ namespace graph
 			else {
 				std::swap(this->adjacencies[firstEdgeIndex], this->adjacencies[newEdgeIndex]);
 				this->adjacencies[firstEdgeIndex].nextLink = newEdgeIndex;
+				newEdgeIndex = firstEdgeIndex;
 			}
 
-			auto propertiesPtr = &this->adjacencies[firstEdgeIndex].properties;
+			auto propertiesPtr = &this->adjacencies[newEdgeIndex].properties;
 			++this->vertices[from].degree;
-			return std::make_pair(CreateLinkDescriptor(from, firstEdgeIndex), true);
+			return std::make_pair(CreateLinkDescriptor(from, newEdgeIndex), true);
 		}
 
 		void RemoveEdge(const vertex_descriptor& from, const vertex_descriptor& to) {
@@ -157,33 +160,35 @@ namespace graph
 				this->vertices[v].firstEdgeIndex = nextEdgeIndex;
 				edgeIndex = nextEdgeIndex;
 			}
-			while (edgeIndex != nullLink) {
-				auto nextEdgeIndex = this->adjacencies[edgeIndex].nextLink;
+			if (edgeIndex == nullLink) return;
+			auto nextEdgeIndex = this->adjacencies[edgeIndex].nextLink;
+			while (nextEdgeIndex != nullLink) {
 				auto linkDescriptor = CreateLinkDescriptor(v, nextEdgeIndex);
-				if (nextEdgeIndex != nullLink && predicate(linkDescriptor)) {
+				if (predicate(linkDescriptor)) {
 					this->adjacencies[edgeIndex].nextLink = this->adjacencies[nextEdgeIndex].nextLink;
 					DoRemoveEdge(v, nextEdgeIndex);
 				}
 				else {
 					edgeIndex = nextEdgeIndex;
 				}
+				nextEdgeIndex = this->adjacencies[edgeIndex].nextLink;
 			}
 		}
 
 	private:
 
-		edge_descriptor CreateLinkDescriptor(const vertex_descriptor& v, size_t linkIndex) {
+		edge_descriptor CreateLinkDescriptor(const vertex_descriptor& v, edges_size_type linkIndex) {
 			return edge_descriptor(v, this->adjacencies[linkIndex].target, &this->adjacencies[linkIndex].properties);
 		}
 
-		void DoRemoveEdge(const vertex_descriptor& v, size_t linkIndex) {
+		void DoRemoveEdge(const vertex_descriptor& v, edges_size_type linkIndex) {
 			--this->vertices[v].degree;
 			this->adjacencies[linkIndex].nextLink = freeLinkIndex;
 			freeLinkIndex = linkIndex;
 		}
 
-		size_t CreateEdge() {
-			size_t newEdgeIndex;
+		edges_size_type CreateEdge() {
+			edges_size_type newEdgeIndex;
 			if (freeLinkIndex != nullLink) {
 				newEdgeIndex = freeLinkIndex;
 				freeLinkIndex = this->adjacencies[freeLinkIndex].nextLink;
@@ -230,9 +235,40 @@ namespace graph
 			return *vertexPropertyMap;
 		}
 
+		void OptimizeSpace() {
+			std::vector<size_t> permutation;
+			permutation.resize(this->adjacencies.size(), nullLink);
+			edges_size_type lastFreeId = 0;
+			for(auto v : graphUtil::Range(0, this->vertices.size())) {
+				auto edgeIndex = this->vertices[v].firstEdgeIndex;
+				auto prevEdgeIndex = nullLink;
+				while(edgeIndex != nullLink) {
+					permutation[edgeIndex] = lastFreeId;
+					if (prevEdgeIndex != nullLink)
+						this->adjacencies[prevEdgeIndex].nextLink = lastFreeId;
+					++lastFreeId;
+					prevEdgeIndex = edgeIndex;
+					edgeIndex = this->adjacencies[edgeIndex].nextLink;
+				}
+				if(this->vertices[v].firstEdgeIndex != nullLink)
+					this->vertices[v].firstEdgeIndex = permutation[this->vertices[v].firstEdgeIndex];
+			}
+			
+			for(auto edgeId : graphUtil::Range(0, this->adjacencies.size())) {
+				auto nextEdgeId = permutation[edgeId];
+				while(nextEdgeId != edgeId && nextEdgeId != nullLink) {
+					std::swap(this->adjacencies[edgeId], this->adjacencies[nextEdgeId]);
+					std::swap(nextEdgeId, permutation[nextEdgeId]);
+				}			
+				permutation[edgeId] = nextEdgeId;
+			}
+			freeLinkIndex = nullLink;
+			this->adjacencies.resize(lastFreeId);
+		}
+
 	private:
 
-		size_t freeLinkIndex;
+		edges_size_type freeLinkIndex;
 		AdjacenciesVecType adjacencies;
 		VerticesVecType vertices;
 		std::unique_ptr<EdgePropertyMapType> edgePropertyMap;

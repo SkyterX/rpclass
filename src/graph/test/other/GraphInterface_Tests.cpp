@@ -193,8 +193,8 @@ TEST(GraphInterface, DynamicGraphCorrectness) {
 			add_edge(v, to, g);
 			++vDegree;
 			EXPECT_EQ(vDegree, out_degree(v, g));
-
 		}
+		optimize_space(g);
 
 		auto outAdjacencies = AsArray(Range(adjacent_vertices(v, g)));
 		stable_sort(outAdjacencies.begin(), outAdjacencies.end());
@@ -206,6 +206,7 @@ TEST(GraphInterface, DynamicGraphCorrectness) {
 			                   return true;
 		                   }, g);
 		EXPECT_EQ(0, out_degree(v, g));
+		optimize_space(g);
 	}
 
 	VerifyPropertyMaps(g, n, m);
