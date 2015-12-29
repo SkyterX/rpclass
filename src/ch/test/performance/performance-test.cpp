@@ -99,7 +99,7 @@ TEST_P(DdsgGraphAlgorithm, CH) {
 		weight, vertex_index, colorF, colorB, 
 		unpack, order, direction, m_numSteps,
 //		GenerateOnlineVertexDegreeOrderStrategy(graph)
-		GenerateOldHLOrderStrategy(graph,
+		GenerateHLOrderStrategy(graph,
 			predecessorF, predecessorB, distanceF, distanceB,
 			weight, vertex_index, colorF, colorB,
 			direction, order, m_numSteps)
