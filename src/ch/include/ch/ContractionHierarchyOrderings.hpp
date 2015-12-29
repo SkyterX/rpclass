@@ -240,11 +240,11 @@ namespace ch
 				}
 			} while (true);
 
-			maxGLCount = std::max(goodLuckCount, maxGLCount);
-			if (itCount++ % 250 == 0) {
-				std::cout << "\t Max Good luck on " << maxGLCount << std::endl;
-				maxGLCount = 0;
-			}
+//			maxGLCount = std::max(goodLuckCount, maxGLCount);
+//			if (itCount++ % 250 == 0) {
+//				std::cout << "\t Max Good luck on " << maxGLCount << std::endl;
+//				maxGLCount = 0;
+//			}
 
 			//при  контракции x все смежные y l(y):=max{l(y), l(x)+1}
 			int lx = initOrGet(return_v, 0, L);

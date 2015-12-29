@@ -8,7 +8,6 @@
 
 namespace ch
 {
-
 	template <typename Graph, typename DirectionMap, typename WeightMap>
 	void RemoveParallelEdges(Graph& graph, DirectionMap& direction, WeightMap& weight) {
 		using namespace graphUtil;
@@ -18,28 +17,28 @@ namespace ch
 			for (const Edge& e : AsArray(Range(out_edges(curVert, graph)))) {
 				auto out_vertex = target(e, graph);
 				remove_out_edge_if(curVert, [&out_vertex, &graph, &e, &direction, &weight](const Edge& other_edge)-> bool {
-					auto other_vertex = target(other_edge, graph);
-					auto edgeDirection = get(direction, other_edge);
-					return other_vertex == out_vertex
-						&& edgeDirection == get(direction, e)
-						&& e != other_edge
-						&& get(weight, other_edge) >= get(weight, e);
-				}, graph);
+					                   auto other_vertex = target(other_edge, graph);
+					                   auto edgeDirection = get(direction, other_edge);
+					                   return other_vertex == out_vertex
+							                   && edgeDirection == get(direction, e)
+							                   && e != other_edge
+							                   && get(weight, other_edge) >= get(weight, e);
+				                   }, graph);
 			}
 		}
 	}
 
 	template <typename Graph, typename DirectionMap, typename WeightType, typename Vertex, typename WeightMap, typename UnpackMap>
 	void AddShortCut(Graph& graph, DirectionMap& direction, WeightMap& weight, UnpackMap& unpack,
-		Vertex& sourceVertex, Vertex& targetVertex, WeightType& shortCutWeight, Vertex& viaVertex, 
-		DirectionBit shortcutDirection, DirectionBit ignoredDirection) {
+	                 Vertex& sourceVertex, Vertex& targetVertex, WeightType& shortCutWeight, Vertex& viaVertex,
+	                 DirectionBit shortcutDirection) {
 		// if i am adding shortcut, previous edges are larger -> remove them
-		graph::remove_out_edge_if(sourceVertex, 
-			[&graph, &targetVertex, &direction, &ignoredDirection]
-			(const auto& edge)-> bool {
-				auto out_vertex = target(edge, graph);
-				return targetVertex == out_vertex && get(direction, edge) != ignoredDirection;
-			}, graph);
+		graph::remove_out_edge_if(sourceVertex,
+		                          [&graph, &targetVertex, &direction, &shortcutDirection]
+		                          (const auto& e)-> bool {
+			                          auto out_vertex = target(e, graph);
+			                          return targetVertex == out_vertex && get(direction, e) == shortcutDirection;
+		                          }, graph);
 
 		auto pr = graph::add_edge(sourceVertex, targetVertex, graph);
 		graph::put(weight, pr.first, shortCutWeight);
@@ -74,14 +73,14 @@ namespace ch
 		auto graph = CreateIncidenceGraph(originalGraph);
 		// removeBothTypeEdges
 		RemoveParallelEdges(graph, direction, weight);
-	
+
 		for (const auto& vertex : Range(vertices(graph))) {
 			graph::put(order, vertex, numeric_limits<VertexOrderType>::max());
 		}
 
 		//		for (auto v : Range(vertices(graph))) {
-//			DumpEdges(v, graph, weight, direction);
-//		}
+		//			DumpEdges(v, graph, weight, direction);
+		//		}
 
 		VertexOrderType curOrder = 0;
 		int counter = 0;
@@ -92,7 +91,7 @@ namespace ch
 			++counter;
 			if (counter % 1000 == 0) {
 				cout << "Processing " << counter << " vertex Id : " << curVert + 1 << " Degree : " << out_degree(curVert, graph) << endl;
-				cout << "Shortcuts amount " << shortcutAmount<< endl;
+				cout << "Shortcuts amount " << shortcutAmount << endl;
 			}
 
 			// find possible shortcuts
@@ -120,13 +119,13 @@ namespace ch
 					auto shortCutLength = get(weight, out_e) + get(weight, in_e);
 					auto shortcutKey = std::make_pair(in_v, out_v);
 					auto it = shortcutCandidates.find(shortcutKey);
-					if(it == shortcutCandidates.end() || it->second > shortCutLength)
+					if (it == shortcutCandidates.end() || it->second > shortCutLength)
 						shortcutCandidates[shortcutKey] = shortCutLength;
-}
+				}
 			}
 
 			// adding new shortcuts // no problems with descriptors
-			for (const auto& it : shortcutCandidates ) {
+			for (const auto& it : shortcutCandidates) {
 				auto in_v = it.first.first;
 				auto out_v = it.first.second;
 				auto shortCutLength = it.second;
@@ -148,15 +147,14 @@ namespace ch
 				}
 				shortcutAmount++;
 				//					cout << "\tShortcut added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
-				AddShortCut(graph, direction, weight, unpack, in_v, out_v, shortCutLength, curVert, DirectionBit::forward, DirectionBit::backward);
-				AddShortCut(graph, direction, weight, unpack, out_v, in_v, shortCutLength, curVert, DirectionBit::backward, DirectionBit::forward);
+				AddShortCut(graph, direction, weight, unpack, in_v, out_v, shortCutLength, curVert, DirectionBit::forward);
+				AddShortCut(graph, direction, weight, unpack, out_v, in_v, shortCutLength, curVert, DirectionBit::backward);
 
 			}
 
 
-
-//			cout << "Original Edges" << endl;
-//			DumpEdges(curVert, graph, weight, direction);
+			//			cout << "Original Edges" << endl;
+			//			DumpEdges(curVert, graph, weight, direction);
 			for (const auto& edge : AsArray(Range(out_edges(curVert, graph)))) {
 				auto to = target(edge, graph);
 				auto from = source(edge, graph);
@@ -164,31 +162,32 @@ namespace ch
 					graph::remove_edge(edge, graph);
 				}
 			}
-//			cout << "After deletion" << endl;
-//			DumpEdges(curVert, graph, weight, direction);
+			//			cout << "After deletion" << endl;
+			//			DumpEdges(curVert, graph, weight, direction);
 			curVert = strategy.next(graph);
 		}
 
-//		for(auto v : Range(vertices(graph))) {
-//			DumpEdges(v, graph, weight, direction);
-//		}
+		//		for(auto v : Range(vertices(graph))) {
+		//			DumpEdges(v, graph, weight, direction);
+		//		}
 
 		optimize_space(graph);
 
 	};
 
-	template<typename Graph, typename WeightMap, typename DirectionMap>
+	template <typename Graph, typename WeightMap, typename DirectionMap>
 	void DumpEdges(const typename Graph::vertex_descriptor& v, Graph& g, WeightMap& weight, DirectionMap& direction) {
 		using namespace std;
 		using namespace graphUtil;
 		cout << v << " : ";
-		for (const auto &e : Range(out_edges(v, g))) {
+		for (const auto& e : Range(out_edges(v, g))) {
 			cout << "\t[" <<
-				target(e, g) << ", " <<
-				get(weight, e) << ", " <<
-				(get(direction, e) == DirectionBit::forward ? "f" : "b") <<
-				"], " << endl;
+					target(e, g) << ", " <<
+					get(weight, e) << ", " <<
+					(get(direction, e) == DirectionBit::forward ? "f" : "b") <<
+					"], " << endl;
 		}
 		cout << endl;
 	}
 }
+
