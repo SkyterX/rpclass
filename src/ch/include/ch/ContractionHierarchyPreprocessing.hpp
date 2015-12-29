@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <unordered_set>
 #include <graph/detail/IncidenceGraph.hpp>
 #include <graph/detail/util/Collection.hpp>
 #include <ch/ContractionHierarchyUtils.hpp>
@@ -28,18 +29,26 @@ namespace ch
 		using namespace graphUtil;
 		using namespace graph;
 		using Edge = typename graph_traits<Graph>::edge_descriptor;
+
+		EdgeHash<Graph> hasher(&graph);
+		std::unordered_set<Edge, EdgeHash<Graph>> deleteSet(8, hasher);
 		for (const auto& curVert : Range(vertices(graph))) {
-			for (const Edge& e : AsArray(Range(out_edges(curVert, graph)))) {
+			deleteSet.clear();
+			for (const Edge& e : Range(out_edges(curVert, graph))) {
+				if (deleteSet.find(e) != deleteSet.end())
+					continue;
 				auto out_vertex = target(e, graph);
-				remove_out_edge_if(curVert, [&out_vertex, &graph, &e, &direction, &weight](const Edge& other_edge)-> bool {
-					                   auto other_vertex = target(other_edge, graph);
-					                   auto edgeDirection = get(direction, other_edge);
-					                   return other_vertex == out_vertex
-							                   && edgeDirection == get(direction, e)
-							                   && e != other_edge
-							                   && get(weight, other_edge) >= get(weight, e);
-				                   }, graph);
+				for (const Edge& other_edge : Range(out_edges(curVert, graph))) {
+					auto other_vertex = target(other_edge, graph);
+					if (other_vertex != out_vertex || e == other_edge) continue;
+					if (get(direction, other_edge) == get(direction, e)
+						&& get(weight, other_edge) >= get(weight, e))
+						deleteSet.insert(other_edge);
+				}
 			}
+			remove_out_edge_if(curVert, [&deleteSet](const Edge& e) {
+				                   return deleteSet.find(e) != deleteSet.end();
+			                   }, graph);
 		}
 	}
 

@@ -3,6 +3,7 @@
 #include <map>
 #include <graph/detail/IncidenceGraph.hpp>
 #include <ch/ContractionHierarchyStructures.hpp>
+#include <graph/graph.hpp>
 
 namespace ch
 {
@@ -79,4 +80,20 @@ namespace ch
 		};
 	};
 
+	template <typename Graph>
+	class EdgeHash {
+		using EdgeDescriptor = typename graph::graph_traits<Graph>::edge_descriptor;
+		using VertexDescriptor = typename graph::graph_traits<Graph>::vertex_descriptor;
+		using VertexPair = std::pair<VertexDescriptor, VertexDescriptor>;
+		Graph* g;
+		std::hash<VertexPair> hasher;
+	public:
+
+		explicit EdgeHash(Graph* g) : g(g) {}
+
+		inline size_t operator()(const EdgeDescriptor& e) const {
+			return hasher(make_pair(source(e, *g), target(e, *g)));
+
+		}
+	};
 };
