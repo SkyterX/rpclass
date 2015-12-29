@@ -98,11 +98,11 @@ TEST_P(DdsgGraphAlgorithm, CH) {
 		predecessorF, predecessorB, distanceF, distanceB, 
 		weight, vertex_index, colorF, colorB, 
 		unpack, order, direction, m_numSteps,
-		OnlineVertexDegreeOrderStrategy<Graph>(graph)
-//		CreateHLOrderStrategy(graph,
-//			predecessorF, predecessorB, distanceF, distanceB,
-//			weight, vertex_index, colorF, colorB,
-//			direction, order, m_numSteps)
+//		GenerateOnlineVertexDegreeOrderStrategy(graph)
+		GenerateOldHLOrderStrategy(graph,
+			predecessorF, predecessorB, distanceF, distanceB,
+			weight, vertex_index, colorF, colorB,
+			direction, order, m_numSteps)
 		);
     end = std::chrono::high_resolution_clock::now();
     CHMetricStatistics statistics(
@@ -152,8 +152,8 @@ TEST_P(DdsgGraphAlgorithm, CH) {
 
 
 INSTANTIATE_TEST_CASE_P(CommandLine, DdsgGraphAlgorithm,
-    ::testing::Combine(::testing::Values("rome99.ddsg"), ::testing::Values(1500), ::testing::Values(false)));
-//    ::testing::Combine(::testing::Values("bel.ddsg"), ::testing::Values(1500), ::testing::Values(false)));
+//    ::testing::Combine(::testing::Values("rome99.ddsg"), ::testing::Values(1500), ::testing::Values(false)));
+    ::testing::Combine(::testing::Values("bel.ddsg"), ::testing::Values(1500), ::testing::Values(false)));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
