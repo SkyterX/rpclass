@@ -116,17 +116,17 @@ namespace ch
 					}
 
 					//				cout << "\tShortcut added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
-					auto shortCutKey = make_pair(in_v, out_v);
+					auto shortCutKey = std::make_pair(in_v, out_v);
 					auto it = shortCuts.find(shortCutKey);
 					if (it == shortCuts.end() || it->second > shortCutLength) {
 
 						// calc ordA
 						ordA++;
 						// calc h(shortcut)
-						int h_in_edge = initOrGet(make_pair(in_v, curVert), 1, h);
-						int h_out_edge = initOrGet(make_pair(curVert, out_v), 1, h);
+						int h_in_edge = initOrGet(std::make_pair(in_v, curVert), 1, h);
+						int h_out_edge = initOrGet(std::make_pair(curVert, out_v), 1, h);
 						int h_shortcut = h_in_edge + h_out_edge;
-						h[make_pair(in_v, out_v)] = h_shortcut;
+						h[std::make_pair(in_v, out_v)] = h_shortcut;
 						sumhA += h_shortcut;
 
 						shortCuts[shortCutKey] = shortCutLength;
@@ -143,10 +143,10 @@ namespace ch
 					// calc ordD
 					ordD++;
 					// calc h(d)
-					int h_in_edge = initOrGet(make_pair(from, curVert), 1, h);
-					int h_out_edge = initOrGet(make_pair(curVert, to), 1, h);
+					int h_in_edge = initOrGet(std::make_pair(from, curVert), 1, h);
+					int h_out_edge = initOrGet(std::make_pair(curVert, to), 1, h);
 					int h_shortcut = h_in_edge + h_out_edge;
-					h[make_pair(from, to)] = h_shortcut;
+					h[std::make_pair(from, to)] = h_shortcut;
 					sumhD += h_shortcut;
 				}
 			}
