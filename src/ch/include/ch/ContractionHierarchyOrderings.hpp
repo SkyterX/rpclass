@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <cassert>
 #include <tuple>
 #include <queue>
 #include <vector>
@@ -87,6 +88,8 @@ namespace ch
 			}
 			usedVertices.insert(v);
 			previousVertex = v;
+
+			priorityCalculator.UpdateIteration();
 			return v;
 		};
 	};
@@ -101,6 +104,8 @@ namespace ch
 		DegreeType operator()(const Vertex& previousVertex, const Vertex& v, Graph& g) const {
 			return graph::out_degree(v, g);
 		}
+
+		void UpdateIteration() {}
 	};
 
 	template <typename Graph>
@@ -119,6 +124,8 @@ namespace ch
 		using DegreeType = typename graph::graph_traits<Graph>::degree_size_type;
 		using DijkstraVisitorType = CHPreprocessDijkstraVisitor<Graph, VertexOrderMap, DirectionMap>;
 		using TrackerType = CHPreprocessOptimalCriteriaTraker<Graph, IndexMap, DijkstraVisitorType, DijkstraVisitorType, DistanceFMap, DistanceBMap, ColorFMap, ColorBMap>;
+		using WeightType = typename WeightMap::value_type;
+		using OrderType = typename VertexOrderMap::value_type;
 		using Edge = std::pair<Vertex, Vertex>;
 		std::unordered_map<Vertex, int> L; // can become properties
 		std::unordered_map<Edge, int> h;
@@ -133,6 +140,7 @@ namespace ch
 		ColorBMap& colorB;
 		VertexOrderMap& order;
 		size_t dijLimit;
+		OrderType currentVertexOrder;
 
 
 		template <typename Key, typename Value, typename MapType>
@@ -145,29 +153,21 @@ namespace ch
 			return lx;
 		}
 
-		double calculatePriority(const Vertex& x, Graph& graph) {
-			double lx = GetOrDefault(x, 0, L);
+		std::pair<double, double> calculateA(const Vertex& x, Graph& graph) {
+			using namespace std;
+			using namespace graphUtil;
+			using namespace graph;
+
 			double ordA = 0;
-			double ordD = 0;//out_degree(x, graph);
 			double sumhA = 0;
-			double sumhD = 0;
-			// find incident edges for sumhD
-			//			for (const auto& e : graphUtil::Range(out_edges(x, graph))) {
-			//				if (get(direction, e) != DirectionBit::backward) { // i.e. forward
-			//					sumhD += initOrGet(std::make_pair(x, target(e, graph)), 1, h);
-			//				}
-			//				if (get(direction, e) != DirectionBit::forward) { // i.e. backward
-			//					sumhD += initOrGet(std::make_pair(target(e, graph), x), 1, h);
-			//				}
-			//			}
-			// find A set
+
 			auto curVert = x;
-			std::map<std::pair<Vertex, Vertex>, size_t> shortCuts;
-			for (const auto& out_e : graphUtil::Range(out_edges(curVert, graph))) {
+			std::map<std::pair<Vertex, Vertex>, WeightType> shortcutCandidates;
+			for (const auto& out_e : Range(out_edges(curVert, graph))) {
 				if (get(direction, out_e) == DirectionBit::backward) {
 					continue;
 				}
-				for (const auto& in_e : graphUtil::Range(out_edges(curVert, graph))) {
+				for (const auto& in_e : Range(out_edges(curVert, graph))) {
 					if (get(direction, in_e) == DirectionBit::forward) {
 						continue;
 					}
@@ -177,52 +177,66 @@ namespace ch
 
 					auto in_v = target(in_e, graph);
 					auto out_v = target(out_e, graph);
-					auto curVertexOrder = get(order, curVert);
-
+					auto curVertexOrder = currentVertexOrder;
 					if (in_v == out_v
 						|| get(order, in_v) <= curVertexOrder
 						|| get(order, out_v) <= curVertexOrder)
 						continue;
 
 					auto shortCutLength = get(weight, out_e) + get(weight, in_e);
-
-					DijkstraVisitorType visitorF(curVert, dijLimit, order, direction, DirectionBit::backward);
-					DijkstraVisitorType visitorB(curVert, dijLimit, order, direction, DirectionBit::forward);
-
-					graph::fancy_bidirectional_dijkstra<TrackerType>(
-						graph, graph, in_v, out_v,
-						predecessorF, predecessorB, distanceF, distanceB,
-						weight, index, colorF, colorB, visitorF, visitorB);
-
-					if (get(colorF, out_v) == boost::two_bit_black) {
-						auto dist = get(distanceF, out_v);
-						if (dist < shortCutLength) {
-							//						cout << "\tShortcut NOT added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
-							continue;
-						}
-					}
-
-					//				cout << "\tShortcut added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
-					auto shortCutKey = std::make_pair(in_v, out_v);
-					auto it = shortCuts.find(shortCutKey);
-					if (it == shortCuts.end() || it->second > shortCutLength) {
-
-						// calc ordA
-						ordA++;
-						// calc h(shortcut)
-						int h_in_edge = GetOrDefault(std::make_pair(in_v, curVert), 1, h);
-						int h_out_edge = GetOrDefault(std::make_pair(curVert, out_v), 1, h);
-						int h_shortcut = h_in_edge + h_out_edge;
-						h[std::make_pair(in_v, out_v)] = h_shortcut;
-						sumhA += h_shortcut;
-
-						shortCuts[shortCutKey] = shortCutLength;
-					}
-
+					auto shortcutKey = std::make_pair(in_v, out_v);
+					auto it = shortcutCandidates.find(shortcutKey);
+					if (it == shortcutCandidates.end() || it->second > shortCutLength)
+						shortcutCandidates[shortcutKey] = shortCutLength;
 				}
 			}
 
-			// calc D set
+			// adding new shortcuts // no problems with descriptors
+			for (const auto& it : shortcutCandidates) {
+				auto in_v = it.first.first;
+				auto out_v = it.first.second;
+				auto shortCutLength = it.second;
+
+				DijkstraVisitorType visitorF(curVert, dijLimit, order, direction, DirectionBit::backward);
+				DijkstraVisitorType visitorB(curVert, dijLimit, order, direction, DirectionBit::forward);
+
+				graph::fancy_bidirectional_dijkstra<TrackerType>(
+					graph, graph, in_v, out_v,
+					predecessorF, predecessorB, distanceF, distanceB,
+					weight, index, colorF, colorB, visitorF, visitorB);
+
+				if (get(colorF, out_v) == boost::two_bit_black) {
+					auto dist = get(distanceF, out_v);
+					if (dist < shortCutLength) {
+						//						cout << "\tShortcut NOT added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
+						continue;
+					}
+				}
+				//					cout << "\tShortcut added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
+
+
+				// calc ordA
+				ordA++;
+				// calc h(shortcut)
+				int h_in_edge = GetOrDefault(std::make_pair(in_v, curVert), 1, h);
+				int h_out_edge = GetOrDefault(std::make_pair(curVert, out_v), 1, h);
+				int h_shortcut = h_in_edge + h_out_edge;
+				h[std::make_pair(in_v, out_v)] = h_shortcut;
+				sumhA += h_shortcut;
+			}
+
+			return std::make_pair(ordA, sumhA);
+		}
+
+		std::pair<double, double> calculateD(const Vertex& x, Graph& graph) {
+			using namespace std;
+			using namespace graphUtil;
+			using namespace graph;
+
+			double ordD = 0;
+			double sumhD = 0;
+
+			auto curVert = x;
 			for (const auto& edge : AsArray(graphUtil::Range(out_edges(curVert, graph)))) {
 				auto to = target(edge, graph);
 				auto from = source(edge, graph);
@@ -238,25 +252,37 @@ namespace ch
 				}
 			}
 
+			return std::make_pair(ordD, sumhD);
+		}
 
-			//			if (sumhD == 0 || ordD == 0) {
-			//				std::cout << "Exception!!! There must not be a lonely vertices" << std::endl;
-			//				throw 20;
-			//			}
-			double delimOrd = 0;
+		double calculatePriority(const Vertex& x, Graph& graph) {
+			using namespace std;
+			using namespace graphUtil;
+			using namespace graph;
+
+			double lx = GetOrDefault(x, 0, L);
+			double ordA = 0;
+			double ordD = 0;
+			double sumhA = 0;
+			double sumhD = 0;
+
+			std::tie(ordA, sumhA) = calculateA(x, graph);
+			std::tie(ordD, sumhD) = calculateD(x, graph);
+			double delimOrd = 1e20;
 			if (ordD != 0) {
 				delimOrd = (static_cast<double>(ordA) / ordD);
 			}
-			double delimSumH = 0;
+			double delimSumH = 1e20;
 			if (sumhD != 0) {
 				delimSumH = (static_cast<double>(sumhA) / sumhD);
 			}
-			return lx + delimOrd + delimSumH;
+			auto p = lx + delimOrd + delimSumH;
+			return p;
 		}
 
 
 	public:
-		using value_type = DegreeType;
+		using value_type = double;
 
 		HLCalculator(Graph& graph,
 		             PredecessorFMap& predecessorF, PredecessorBMap& predecessorB,
@@ -268,18 +294,19 @@ namespace ch
 			  distanceF(distanceF), distanceB(distanceB), weight(weight), index(index),
 			  colorF(colorF), colorB(colorB), order(order), dijLimit(dijLimit) {}
 
-		DegreeType operator()(const Vertex& previousVertex, const Vertex& v, Graph& graph) {
+		double operator()(const Vertex& previousVertex, const Vertex& v, Graph& graph) {
 			if (previousVertex != graph.null_vertex()) {
 				//при  контракции x все смежные y l(y):=max{l(y), l(x)+1}
-				int lx = GetOrDefault(previousVertex, 0, L);
-				for (const auto& e : graphUtil::Range(out_edges(previousVertex, graph))) {
-					auto y = target(e, graph);
-					if (GetOrDefault(y, 0, L) < lx + 1) {
-						L[y] = lx + 1;
-					}
-				};
+				auto lx = GetOrDefault(previousVertex, 0, L);
+				if (GetOrDefault(v, 0, L) < lx + 1) {
+					L[v] = lx + 1;
+				}
 			}
 			return calculatePriority(v, graph);
+		}
+
+		void UpdateIteration() {
+			++currentVertexOrder;
 		}
 	};
 
