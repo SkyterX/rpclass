@@ -35,7 +35,6 @@ namespace ch
 		std::queue<Vertex> updateQueue;
 		std::unordered_set<Vertex> usedVertices;
 		PriorityCalculator priorityCalculator;
-		Vertex previousVertex;
 	public:
 
 		AbstractPriorityOrderStrategy(Graph& g, PriorityCalculator& priorityCalculator)
@@ -48,7 +47,7 @@ namespace ch
 			using namespace graph;
 
 			for (auto& v : Range(vertices(graph))) {
-				auto p = priorityCalculator(graph.null_vertex(), v, graph);
+				auto p = priorityCalculator(v, graph);
 				queue.Insert(p, v);
 			}
 			isInitialized = true;
@@ -60,7 +59,7 @@ namespace ch
 				updateQueue.pop();
 				if (usedVertices.find(v) != usedVertices.end())
 					continue;
-				auto p = priorityCalculator(previousVertex, v, graph);
+				auto p = priorityCalculator(v, graph);
 				queue.DecreaseKey(p, v, p);
 			}
 		}
@@ -87,9 +86,72 @@ namespace ch
 				updateQueue.push(to);
 			}
 			usedVertices.insert(v);
-			previousVertex = v;
 
-			priorityCalculator.UpdateIteration();
+			priorityCalculator.UpdateIteration(v, graph);
+			return v;
+		};
+	};
+
+	template <typename Graph, typename PriorityCalculator>
+	class AbstractLazyPriorityOrderStrategy {
+		using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
+		using Priority = typename PriorityCalculator::value_type;
+		using QueueItemType = graph::queue::QueueItem<Priority, Vertex>;
+		using QueueType = graph::queue::SegmentTreeQueue<Priority, Vertex>;
+
+		bool isInitialized;
+		QueueType queue;
+		std::queue<Vertex> updateQueue;
+		std::unordered_set<Vertex> usedVertices;
+		PriorityCalculator priorityCalculator;
+	public:
+
+		AbstractLazyPriorityOrderStrategy(Graph& g, PriorityCalculator& priorityCalculator)
+			: isInitialized(false),
+			queue(graph::num_vertices(g)),
+			priorityCalculator(priorityCalculator) { }
+
+		void Initialize(Graph& graph) {
+			using namespace graphUtil;
+			using namespace graph;
+
+			for (auto& v : Range(vertices(graph))) {
+				auto p = priorityCalculator(v, graph);
+				queue.Insert(p, v);
+			}
+			isInitialized = true;
+		}
+
+		Vertex next(Graph& graph) {
+			using namespace graphUtil;
+			using namespace graph;
+
+			if (!isInitialized) {
+				Initialize(graph);
+			}
+			if (queue.IsEmpty()) {
+				return graph.null_vertex();
+			}
+
+			Vertex v;
+			Priority p;
+			std::tie(p, v) = queue.PeekMin();
+			queue.DeleteMin();
+			
+			p = priorityCalculator(v, graph);
+
+			while(!queue.IsEmpty()) {
+//				std::cout << v << std::endl;
+				if (queue.PeekMin().Key() >= p)
+					break;
+				queue.Insert(p, v);
+				std::tie(p, v) = queue.PeekMin();
+				queue.DeleteMin();
+				p = priorityCalculator(v, graph);
+			}
+
+			usedVertices.insert(v);
+			priorityCalculator.UpdateIteration(v, graph);
 			return v;
 		};
 	};
@@ -101,11 +163,11 @@ namespace ch
 	public:
 		using value_type = DegreeType;
 
-		DegreeType operator()(const Vertex& previousVertex, const Vertex& v, Graph& g) const {
+		DegreeType operator()(const Vertex& v, Graph& g) const {
 			return graph::out_degree(v, g);
 		}
 
-		void UpdateIteration() {}
+		void UpdateIteration(const Vertex& v, Graph& g) {}
 	};
 
 	template <typename Graph>
@@ -113,7 +175,17 @@ namespace ch
 
 	template <typename Graph>
 	OnlineVertexDegreeOrderStrategy<Graph> GenerateOnlineVertexDegreeOrderStrategy(Graph& graph) {
-		return OnlineVertexDegreeOrderStrategy<Graph>(graph, VertexDegreeCalculator<Graph>());
+		auto calculator = VertexDegreeCalculator<Graph>();
+		return OnlineVertexDegreeOrderStrategy<Graph>(graph, calculator);
+	}
+
+	template <typename Graph>
+	using OnlineVertexDegreeLazyOrderStrategy = AbstractLazyPriorityOrderStrategy<Graph, VertexDegreeCalculator<Graph>>;
+
+	template <typename Graph>
+	OnlineVertexDegreeLazyOrderStrategy<Graph> GenerateOnlineVertexDegreeLazyOrderStrategy(Graph& graph) {
+		auto calculator = VertexDegreeCalculator<Graph>();
+		return OnlineVertexDegreeLazyOrderStrategy<Graph>(graph, calculator);
 	}
 
 	template <typename Graph, typename PredecessorFMap, typename PredecessorBMap, typename DistanceFMap,
@@ -294,19 +366,19 @@ namespace ch
 			  distanceF(distanceF), distanceB(distanceB), weight(weight), index(index),
 			  colorF(colorF), colorB(colorB), order(order), dijLimit(dijLimit) {}
 
-		double operator()(const Vertex& previousVertex, const Vertex& v, Graph& graph) {
-			if (previousVertex != graph.null_vertex()) {
-				//при  контракции x все смежные y l(y):=max{l(y), l(x)+1}
-				auto lx = GetOrDefault(previousVertex, 0, L);
-				if (GetOrDefault(v, 0, L) < lx + 1) {
-					L[v] = lx + 1;
-				}
-			}
+		double operator()(const Vertex& v, Graph& graph) {
 			return calculatePriority(v, graph);
 		}
 
-		void UpdateIteration() {
-			++currentVertexOrder;
+		void UpdateIteration(const Vertex& v, Graph& g) {
+			++currentVertexOrder;			
+
+			auto lx = GetOrDefault(v, 0, L);
+			for(auto &to : graphUtil::Range(graph::adjacent_vertices(v, g))) {
+				if (GetOrDefault(to, 0, L) < lx + 1) {
+					L[to] = lx + 1;
+				}
+			}
 		}
 	};
 
@@ -341,6 +413,38 @@ namespace ch
 		                       VertexOrderMap, DirectionMap>(
 			graph,
 			hlCalculator);
+	}
+
+	template <typename Graph, typename PredecessorFMap, typename PredecessorBMap, typename DistanceFMap,
+		typename DistanceBMap, typename WeightMap, typename IndexMap, typename ColorFMap, typename ColorBMap,
+		typename VertexOrderMap, typename DirectionMap>
+		using HLLazyOrderStrategy = AbstractLazyPriorityOrderStrategy<
+		Graph, HLCalculator<
+		Graph, PredecessorFMap, PredecessorBMap,
+		DistanceFMap, DistanceBMap, WeightMap, IndexMap, ColorFMap, ColorBMap, VertexOrderMap, DirectionMap >> ;
+
+	template <typename Graph, typename PredecessorFMap, typename PredecessorBMap, typename DistanceFMap,
+		typename DistanceBMap, typename WeightMap, typename IndexMap, typename ColorFMap, typename ColorBMap,
+		typename VertexOrderMap, typename DirectionMap>
+		HLLazyOrderStrategy<Graph, PredecessorFMap, PredecessorBMap, DistanceFMap,
+		DistanceBMap, WeightMap, IndexMap, ColorFMap, ColorBMap,
+		VertexOrderMap, DirectionMap> GenerateHLLazyOrderStrategy(
+			Graph& graph,
+			PredecessorFMap& predecessorF, PredecessorBMap& predecessorB,
+			DistanceFMap& distanceF, DistanceBMap& distanceB,
+			WeightMap& weight, IndexMap& index,
+			ColorFMap& colorF, ColorBMap& colorB,
+			DirectionMap& direction, VertexOrderMap& oreder, size_t dijLimit) {
+		auto hlCalculator = HLCalculator<Graph, PredecessorFMap, PredecessorBMap, DistanceFMap,
+			DistanceBMap, WeightMap, IndexMap, ColorFMap, ColorBMap,
+			VertexOrderMap, DirectionMap>(
+				graph, predecessorF, predecessorB, distanceF,
+				distanceB, weight, index, colorF, colorB, direction, oreder, dijLimit);
+		return HLLazyOrderStrategy<Graph, PredecessorFMap, PredecessorBMap, DistanceFMap,
+			DistanceBMap, WeightMap, IndexMap, ColorFMap, ColorBMap,
+			VertexOrderMap, DirectionMap>(
+				graph,
+				hlCalculator);
 	}
 
 
