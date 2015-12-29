@@ -8,6 +8,21 @@
 
 namespace ch
 {
+	template <typename Graph, typename WeightMap, typename DirectionMap>
+	void DumpEdges(const typename Graph::vertex_descriptor& v, Graph& g, WeightMap& weight, DirectionMap& direction) {
+		using namespace std;
+		using namespace graphUtil;
+		cout << v << " : ";
+		for (const auto& e : Range(out_edges(v, g))) {
+			cout << "\t[" <<
+				target(e, g) << ", " <<
+				get(weight, e) << ", " <<
+				(get(direction, e) == DirectionBit::forward ? "f" : "b") <<
+				"], " << endl;
+		}
+		cout << endl;
+	}
+
 	template <typename Graph, typename DirectionMap, typename WeightMap>
 	void RemoveParallelEdges(Graph& graph, DirectionMap& direction, WeightMap& weight) {
 		using namespace graphUtil;
@@ -173,21 +188,8 @@ namespace ch
 
 		optimize_space(graph);
 
+		cout << "Shortcuts amount " << shortcutAmount << endl;
 	};
 
-	template <typename Graph, typename WeightMap, typename DirectionMap>
-	void DumpEdges(const typename Graph::vertex_descriptor& v, Graph& g, WeightMap& weight, DirectionMap& direction) {
-		using namespace std;
-		using namespace graphUtil;
-		cout << v << " : ";
-		for (const auto& e : Range(out_edges(v, g))) {
-			cout << "\t[" <<
-					target(e, g) << ", " <<
-					get(weight, e) << ", " <<
-					(get(direction, e) == DirectionBit::forward ? "f" : "b") <<
-					"], " << endl;
-		}
-		cout << endl;
-	}
 }
 
