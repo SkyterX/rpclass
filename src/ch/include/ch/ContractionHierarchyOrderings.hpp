@@ -1,11 +1,14 @@
 #pragma once
 
 #include <tuple>
+#include <queue>
 #include <vector>
+#include <unordered_set>
 #include <random>
 #include <graph/graph.hpp>
 #include <graph/detail/util/Collection.hpp>
 #include <graph/queue/HeapQueue.hpp>
+#include <graph/queue/SegmentTreeQueue.hpp>
 #include <graph/Hash.hpp>
 #include <ch/ContractionHierarchyUtils.hpp>
 
@@ -17,8 +20,90 @@ namespace ch
 		typename graph::graph_traits<Graph>::vertex_descriptor
 		next(Graph& graph) {};
 	};
+	
+	template <typename Graph, typename PriorityCalculator>
+	class AbstractPriorityOrderStrategy {
+		using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
+		using Priority = typename PriorityCalculator::result_type;
+		using QueueItemType = graph::queue::QueueItem<Priority, Vertex>;
+		using QueueType = graph::queue::SegmentTreeQueue<Priority, Vertex>;
 
+		bool isInitialized;
+		QueueType queue;
+		std::queue<Vertex> updateQueue;
+		std::unordered_set<Vertex> usedVertices;
+		PriorityCalculator priorityCalculator;
+	public:
+		
+		AbstractPriorityOrderStrategy(Graph& g)
+			: isInitialized(false), 
+			queue(graph::num_vertices(g)),
+			priorityCalculator() {
+		}
 
+		void Initialize(Graph& graph) {
+			using namespace graphUtil;
+			using namespace graph;
+
+			for(auto& v : Range(vertices(graph))) {
+				auto p = priorityCalculator(v, graph);
+				queue.Insert(p, v);
+			}
+			isInitialized = true;
+		}
+
+		void UpdatePreviousVertex(Graph& graph) {
+			while(!updateQueue.empty()) {
+				auto v = updateQueue.front();
+				updateQueue.pop();
+				if (usedVertices.find(v) != usedVertices.end())
+					continue;
+				auto p = priorityCalculator(v, graph);
+				queue.DecreaseKey(p, v, p);
+			}
+		}
+
+		Vertex next(Graph& graph) {
+			using namespace graphUtil;
+			using namespace graph;
+
+			if (!isInitialized) {
+				Initialize(graph);
+			}
+			if (queue.IsEmpty()) {
+				return graph.null_vertex();
+			}
+
+			UpdatePreviousVertex(graph);
+
+			Vertex v;
+			Priority p;
+			std::tie(p, v) = queue.PeekMin();
+			queue.DeleteMin();
+			
+			for(auto& to : Range(adjacent_vertices(v, graph))) {
+				updateQueue.push(to);
+			}
+			usedVertices.insert(v);
+
+			return v;
+		};
+	};
+
+	template <typename Graph>
+	struct VertexDegreeCalculator : public std::unary_function<
+		typename graph::graph_traits<Graph>::vertex_descriptor, 
+		typename graph::graph_traits<Graph>::degree_size_type> {
+		using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
+		using DegreeType = typename graph::graph_traits<Graph>::degree_size_type;
+
+		DegreeType operator()(const Vertex& v, Graph& g) const{
+			return graph::out_degree(v, g);
+		}
+	};
+
+	template <typename Graph>
+	using OnlineVertexDegreeOrderStrategy = AbstractPriorityOrderStrategy<Graph, VertexDegreeCalculator<Graph>>;
 
 	template <typename Graph, typename PredecessorFMap, typename PredecessorBMap, typename DistanceFMap,
 		typename DistanceBMap, typename WeightMap, typename IndexMap, typename ColorFMap, typename ColorBMap, 

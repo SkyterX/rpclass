@@ -98,11 +98,11 @@ TEST_P(DdsgGraphAlgorithm, CH) {
 		predecessorF, predecessorB, distanceF, distanceB, 
 		weight, vertex_index, colorF, colorB, 
 		unpack, order, direction, m_numSteps,
-//		VertexDegreeOrderStrategy<Graph>(graph)
-		CreateHLOrderStrategy(graph,
-			predecessorF, predecessorB, distanceF, distanceB,
-			weight, vertex_index, colorF, colorB,
-			direction, order, m_numSteps)
+		OnlineVertexDegreeOrderStrategy<Graph>(graph)
+//		CreateHLOrderStrategy(graph,
+//			predecessorF, predecessorB, distanceF, distanceB,
+//			weight, vertex_index, colorF, colorB,
+//			direction, order, m_numSteps)
 		);
     end = std::chrono::high_resolution_clock::now();
     CHMetricStatistics statistics(
