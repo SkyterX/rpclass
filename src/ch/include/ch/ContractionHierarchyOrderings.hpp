@@ -24,7 +24,7 @@ namespace ch
 	template <typename Graph, typename PriorityCalculator>
 	class AbstractPriorityOrderStrategy {
 		using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
-		using Priority = typename PriorityCalculator::result_type;
+		using Priority = typename PriorityCalculator::value_type;
 		using QueueItemType = graph::queue::QueueItem<Priority, Vertex>;
 		using QueueType = graph::queue::SegmentTreeQueue<Priority, Vertex>;
 
@@ -33,6 +33,7 @@ namespace ch
 		std::queue<Vertex> updateQueue;
 		std::unordered_set<Vertex> usedVertices;
 		PriorityCalculator priorityCalculator;
+		Vertex previousVertex;
 	public:
 		
 		AbstractPriorityOrderStrategy(Graph& g)
@@ -46,7 +47,7 @@ namespace ch
 			using namespace graph;
 
 			for(auto& v : Range(vertices(graph))) {
-				auto p = priorityCalculator(v, graph);
+				auto p = priorityCalculator(graph.null_vertex(), v, graph);
 				queue.Insert(p, v);
 			}
 			isInitialized = true;
@@ -58,7 +59,7 @@ namespace ch
 				updateQueue.pop();
 				if (usedVertices.find(v) != usedVertices.end())
 					continue;
-				auto p = priorityCalculator(v, graph);
+				auto p = priorityCalculator(previousVertex, v, graph);
 				queue.DecreaseKey(p, v, p);
 			}
 		}
@@ -85,19 +86,19 @@ namespace ch
 				updateQueue.push(to);
 			}
 			usedVertices.insert(v);
-
+			previousVertex = v;
 			return v;
 		};
 	};
 
 	template <typename Graph>
-	struct VertexDegreeCalculator : public std::unary_function<
-		typename graph::graph_traits<Graph>::vertex_descriptor, 
-		typename graph::graph_traits<Graph>::degree_size_type> {
+	class VertexDegreeCalculator {
 		using Vertex = typename graph::graph_traits<Graph>::vertex_descriptor;
 		using DegreeType = typename graph::graph_traits<Graph>::degree_size_type;
+	public:
+		using value_type = DegreeType;
 
-		DegreeType operator()(const Vertex& v, Graph& g) const{
+		DegreeType operator()(const Vertex& previousVertex, const Vertex& v, Graph& g) const{
 			return graph::out_degree(v, g);
 		}
 	};
