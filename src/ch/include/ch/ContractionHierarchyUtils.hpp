@@ -92,7 +92,7 @@ namespace ch
 		explicit EdgeHash(Graph* g) : g(g) {}
 
 		inline size_t operator()(const EdgeDescriptor& e) const {
-			return hasher(make_pair(source(e, *g), target(e, *g)));
+			return hasher(std::make_pair(source(e, *g), target(e, *g)));
 
 		}
 	};

@@ -304,15 +304,16 @@ namespace ch
 		WeightMap& weight, IndexMap& index,
 		ColorFMap& colorF, ColorBMap& colorB,
 		DirectionMap& direction, VertexOrderMap& oreder, size_t dijLimit) {
+		auto hlCalculator = HLCalculator<Graph, PredecessorFMap, PredecessorBMap, DistanceFMap,
+		                                 DistanceBMap, WeightMap, IndexMap, ColorFMap, ColorBMap,
+		                                 VertexOrderMap, DirectionMap>(
+			graph, predecessorF, predecessorB, distanceF,
+			distanceB, weight, index, colorF, colorB, direction, oreder, dijLimit);
 		return HLOrderStrategy<Graph, PredecessorFMap, PredecessorBMap, DistanceFMap,
 		                       DistanceBMap, WeightMap, IndexMap, ColorFMap, ColorBMap,
 		                       VertexOrderMap, DirectionMap>(
 			graph,
-			HLCalculator<Graph, PredecessorFMap, PredecessorBMap, DistanceFMap,
-			             DistanceBMap, WeightMap, IndexMap, ColorFMap, ColorBMap,
-			             VertexOrderMap, DirectionMap>(
-				graph, predecessorF, predecessorB, distanceF,
-				distanceB, weight, index, colorF, colorB, direction, oreder, dijLimit));
+			hlCalculator);
 	}
 
 
