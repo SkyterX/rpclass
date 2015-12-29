@@ -8,34 +8,44 @@
 
 namespace ch
 {
+
 	template <typename Graph, typename DirectionMap, typename WeightMap>
-	void RemovePairedEdges(Graph& graph, DirectionMap& direction, WeightMap& weight) {
-		using Edge = typename graph::graph_traits<Graph>::edge_descriptor;
-		for (const auto& curVert : graphUtil::Range(vertices(graph))) {
-			for (const Edge& edge : AsArray(graphUtil::Range(out_edges(curVert, graph)))) {
-				auto out_vertex = target(edge, graph);
-
-				if (get(direction, edge) != DirectionBit::backward) {
-					graph::remove_out_edge_if(curVert, [&out_vertex, &graph, &edge, &direction, &weight](const Edge& other_edge)-> bool {
-						auto other_vertex = target(other_edge, graph);
-						return other_vertex == out_vertex 
-							&& get(direction, other_edge) != DirectionBit::backward
-							&& edge != other_edge
-							&& get(weight, other_edge) >= get(weight, edge);
-					}, graph);
-				}
-
-				if (get(direction, edge) != DirectionBit::forward) {
-					graph::remove_out_edge_if(curVert, [&out_vertex, &graph, &edge, &direction, &weight](const Edge& other_edge)-> bool {
-						auto other_vertex = target(other_edge, graph);
-						return other_vertex == out_vertex
-							&& get(direction, other_edge) != DirectionBit::forward 
-							&& edge != other_edge
-							&& get(weight, other_edge) >= get(weight, edge);
-					}, graph);
-				}
+	void RemoveParallelEdges(Graph& graph, DirectionMap& direction, WeightMap& weight) {
+		using namespace graphUtil;
+		using namespace graph;
+		using Edge = typename graph_traits<Graph>::edge_descriptor;
+		for (const auto& curVert : Range(vertices(graph))) {
+			for (const Edge& e : AsArray(Range(out_edges(curVert, graph)))) {
+				auto out_vertex = target(e, graph);
+				remove_out_edge_if(curVert, [&out_vertex, &graph, &e, &direction, &weight](const Edge& other_edge)-> bool {
+					auto other_vertex = target(other_edge, graph);
+					auto edgeDirection = get(direction, other_edge);
+					return other_vertex == out_vertex
+						&& edgeDirection == get(direction, e)
+						&& e != other_edge
+						&& get(weight, other_edge) >= get(weight, e);
+				}, graph);
 			}
 		}
+	}
+
+	template <typename Graph, typename DirectionMap, typename WeightType, typename Vertex, typename WeightMap, typename UnpackMap>
+	void AddShortCut(Graph& graph, DirectionMap& direction, WeightMap& weight, UnpackMap& unpack,
+		Vertex& sourceVertex, Vertex& targetVertex, WeightType& shortCutWeight, Vertex& viaVertex, 
+		DirectionBit shortcutDirection, DirectionBit ignoredDirection) {
+		// if i am adding shortcut, previous edges are larger -> remove them
+		graph::remove_out_edge_if(sourceVertex, 
+			[&graph, &targetVertex, &direction, &ignoredDirection]
+			(const auto& edge)-> bool {
+				auto out_vertex = target(edge, graph);
+				return targetVertex == out_vertex && get(direction, edge) != ignoredDirection;
+			}, graph);
+
+		auto pr = graph::add_edge(sourceVertex, targetVertex, graph);
+		graph::put(weight, pr.first, shortCutWeight);
+		graph::put(direction, pr.first, shortcutDirection);
+		graph::put(unpack, pr.first, viaVertex);
+
 	}
 
 	// uses dijkstra, therefore should have at least all property maps used by dijkstra
@@ -58,31 +68,35 @@ namespace ch
 		using Vertex = typename graph_traits<Graph>::vertex_descriptor;
 		using DijkstraVisitorType = CHPreprocessDijkstraVisitor<Graph, VertexOrderMap, DirectionMap>;
 		using TrackerType = CHPreprocessOptimalCriteriaTraker<Graph, IndexMap, DijkstraVisitorType, DijkstraVisitorType, DistanceFMap, DistanceBMap, ColorFMap, ColorBMap>;
+		using WeightType = typename WeightMap::value_type;
+		using VertexOrderType = typename VertexOrderMap::value_type;
 
 		auto graph = CreateIncidenceGraph(originalGraph);
-		RemovePairedEdges(graph, direction, weight);
-		auto curVert = strategy.next(graph);
-		
+		// removeBothTypeEdges
+		RemoveParallelEdges(graph, direction, weight);
+	
 		for (const auto& vertex : Range(vertices(graph))) {
-			graph::put(order, vertex, numeric_limits<typename VertexOrderMap::value_type>::max());
+			graph::put(order, vertex, numeric_limits<VertexOrderType>::max());
 		}
-		
-//		for (auto v : Range(vertices(graph))) {
+
+		//		for (auto v : Range(vertices(graph))) {
 //			DumpEdges(v, graph, weight, direction);
 //		}
 
-		size_t curOrder = 0;
+		VertexOrderType curOrder = 0;
 		int counter = 0;
 		int shortcutAmount = 0;
+		auto curVert = strategy.next(graph);
 		while (curVert != graph.null_vertex()) {
 			graph::put(order, curVert, curOrder++);
 			++counter;
 			if (counter % 1000 == 0) {
 				cout << "Processing " << counter << " vertex Id : " << curVert + 1 << " Degree : " << out_degree(curVert, graph) << endl;
 				cout << "Shortcuts amount " << shortcutAmount<< endl;
-
 			}
 
+			// find possible shortcuts
+			map<pair<Vertex, Vertex>, WeightType> shortcutCandidates;
 			for (const auto& out_e : Range(out_edges(curVert, graph))) {
 				if (get(direction, out_e) == DirectionBit::backward) {
 					continue;
@@ -104,53 +118,43 @@ namespace ch
 						continue;
 
 					auto shortCutLength = get(weight, out_e) + get(weight, in_e);
-
-					DijkstraVisitorType visitorF(curVert, dijLimit, order, direction, DirectionBit::backward);
-					DijkstraVisitorType visitorB(curVert, dijLimit, order, direction, DirectionBit::forward);
-
-					graph::fancy_bidirectional_dijkstra<TrackerType>(
-						graph, graph, in_v, out_v, 
-						predecessorF, predecessorB, distanceF, distanceB, 
-						weight, index, colorF, colorB, visitorF, visitorB);
-
-					if (get(colorF, out_v) == boost::two_bit_black) {
-						auto dist = get(distanceF, out_v);
-						if (dist < shortCutLength) {
-//						cout << "\tShortcut NOT added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
-							continue;
-						}
-					}
-
-//				cout << "\tShortcut added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
-
-					// removing larger edges
-					graph::remove_out_edge_if(in_v, [&graph, &out_v, &direction](const auto& edge)-> bool {
-						auto out_vertex = target(edge, graph);
-						return out_v == out_vertex && get(direction, edge) != DirectionBit::backward;
-					}, graph);
-					graph::remove_out_edge_if(out_v, [&graph, &in_v, &direction](const auto& edge)-> bool {
-						auto in_vertex = target(edge, graph);
-						return in_v == in_vertex && get(direction, edge) != DirectionBit::forward;
-					}, graph);
-
-					// adding shortcut
-					shortcutAmount++;
-					auto u = in_v;
-					auto v = out_v;
-					auto shortCutWeight = shortCutLength;
-					//			cout << "\tShortcut added: " << u + 1 << " to " << v + 1 << " with length " << shortCutWeight << endl;
-					auto pr = graph::add_edge(u, v, graph);
-					graph::put(weight, pr.first, shortCutWeight);
-					graph::put(direction, pr.first, DirectionBit::forward);
-					graph::put(unpack, pr.first, curVert);
-
-					auto pr1 = graph::add_edge(v, u, graph);
-					graph::put(weight, pr1.first, shortCutWeight);
-					graph::put(direction, pr1.first, DirectionBit::backward);
-					graph::put(unpack, pr1.first, curVert);
-				}
+					auto shortcutKey = std::make_pair(in_v, out_v);
+					auto it = shortcutCandidates.find(shortcutKey);
+					if(it == shortcutCandidates.end() || it->second > shortCutLength)
+						shortcutCandidates[shortcutKey] = shortCutLength;
+}
 			}
-			//remove edges
+
+			// adding new shortcuts // no problems with descriptors
+			for (const auto& it : shortcutCandidates ) {
+				auto in_v = it.first.first;
+				auto out_v = it.first.second;
+				auto shortCutLength = it.second;
+
+				DijkstraVisitorType visitorF(curVert, dijLimit, order, direction, DirectionBit::backward);
+				DijkstraVisitorType visitorB(curVert, dijLimit, order, direction, DirectionBit::forward);
+
+				graph::fancy_bidirectional_dijkstra<TrackerType>(
+					graph, graph, in_v, out_v,
+					predecessorF, predecessorB, distanceF, distanceB,
+					weight, index, colorF, colorB, visitorF, visitorB);
+
+				if (get(colorF, out_v) == boost::two_bit_black) {
+					auto dist = get(distanceF, out_v);
+					if (dist < shortCutLength) {
+						//						cout << "\tShortcut NOT added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
+						continue;
+					}
+				}
+				shortcutAmount++;
+				//					cout << "\tShortcut added: " << in_v + 1 << " to " << out_v + 1 << " with length " << shortCutLength << endl;
+				AddShortCut(graph, direction, weight, unpack, in_v, out_v, shortCutLength, curVert, DirectionBit::forward, DirectionBit::backward);
+				AddShortCut(graph, direction, weight, unpack, out_v, in_v, shortCutLength, curVert, DirectionBit::backward, DirectionBit::forward);
+
+			}
+
+
+
 //			cout << "Original Edges" << endl;
 //			DumpEdges(curVert, graph, weight, direction);
 			for (const auto& edge : AsArray(Range(out_edges(curVert, graph)))) {
